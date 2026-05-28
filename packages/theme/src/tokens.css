@@ -1,0 +1,50 @@
+/**
+ * @peasant-labs/theme — design tokens.
+ *
+ * Placeholder token layer for the transcript browser. These CSS custom
+ * properties are intentionally minimal for now; the full token set will be
+ * reconciled from peasant/web's DESIGN_SYSTEM.md in a later task.
+ *
+ * Import directly: `import "@peasant-labs/theme/tokens.css";`
+ */
+
+:root {
+  /* Surfaces */
+  --tb-color-bg: #0b0d12;
+  --tb-color-surface: #14171f;
+  --tb-color-border: #232733;
+
+  /* Text */
+  --tb-color-fg: #e6e8ee;
+  --tb-color-fg-muted: #9aa1b1;
+
+  /* Accents */
+  --tb-color-accent: #6ea8fe;
+
+  /* Role colors */
+  --tb-color-user: #6ea8fe;
+  --tb-color-assistant: #7ee787;
+  --tb-color-tool: #d2a8ff;
+  --tb-color-system: #9aa1b1;
+
+  /* Outcome / label colors */
+  --tb-color-positive: #2ea043;
+  --tb-color-negative: #f85149;
+
+  /* Typography */
+  --tb-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --tb-font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", monospace;
+
+  /* Spacing scale (rem) */
+  --tb-space-1: 0.25rem;
+  --tb-space-2: 0.5rem;
+  --tb-space-3: 0.75rem;
+  --tb-space-4: 1rem;
+  --tb-space-6: 1.5rem;
+  --tb-space-8: 2rem;
+
+  /* Radii */
+  --tb-radius-sm: 0.25rem;
+  --tb-radius-md: 0.5rem;
+  --tb-radius-lg: 0.75rem;
+}
