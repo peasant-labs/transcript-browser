@@ -1,7 +1,7 @@
 {
   "name": "@peasant-labs/transcript-browser",
   "version": "0.0.0",
-  "description": "React viewer for AI agent session transcripts (scaffold — no components yet).",
+  "description": "Framework-agnostic React viewer for AI agent session transcripts.",
   "license": "UNLICENSED",
   "type": "module",
   "main": "./dist/index.js",
@@ -11,10 +11,12 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./styles.css": "./src/styles.css"
   },
   "files": [
-    "dist"
+    "dist",
+    "src/styles.css"
   ],
   "scripts": {
     "build": "tsup",
@@ -27,9 +29,16 @@
   },
   "dependencies": {
     "@peasant-labs/types": "workspace:*",
-    "@peasant-labs/theme": "workspace:*"
+    "@peasant-labs/theme": "workspace:*",
+    "clsx": "^2.1.1",
+    "diff": "^7.0.0",
+    "lucide-react": "^0.469.0",
+    "react-markdown": "^9.0.1",
+    "remark-gfm": "^4.0.0",
+    "shiki": "^1.24.4"
   },
   "devDependencies": {
+    "@types/diff": "^7.0.0",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.1",
     "react": "^19.0.0",

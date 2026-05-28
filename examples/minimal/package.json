@@ -2,7 +2,7 @@
   "name": "@peasant-labs/example-minimal",
   "version": "0.0.0",
   "private": true,
-  "description": "Minimal Vite app proving the @peasant-labs/types wiring.",
+  "description": "Minimal Vite app rendering the transcript-browser viewer.",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@peasant-labs/types": "workspace:*",
+    "@peasant-labs/theme": "workspace:*",
+    "@peasant-labs/transcript-browser": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

@@ -7,18 +7,19 @@ consumed by two existing apps:
 - `peasant/web`
 - `village/frontend`
 
-This is a pnpm workspace monorepo. As of this scaffold it contains the shared
-TypeScript types and empty package shells; the viewer components have **not**
-been extracted yet.
+This is a pnpm workspace monorepo. The first viewer slice — **primitives + the
+canvas (list) view** — has been ported out of the peasant app into
+`@peasant-labs/transcript-browser` as agnostic, props-driven components. The
+graph / rails / header / overlay views are deferred to later slices.
 
 ## Packages
 
 | Package | Name | Status |
 |---|---|---|
 | `packages/types` | `@peasant-labs/types` | Shared transcript types (the reconciled superset). |
-| `packages/theme` | `@peasant-labs/theme` | CSS variable tokens + Tailwind v4 preset placeholder. |
-| `packages/browser` | `@peasant-labs/transcript-browser` | React 19 library scaffold — builds, exports nothing real yet. |
-| `examples/minimal` | `@peasant-labs/example-minimal` | Tiny Vite app importing `@peasant-labs/types` to prove wiring. |
+| `packages/theme` | `@peasant-labs/theme` | `--tb-*` CSS variable token contract (light + dark). |
+| `packages/browser` | `@peasant-labs/transcript-browser` | Framework-agnostic React viewer — primitives + transcript canvas. See its [README](./packages/browser/README.md). |
+| `examples/minimal` | `@peasant-labs/example-minimal` | Vite app rendering `<TranscriptCanvas>` against a realistic sample session. |
 
 ## Quick start
 
@@ -51,6 +52,9 @@ transcript-browser/
   transport-specific types (WebSocket subscription machinery, REST list
   wrappers, list/dashboard payloads, redaction-review types) were deliberately
   left in their respective apps.
-- See [`DIVERGENCES.md`](./DIVERGENCES.md) for the reconciliation details.
+- The viewer follows a strict **agnosticism contract**: data in via props only,
+  actions out via optional callbacks + capability flags, theming via `--tb-*`
+  CSS variables only. See the [browser README](./packages/browser/README.md).
+- See [`DIVERGENCES.md`](./DIVERGENCES.md) for the type reconciliation details.
 - Neither `peasant` nor `village` has been wired to consume these packages yet;
   that is a later task.

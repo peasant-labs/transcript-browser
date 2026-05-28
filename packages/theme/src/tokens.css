@@ -1,41 +1,83 @@
 /**
- * @peasant-labs/theme — design tokens.
+ * @peasant-labs/theme — design tokens for the transcript browser.
  *
- * Placeholder token layer for the transcript browser. These CSS custom
- * properties are intentionally minimal for now; the full token set will be
- * reconciled from peasant/web's DESIGN_SYSTEM.md in a later task.
+ * The single source of truth for the viewer's colour, type and spacing
+ * contract. Every component in `@peasant-labs/transcript-browser` paints
+ * exclusively from these CSS custom properties, so a consuming app can
+ * re-theme the entire viewer by overriding the `--tb-*` variables — no
+ * component changes, no Tailwind config, no build step required.
  *
- * Import directly: `import "@peasant-labs/theme/tokens.css";`
+ * Usage:
+ *   import "@peasant-labs/theme/tokens.css";       // the tokens (this file)
+ *   import "@peasant-labs/transcript-browser/styles.css"; // the component CSS
+ *
+ * Light theme is the default. Add `class="tb-dark"` (or `data-tb-theme="dark"`)
+ * to any ancestor of the viewer to flip it to the dark palette. To wire the
+ * viewer to your app's own theme, override any of the variables below in your
+ * own stylesheet — only the names are load-bearing.
+ *
+ * The values mirror peasant's v2 editorial palette (`web/DESIGN_SYSTEM.md`),
+ * resolved from HSL components to plain colours so the package themes itself
+ * with zero configuration.
  */
 
 :root {
-  /* Surfaces */
-  --tb-color-bg: #0b0d12;
-  --tb-color-surface: #14171f;
-  --tb-color-border: #232733;
+  /* ── Surfaces ─────────────────────────────────────────────────────────── */
+  --tb-canvas: hsl(30 14% 98%); /* page background */
+  --tb-surface: hsl(0 0% 100%); /* card / panel */
+  --tb-surface-hover: hsl(30 9% 96%); /* hover row */
+  --tb-code-bg: hsl(30 9% 96%); /* code / inline-code background */
 
-  /* Text */
-  --tb-color-fg: #e6e8ee;
-  --tb-color-fg-muted: #9aa1b1;
+  /* ── Ink scale (text) ─────────────────────────────────────────────────── */
+  --tb-ink: hsl(24 10% 6%); /* primary text */
+  --tb-ink-2: hsl(25 6% 30%); /* secondary text */
+  --tb-ink-3: hsl(25 5% 46%); /* tertiary text */
+  --tb-ink-4: hsl(25 5% 64%); /* quaternary / placeholder */
 
-  /* Accents */
-  --tb-color-accent: #6ea8fe;
+  /* ── Rules (borders) + rail ───────────────────────────────────────────── */
+  --tb-rule: hsl(30 8% 88%); /* default border */
+  --tb-rule-strong: hsl(30 8% 76%); /* emphatic border */
+  --tb-rail: hsl(30 6% 84%); /* transcript timeline rail */
 
-  /* Role colors */
-  --tb-color-user: #6ea8fe;
-  --tb-color-assistant: #7ee787;
-  --tb-color-tool: #d2a8ff;
-  --tb-color-system: #9aa1b1;
+  /* ── Accent / focus ───────────────────────────────────────────────────── */
+  --tb-accent: hsl(24 10% 6%); /* monochrome accent (= ink) */
+  --tb-focus: hsl(24 10% 6%); /* focus ring */
 
-  /* Outcome / label colors */
-  --tb-color-positive: #2ea043;
-  --tb-color-negative: #f85149;
+  /* ── Semantic states ──────────────────────────────────────────────────── */
+  --tb-positive: hsl(142 71% 30%);
+  --tb-positive-soft: hsl(142 60% 95%);
+  --tb-caution: hsl(35 92% 38%);
+  --tb-caution-soft: hsl(38 95% 94%);
+  --tb-negative: hsl(0 72% 45%);
+  --tb-negative-soft: hsl(0 75% 96%);
 
-  /* Typography */
-  --tb-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --tb-font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", monospace;
+  /* ── Diff (the only place red/green tints appear) ─────────────────────── */
+  --tb-diff-add: hsl(140 70% 88%);
+  --tb-diff-add-text: hsl(140 75% 22%);
+  --tb-diff-add-gutter: hsl(140 55% 70%);
+  --tb-diff-add-accent: hsl(142 60% 45%);
+  --tb-diff-del: hsl(2 90% 91%);
+  --tb-diff-del-text: hsl(358 75% 36%);
+  --tb-diff-del-gutter: hsl(0 60% 78%);
+  --tb-diff-del-accent: hsl(358 80% 56%);
 
-  /* Spacing scale (rem) */
+  /* ── Role accents (conversational turn colouring) ─────────────────────── */
+  --tb-role-user: hsl(216 45% 46%);
+  --tb-role-user-soft: hsl(216 44% 96%);
+  --tb-role-assistant: hsl(16 58% 52%);
+  --tb-role-assistant-soft: hsl(22 60% 96%);
+
+  /* ── Provider brand marks ─────────────────────────────────────────────── */
+  --tb-provider-claude: hsl(16 60% 56%);
+  --tb-provider-gemini: hsl(217 89% 61%);
+  --tb-provider-opencode: hsl(174 60% 38%);
+  --tb-provider-codex: hsl(25 6% 30%);
+
+  /* ── Typography ───────────────────────────────────────────────────────── */
+  --tb-font-sans: "Chivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --tb-font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+
+  /* ── Spacing scale (rem) ──────────────────────────────────────────────── */
   --tb-space-1: 0.25rem;
   --tb-space-2: 0.5rem;
   --tb-space-3: 0.75rem;
@@ -43,8 +85,56 @@
   --tb-space-6: 1.5rem;
   --tb-space-8: 2rem;
 
-  /* Radii */
-  --tb-radius-sm: 0.25rem;
-  --tb-radius-md: 0.5rem;
-  --tb-radius-lg: 0.75rem;
+  /* ── Radii (square by default, matching peasant's editorial look) ─────── */
+  --tb-radius-sm: 0;
+  --tb-radius-md: 0;
+  --tb-radius-lg: 0;
+}
+
+/* ── Dark theme ─────────────────────────────────────────────────────────────
+   Apply `class="tb-dark"` or `data-tb-theme="dark"` on an ancestor element. */
+.tb-dark,
+[data-tb-theme="dark"] {
+  --tb-canvas: hsl(24 10% 4%);
+  --tb-surface: hsl(24 8% 8%);
+  --tb-surface-hover: hsl(25 5% 14%);
+  --tb-code-bg: hsl(25 5% 14%);
+
+  --tb-ink: hsl(30 14% 98%);
+  --tb-ink-2: hsl(25 5% 78%);
+  --tb-ink-3: hsl(25 5% 58%);
+  --tb-ink-4: hsl(25 5% 40%);
+
+  --tb-rule: hsl(25 5% 18%);
+  --tb-rule-strong: hsl(25 5% 28%);
+  --tb-rail: hsl(25 5% 22%);
+
+  --tb-accent: hsl(30 14% 98%);
+  --tb-focus: hsl(30 14% 98%);
+
+  --tb-positive: hsl(142 60% 50%);
+  --tb-positive-soft: hsl(142 50% 12%);
+  --tb-caution: hsl(38 92% 60%);
+  --tb-caution-soft: hsl(35 60% 16%);
+  --tb-negative: hsl(0 70% 60%);
+  --tb-negative-soft: hsl(0 50% 14%);
+
+  --tb-diff-add: hsl(140 55% 18%);
+  --tb-diff-add-text: hsl(138 65% 82%);
+  --tb-diff-add-gutter: hsl(140 50% 30%);
+  --tb-diff-add-accent: hsl(142 60% 50%);
+  --tb-diff-del: hsl(0 55% 20%);
+  --tb-diff-del-text: hsl(0 70% 82%);
+  --tb-diff-del-gutter: hsl(0 50% 32%);
+  --tb-diff-del-accent: hsl(358 75% 58%);
+
+  --tb-role-user: hsl(216 55% 68%);
+  --tb-role-user-soft: hsl(216 28% 14%);
+  --tb-role-assistant: hsl(16 62% 64%);
+  --tb-role-assistant-soft: hsl(20 34% 14%);
+
+  --tb-provider-claude: hsl(16 64% 64%);
+  --tb-provider-gemini: hsl(217 85% 70%);
+  --tb-provider-opencode: hsl(174 52% 52%);
+  --tb-provider-codex: hsl(25 5% 78%);
 }
