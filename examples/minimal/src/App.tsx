@@ -4,10 +4,15 @@ import {
   TrajectoryGraph,
   annotateTranscript,
 } from "@peasant-labs/transcript-browser";
+import { ProjectOverview } from "@peasant-labs/analytics";
 import "@peasant-labs/theme/tokens.css";
 import "@peasant-labs/transcript-browser/styles.css";
+import "@peasant-labs/analytics/styles.css";
 import "@xyflow/react/dist/style.css";
 import { sampleSession, samplePhases, sampleScorecard } from "./sample-session.js";
+import { sampleSessions } from "./sample-analytics.js";
+
+type View = "transcript" | "analytics";
 
 /**
  * Renders the shared `<SessionDetail>` composer against a realistic sample.
@@ -25,6 +30,7 @@ export function App() {
   const [dark, setDark] = useState(true);
   const [labeling, setLabeling] = useState(true);
   const [canEdit, setCanEdit] = useState(true);
+  const [view, setView] = useState<View>("transcript");
 
   // Host-derived annotations: the package never derives these implicitly — the
   // app calls the exported pure helper and passes the result in.
@@ -40,25 +46,65 @@ export function App() {
             zIndex: 80,
             display: "flex",
             gap: "0.5rem",
+            alignItems: "center",
             justifyContent: "flex-end",
             padding: "0.5rem 1.5rem",
             background: "var(--tb-surface)",
             borderBottom: "1px solid var(--tb-rule)",
           }}
         >
+          {/* Top-level view switch: the agnostic viewer vs. the analytics layer. */}
+          <div style={{ marginRight: "auto", display: "flex", gap: "0.25rem" }}>
+            <button
+              type="button"
+              onClick={() => setView("transcript")}
+              style={{ fontWeight: view === "transcript" ? 700 : 400 }}
+            >
+              Transcript
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("analytics")}
+              style={{ fontWeight: view === "analytics" ? 700 : 400 }}
+            >
+              Analytics
+            </button>
+          </div>
           <button type="button" onClick={() => setDark((v) => !v)}>
             {dark ? "Light" : "Dark"} theme
           </button>
-          <button type="button" onClick={() => setLabeling((v) => !v)}>
-            {labeling ? "Hide" : "Show"} turn action slot
-          </button>
-          <button type="button" onClick={() => setCanEdit((v) => !v)}>
-            canEdit: {canEdit ? "on" : "off"}
-          </button>
+          {view === "transcript" ? (
+            <>
+              <button type="button" onClick={() => setLabeling((v) => !v)}>
+                {labeling ? "Hide" : "Show"} turn action slot
+              </button>
+              <button type="button" onClick={() => setCanEdit((v) => !v)}>
+                canEdit: {canEdit ? "on" : "off"}
+              </button>
+            </>
+          ) : null}
         </div>
 
-        {/* The 48px control bar above is the host's own chrome — pass its height
-            as `stickyTop` so the viewer's sticky header sits below it. */}
+        {view === "analytics" ? (
+          // The analytics layer: a generated SessionSummary[] fixture passed
+          // straight in as props. The host owns how an opaque contributorId is
+          // displayed via `renderContributor`; sections are toggle-able.
+          <div style={{ padding: "1.5rem" }}>
+            <ProjectOverview
+              sessions={sampleSessions}
+              title="Collective pulse"
+              subtitle={`${sampleSessions.length} sessions · generated fixture`}
+              contributorLimit={10}
+              renderContributor={(row) => (
+                <span style={{ fontWeight: 600, textTransform: "capitalize" }}>
+                  {row.contributorId}
+                </span>
+              )}
+            />
+          </div>
+        ) : (
+        /* The 48px control bar above is the host's own chrome — pass its height
+            as `stickyTop` so the viewer's sticky header sits below it. */
         <SessionDetail
           detail={sampleSession}
           phases={samplePhases}
@@ -106,6 +152,7 @@ export function App() {
           // it via a render-prop instead of the package importing it directly.
           renderGraph={(props) => <TrajectoryGraph {...props} />}
         />
+        )}
       </main>
     </div>
   );

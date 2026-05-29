@@ -12,6 +12,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@peasant-labs/analytics": "workspace:*",
     "@peasant-labs/types": "workspace:*",
     "@peasant-labs/theme": "workspace:*",
     "@peasant-labs/transcript-browser": "workspace:*",

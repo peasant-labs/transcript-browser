@@ -15,3 +15,4 @@ export * from "./transcript.js";
 export * from "./annotations.js";
 export * from "./quality.js";
 export * from "./insights.js";
+export * from "./analytics.js";

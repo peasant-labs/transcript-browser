@@ -16,10 +16,11 @@ graph / rails / header / overlay views are deferred to later slices.
 
 | Package | Name | Status |
 |---|---|---|
-| `packages/types` | `@peasant-labs/types` | Shared transcript types (the reconciled superset). |
+| `packages/types` | `@peasant-labs/types` | Shared transcript + analytics types (the reconciled superset). |
 | `packages/theme` | `@peasant-labs/theme` | `--tb-*` CSS variable token contract (light + dark). |
 | `packages/browser` | `@peasant-labs/transcript-browser` | Framework-agnostic React viewer — primitives + transcript canvas. See its [README](./packages/browser/README.md). |
-| `examples/minimal` | `@peasant-labs/example-minimal` | Vite app rendering `<TranscriptCanvas>` against a realistic sample session. |
+| `packages/analytics` | `@peasant-labs/analytics` | Framework-agnostic project/collective analytics — pure metric functions over `SessionSummary[]` + a configurable `<ProjectOverview>` (recharts). Separate from `browser` so analytics-only users skip the viewer's heavy deps. See its [README](./packages/analytics/README.md). |
+| `examples/minimal` | `@peasant-labs/example-minimal` | Vite app rendering `<TranscriptCanvas>` and `<ProjectOverview>` against realistic samples. |
 
 ## Quick start
 
@@ -37,7 +38,8 @@ transcript-browser/
 ├── packages/
 │   ├── types/      @peasant-labs/types
 │   ├── theme/      @peasant-labs/theme
-│   └── browser/    @peasant-labs/transcript-browser  (empty scaffold)
+│   ├── browser/    @peasant-labs/transcript-browser
+│   └── analytics/  @peasant-labs/analytics
 ├── examples/
 │   └── minimal/    minimal Vite wiring proof
 ├── pnpm-workspace.yaml
