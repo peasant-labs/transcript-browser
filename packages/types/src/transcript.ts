@@ -15,6 +15,7 @@ import type {
   StopReason,
   ToolCallKind,
 } from "./enums.js";
+import type { SessionScorecard } from "./quality.js";
 
 /** Tool invocation metadata inside a turn. */
 export interface ToolCallDetail {
@@ -115,4 +116,11 @@ export interface SessionDetailPayload {
    * metadata columns expose no per-signal reason, so no reason field exists.
    */
   outcome?: string;
+  /**
+   * Per-session quality signals for the optional "How this session went"
+   * self-assessment card. Absent when the session has no computed metrics. The
+   * shared viewer only renders the scorecard when this (or an explicit prop) is
+   * supplied — the viewer works fine without it.
+   */
+  scorecard?: SessionScorecard;
 }

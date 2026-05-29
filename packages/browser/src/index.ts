@@ -13,25 +13,60 @@
  *   import "@peasant-labs/theme/tokens.css";
  *   import "@peasant-labs/transcript-browser/styles.css";
  *
- * The primary entry point is `<TranscriptCanvas turns={detail.turns} … />`.
+ * The primary entry point is `<SessionDetail detail={…} … />` — the full viewer
+ * (header + tabs + canvas/graph/rails/views). `<TranscriptCanvas>` remains
+ * available as the bare list view.
  */
 
+// --- Top-level composer ----------------------------------------------------
+export { SessionDetail, type SessionDetailProps } from "./SessionDetail.js";
+export { SessionTab, type SessionTabDef } from "./session-detail-types.js";
+
+// --- Slices ----------------------------------------------------------------
 export * from "./primitives/index.js";
 export * from "./canvas/index.js";
+export * from "./graph/index.js";
+export * from "./rails/index.js";
+export * from "./views/index.js";
+export * from "./header/index.js";
+export * from "./overlays/index.js";
 
-// Pure helpers re-exported for hosts that want to share the viewer's logic
-// (e.g. an outline rail that must agree with the inline turn labels).
+// --- Pure helpers re-exported for hosts that want to share the viewer's logic
 export { computeTasks, computeTurnLabels, type TaskGroup } from "./lib/tasks.js";
 export { phaseLabel } from "./lib/phase.js";
+export { providerLabel } from "./lib/provider.js";
 export { formatRelative, formatDurationMins, formatDateLong } from "./lib/time.js";
+export {
+  composeSessionTitle,
+  summarizePrompt,
+  projectLabel,
+} from "./lib/title.js";
+export {
+  annotateTranscript,
+  type TranscriptAnnotation,
+} from "./lib/pattern-detection.js";
+export {
+  assessSession,
+  computePersonalMedians,
+  retryShare,
+  median,
+  type AxisVerdict,
+  type AxisId,
+  type AxisFlag,
+  type AxisComparison,
+  type Band,
+  type PersonalMedians,
+} from "./lib/scorecard.js";
 
-// Re-export the shared transcript types so consumers have a single import path.
+// --- Shared transcript types (single import path for consumers) ------------
 export type {
   SessionDetailPayload,
   TurnDetail,
   ToolCallDetail,
   SessionCommit,
   SessionGitContext,
+  SessionScorecard,
+  QualitySession,
   Provider,
   Role,
   Phase,

@@ -1,4 +1,4 @@
-import type { Phase, SessionDetailPayload } from "@peasant-labs/types";
+import type { Phase, SessionDetailPayload, SessionScorecard } from "@peasant-labs/types";
 
 /**
  * A realistic hand-written sample, typed against the shared
@@ -194,3 +194,23 @@ export const samplePhases: Phase[] = [
   { type: "debug", startTurn: 3, endTurn: 4, badges: [{ type: "error", count: 1 }] },
   { type: "implementation", startTurn: 5, endTurn: 7, badges: [] },
 ];
+
+/**
+ * Optional scorecard fixture — proves the SessionScorecard card renders when
+ * data is supplied. Remove it (or pass `scorecard={null}`) and the card simply
+ * doesn't appear; the viewer still works.
+ */
+export const sampleScorecard: SessionScorecard = {
+  totalTokens: 18420,
+  retryTokensWasted: 1300,
+  m5ContextUtilizationPct: 42,
+  m6OutputSurvivalPct: 88,
+  specQualityScore: 72,
+  signalDensity: 64,
+  m7SpecHasExamples: true,
+  m7SpecHasConstraints: false,
+  m4ConsecutiveErrorMax: 1,
+  withinSessionReverts: 1,
+  costTotalUsd: 0.42,
+  outcome: "resolved",
+};

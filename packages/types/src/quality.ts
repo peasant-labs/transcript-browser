@@ -11,6 +11,36 @@ import type { AnnotationSummary } from "./annotations.js";
 /** Heuristic session outcome computed by the backend. */
 export type SessionOutcome = "resolved" | "partial" | "failed";
 
+/**
+ * Deterministic per-session quality signals consumed by the optional
+ * SessionScorecard ("How this session went") self-assessment card. Mirrors Go
+ * pkg/schema.SessionScorecard. All numeric fields are optional so the card can
+ * distinguish "not computed" from a real zero.
+ *
+ * Source of truth: peasant `web/src/types/messages.ts`. Village does not define
+ * this. It lives here because it is a per-transcript quality shape the shared
+ * viewer renders (via the optional scorecard prop), not app/transport glue.
+ */
+export interface SessionScorecard {
+  // Token efficiency inputs.
+  m2TokenOutcomeRatio?: number;
+  m5ContextUtilizationPct?: number;
+  m6OutputSurvivalPct?: number;
+  retryTokensWasted?: number;
+  totalTokens?: number;
+  costTotalUsd?: number;
+  // Prompt quality inputs.
+  specQualityScore?: number;
+  signalDensity?: number;
+  m7SpecHasExamples?: boolean;
+  m7SpecHasConstraints?: boolean;
+  // Loop efficiency inputs.
+  m4ConsecutiveErrorMax?: number;
+  withinSessionReverts?: number;
+  /** Session outcome echoed for the "failed + above-median cost" trigger. */
+  outcome?: string;
+}
+
 /** Binary label used everywhere in the UI: positive (green) or negative (red). */
 export type SessionLabel = "positive" | "negative";
 

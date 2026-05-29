@@ -11,6 +11,11 @@ export { PhaseDivider, type PhaseDividerProps } from "./PhaseDivider.js";
 export { CheckpointMarker, type CheckpointMarkerProps } from "./CheckpointMarker.js";
 export { TaskBoundary, type TaskBoundaryProps } from "./TaskBoundary.js";
 export { EmptyState, type EmptyStateProps } from "./EmptyState.js";
+export {
+  ViewModeToggle,
+  type ViewModeToggleProps,
+  type TrajectoryMode,
+} from "./ViewModeToggle.js";
 
 export {
   rendererFor,
@@ -35,4 +40,5 @@ export type {
   ViewerCapabilities,
   ViewerCallbacks,
   RenderTurnActions,
+  DownloadFormat,
 } from "./types.js";

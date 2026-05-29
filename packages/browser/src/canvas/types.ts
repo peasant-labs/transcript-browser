@@ -46,8 +46,21 @@ export interface ViewerCapabilities {
   canEdit?: boolean;
   /** Can the current viewer change session visibility? */
   canChangeVisibility?: boolean;
-  /** Can the current viewer contribute / publish the session? */
+  /**
+   * Can the current viewer contribute / publish / share the session?
+   * (peasant: deep-link into the share wizard; village: contribute to a
+   * collective.) The host owns what "contribute" means via `onContribute`.
+   */
   canContribute?: boolean;
+  /**
+   * Can the current viewer copy a shareable link? The link itself is built by
+   * `linkBuilder` (host-owned routing) — the viewer never hardcodes a route.
+   */
+  canCopyLink?: boolean;
+  /** Can the current viewer download the transcript (JSON / JSONL / Markdown)? */
+  canDownload?: boolean;
+  /** Can the current viewer open a "chat with trace" affordance? */
+  canChatWithTrace?: boolean;
 }
 
 /**
@@ -61,9 +74,29 @@ export interface ViewerCallbacks {
   onEdit?: () => void;
   /** Host-handled visibility change. */
   onVisibilityChange?: (visible: boolean) => void;
-  /** Host-handled contribute / publish. */
+  /**
+   * Host-handled contribute / publish / share. Both apps diverge on what this
+   * does (peasant opens a share wizard; village opens a collective picker), so
+   * the viewer just emits the intent and lets the host own the flow.
+   */
   onContribute?: () => void;
+  /**
+   * Host-handled copy-link. Receives the link `linkBuilder()` produced for the
+   * session, so the host controls the route shape.
+   */
+  onCopyLink?: (url: string) => void;
+  /**
+   * Host-handled download. The viewer ships a default serializer (JSON / JSONL
+   * / Markdown), so when this is absent but `canDownload` is set the menu
+   * downloads via the built-in serializer. Supply this to override.
+   */
+  onDownload?: (format: DownloadFormat) => void;
+  /** Host-handled "chat with trace". */
+  onChatWithTrace?: () => void;
 }
+
+/** Transcript download formats offered by the ActionMenu. */
+export type DownloadFormat = "json" | "jsonl" | "markdown";
 
 /**
  * Render-prop for the per-turn action slot (e.g. a "Label" popover). The host
