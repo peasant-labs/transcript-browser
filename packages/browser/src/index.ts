@@ -25,6 +25,13 @@ export { SessionTab, type SessionTabDef } from "./session-detail-types.js";
 // --- Slices ----------------------------------------------------------------
 export * from "./primitives/index.js";
 export * from "./canvas/index.js";
+
+// --- `primitives` surface — shadcn-style UI primitives ---------------------
+// Ported from the village viewer redesign and re-expressed in the package's
+// `--tb-*` token model (no Tailwind, no Radix). Namespaced to avoid colliding
+// with the bespoke transcript primitives above (e.g. both expose a `Tooltip`).
+//   import { primitives } from "@peasant-labs/transcript-browser";
+export * as primitives from "./ui/index.js";
 export * from "./graph/index.js";
 export * from "./rails/index.js";
 export * from "./views/index.js";

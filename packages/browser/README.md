@@ -209,6 +209,29 @@ whole viewer; the token contract is shipped inside the bundled
 - **Primitives:** `CodeBlock`, `Markdown`, `DiffView`, `TokenBadge`,
   `DurationBadge`, `OutcomeChip`, `ErrorPill`, `RoleGlyph`, `Chip`, `ToolIcon`,
   `ProviderIcon`, `Kbd`.
+- **`primitives` (shadcn-style UI surface):** a namespaced set of generic UI
+  primitives — `Badge`, `Button`, `Card`/`CardContent`, `Checkbox`,
+  `Collapsible`/`CollapsibleTrigger`/`CollapsibleContent`, `Input`,
+  `Select`/`SelectTrigger`/`SelectValue`/`SelectContent`/`SelectItem`,
+  `Skeleton`, `Table` (+ `TableHeader`/`TableBody`/`TableRow`/`TableHead`/
+  `TableCell`), `Tooltip`/`TooltipTrigger`/`TooltipContent`/`TooltipProvider`,
+  `Popover`/`PopoverTrigger`/`PopoverContent`. Ported from the village viewer
+  redesign and re-expressed in the `--tb-*` token model. Imported under a
+  namespace to avoid colliding with the transcript primitives above (both expose
+  a `Tooltip`):
+
+  ```tsx
+  import { primitives } from "@peasant-labs/transcript-browser";
+  const { Button, Badge, Select, SelectTrigger, SelectValue, SelectContent, SelectItem } = primitives;
+  ```
+
+  They keep the shadcn-style API (CVA `variant`/`size` props, the
+  `Select`/`Collapsible`/`Tooltip`/`Popover` compositions, `aria-*` + `data-slot`
+  attributes) but carry **no Tailwind and no Radix**: every visual is a
+  `tb-`-prefixed class backed by `--tb-*` variables, and the interactive
+  primitives (checkbox, collapsible, select, tooltip, popover) are reimplemented
+  dependency-free. Fully agnostic — no village imports, brand strings, routes or
+  data fetching.
 - **Helpers (pure):** `computeTasks`, `computeTurnLabels`, `phaseLabel`,
   `providerLabel`, `formatRelative`, `formatTokens`, `formatDuration`,
   `parseArgs`, `composeSessionTitle`, `summarizePrompt`, `projectLabel`,
@@ -224,8 +247,10 @@ whole viewer; the token contract is shipped inside the bundled
 
 Runtime deps are kept lean and framework-neutral: `lucide-react` (icons),
 `shiki` (syntax highlighting), `react-markdown` + `remark-gfm` (markdown),
-`diff` (inline diffs), `clsx` (class joining). `@xyflow/react` is an **optional
-peer dependency** — needed only for the graph view. No UI kit, no router, no
-data layer. (Radix tooltips/popovers/dialogs from the source apps were replaced
-with a dependency-free CSS tooltip, self-contained dropdown menus, and a
-host-owned action slot.)
+`diff` (inline diffs), `clsx` (class joining), `class-variance-authority` (the
+CVA `variant`/`size` API for the `primitives` surface — class composition only,
+no Tailwind). `@xyflow/react` is an **optional peer dependency** — needed only
+for the graph view. No UI kit, no router, no data layer. (Radix
+tooltips/popovers/dialogs/selects/checkboxes from the source apps were replaced
+with dependency-free CSS tooltips, self-contained dropdown menus/listboxes, a
+context-based collapsible, and a host-owned action slot.)
