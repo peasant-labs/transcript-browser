@@ -14,17 +14,28 @@ available as the bare list view.
 
 ## Install
 
+The published package is **self-contained**: the sibling `@peasant-labs/types`
+and `@peasant-labs/theme` packages are bundled into `dist/` (both the JS and the
+`.d.ts`), so a consumer installs **only** this package plus the React peers. It
+works with `npm` (including via a `file:` tarball/path) — no workspace protocol
+and no `@peasant-labs/*` siblings required.
+
 ```bash
-pnpm add @peasant-labs/transcript-browser @peasant-labs/theme @peasant-labs/types react react-dom
+# npm (e.g. from a published tarball or a file: path)
+npm install @peasant-labs/transcript-browser react react-dom
 # Only if you mount the graph view — it's an OPTIONAL peer dependency:
-pnpm add @xyflow/react
+npm install @xyflow/react
 ```
 
-Import the two stylesheets once at your app root:
+Only `react` and `react-dom` are required peers; `@xyflow/react` is an optional
+peer needed solely for the graph view.
+
+Import the **single** bundled stylesheet once at your app root — it already
+contains both the `--tb-*` theme tokens and the `tb-`-prefixed component styles,
+so there is no separate theme CSS to install:
 
 ```ts
-import "@peasant-labs/theme/tokens.css";              // the --tb-* token contract
-import "@peasant-labs/transcript-browser/styles.css"; // the component CSS
+import "@peasant-labs/transcript-browser/styles.css"; // tokens + component CSS, all in one
 // Only if you use the graph view:
 import "@xyflow/react/dist/style.css";
 ```
@@ -42,8 +53,8 @@ import {
   SessionDetail,
   TrajectoryGraph,
   annotateTranscript,
+  type SessionDetailPayload,
 } from "@peasant-labs/transcript-browser";
-import type { SessionDetailPayload } from "@peasant-labs/types";
 
 function Viewer({ detail }: { detail: SessionDetailPayload }) {
   // The host derives annotations + phases and passes them in — the package
@@ -165,8 +176,9 @@ package — the host wires each affordance and owns its own modals.
 
 The viewer paints **exclusively** from `--tb-*` custom properties — no hardcoded
 colours, fonts, brand strings or routes. Override any variable to re-theme the
-whole viewer; the required token contract lives in `@peasant-labs/theme`
-(`tokens.css`). Key tokens: `--tb-canvas`, `--tb-surface`, `--tb-ink[-2/-3/-4]`,
+whole viewer; the token contract is shipped inside the bundled
+`@peasant-labs/transcript-browser/styles.css`. Key tokens: `--tb-canvas`,
+`--tb-surface`, `--tb-ink[-2/-3/-4]`,
 `--tb-rule[-strong]`, `--tb-rail`, `--tb-accent`, `--tb-positive/caution/negative`
 (+ `-soft`), `--tb-diff-*`, `--tb-role-user/assistant` (+ `-soft`),
 `--tb-provider-*`, `--tb-font-sans/mono`.
@@ -204,7 +216,9 @@ whole viewer; the required token contract lives in `@peasant-labs/theme`
 - **Types:** the contract types (`TurnLabel`, `TurnLinkBuilder`,
   `ViewerCallbacks`, `ViewerCapabilities`, `RenderTurnActions`,
   `DownloadFormat`, `TranscriptAnnotation`) plus the shared transcript shapes
-  re-exported from `@peasant-labs/types`.
+  (`SessionDetailPayload`, `TurnDetail`, `ToolCallDetail`, `Provider`, `Role`,
+  `Phase`, …) — all re-exported inline so consumers import them straight from
+  `@peasant-labs/transcript-browser` (no `@peasant-labs/types` install needed).
 
 ## Dependencies
 

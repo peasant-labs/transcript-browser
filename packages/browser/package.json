@@ -12,16 +12,17 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./styles.css": "./src/styles.css"
+    "./styles.css": "./dist/styles.css"
   },
   "files": [
-    "dist",
-    "src/styles.css"
+    "dist"
   ],
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepack": "tsup && node scripts/workspace-devdeps.mjs strip",
+    "postpack": "node scripts/workspace-devdeps.mjs restore"
   },
   "peerDependencies": {
     "@xyflow/react": "^12.0.0",
@@ -34,8 +35,6 @@
     }
   },
   "dependencies": {
-    "@peasant-labs/types": "workspace:*",
-    "@peasant-labs/theme": "workspace:*",
     "clsx": "^2.1.1",
     "diff": "^7.0.0",
     "lucide-react": "^0.469.0",
@@ -44,6 +43,8 @@
     "shiki": "^1.24.4"
   },
   "devDependencies": {
+    "@peasant-labs/theme": "workspace:*",
+    "@peasant-labs/types": "workspace:*",
     "@types/diff": "^7.0.0",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.1",

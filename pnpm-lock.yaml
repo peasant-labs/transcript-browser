@@ -54,12 +54,6 @@ importers:
 
   packages/browser:
     dependencies:
-      '@peasant-labs/theme':
-        specifier: workspace:*
-        version: link:../theme
-      '@peasant-labs/types':
-        specifier: workspace:*
-        version: link:../types
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -79,6 +73,12 @@ importers:
         specifier: ^1.24.4
         version: 1.29.2
     devDependencies:
+      '@peasant-labs/theme':
+        specifier: workspace:*
+        version: link:../theme
+      '@peasant-labs/types':
+        specifier: workspace:*
+        version: link:../types
       '@types/diff':
         specifier: ^7.0.0
         version: 7.0.2
