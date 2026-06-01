@@ -23,7 +23,7 @@ export interface MetadataChipsProps {
  * peasant's `header/MetadataChips.tsx`.
  */
 export function MetadataChips({ detail, displayTurnCount, outcome, outcomeReasons }: MetadataChipsProps) {
-  const provider = detail.provider;
+  const provider = detail.harness;
   const author = detail.gitContext?.user;
   const commits = detail.gitContext?.commits?.length ?? 0;
   const filesChanged = detail.gitContext?.commits?.reduce((n, c) => n + (c.filesChanged ?? 0), 0) ?? 0;

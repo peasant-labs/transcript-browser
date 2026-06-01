@@ -293,7 +293,7 @@ export function renderDownload(detail: SessionDetailPayload, format: DownloadFor
   const lines: string[] = [];
   lines.push(`# Session \`${detail.id}\``);
   lines.push("");
-  lines.push(`- **Provider:** ${detail.provider}`);
+  lines.push(`- **Provider:** ${detail.harness}`);
   if (detail.model) lines.push(`- **Model:** ${detail.model}`);
   lines.push(`- **Started:** ${detail.startTime}`);
   if (detail.durationMins) lines.push(`- **Duration:** ${detail.durationMins.toFixed(1)} min`);
