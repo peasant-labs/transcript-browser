@@ -54,8 +54,14 @@ export type StopReason = (typeof StopReason)[keyof typeof StopReason];
 
 // -- Provider / Role ---------------------------------------------------------
 
-/** Agent harness that produced the transcript. */
-export type Provider = "claude" | "gemini" | "codex" | "opencode";
+/**
+ * Agent harness that produced the transcript.
+ *
+ * Values mirror the backend `bestiary.Harness` wire values. The JSON key stays
+ * `provider` (see `transcript.ts`) even though these are harness identifiers —
+ * the same type/key seam the peasant backend has at `pkg/schema/local_api.go`.
+ */
+export type Provider = "claude-code" | "gemini-cli" | "codex" | "opencode";
 
 /** Speaker role for a single turn. */
 export type Role = "user" | "assistant" | "tool" | "system";

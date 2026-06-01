@@ -7,8 +7,8 @@ import type { Provider } from "@peasant-labs/types";
  * provider string for any unknown value.
  */
 const PROVIDER_LABEL: Record<Provider, string> = {
-  claude: "Claude",
-  gemini: "Gemini",
+  "claude-code": "Claude Code",
+  "gemini-cli": "Gemini CLI",
   opencode: "OpenCode",
   codex: "Codex",
 };
