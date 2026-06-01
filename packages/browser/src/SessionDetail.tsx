@@ -93,7 +93,7 @@ export interface SessionDetailProps {
     activeMatchIndex?: number;
     onPhaseActivate: (i: number) => void;
     onViewportChange: (range: { start: number; end: number }) => void;
-    provider: SessionDetailPayload["provider"];
+    provider: SessionDetailPayload["harness"];
   }) => ReactNode;
 
   /** px offset for the sticky header (host app navbar height). Defaults to 0. */
@@ -502,13 +502,13 @@ export function SessionDetail({
                       activeMatchIndex: activeMatchTurn,
                       onPhaseActivate: setActivePhaseIndex,
                       onViewportChange: setViewportRange,
-                      provider: detail.provider,
+                      provider: detail.harness,
                     })}
                   </div>
                 ) : (
                   <TranscriptCanvas
                     turns={filteredTurns}
-                    provider={detail.provider}
+                    provider={detail.harness}
                     phases={viewOptions.showHidden ? filteredPhases : []}
                     activePhaseIndex={activePhaseIndex}
                     onPhaseClick={(_p, i) => setActivePhaseIndex(i)}

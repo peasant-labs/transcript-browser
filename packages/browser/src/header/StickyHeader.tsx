@@ -95,7 +95,7 @@ export function StickyHeader({
         )}
 
         <span className="tb-stickyhead-provider">
-          <ProviderIcon provider={detail.provider} size={12} />
+          <ProviderIcon provider={detail.harness} size={12} />
           {detail.model && <span className="tb-mono tb-tnum tb-stickyhead-model">{detail.model}</span>}
         </span>
 

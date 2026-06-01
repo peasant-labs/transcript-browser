@@ -9,7 +9,7 @@ import type { Phase, SessionDetailPayload, SessionScorecard } from "@peasant-lab
  */
 export const sampleSession: SessionDetailPayload = {
   id: "sess_demo_0001",
-  provider: "claude-code",
+  harness: "claude-code",
   startTime: "2026-05-28T10:00:00Z",
   endTime: "2026-05-28T10:08:30Z",
   durationMins: 8.5,

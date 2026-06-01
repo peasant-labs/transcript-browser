@@ -92,7 +92,7 @@ export interface SessionGitContext {
  */
 export interface SessionDetailPayload {
   id: string;
-  provider: Provider;
+  harness: Provider;
   startTime: string;
   endTime: string;
   durationMins: number;

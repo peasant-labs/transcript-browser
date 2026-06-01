@@ -62,7 +62,7 @@ export function HighlightsView({
   scorecard,
   medians,
 }: HighlightsViewProps) {
-  const provider = detail.provider as Provider;
+  const provider = detail.harness as Provider;
   const errorSet = useMemo(() => new Set(errorTurnIndices), [errorTurnIndices]);
 
   const highlights: Highlight[] = useMemo(() => {

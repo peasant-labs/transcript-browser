@@ -57,9 +57,9 @@ export type StopReason = (typeof StopReason)[keyof typeof StopReason];
 /**
  * Agent harness that produced the transcript.
  *
- * Values mirror the backend `bestiary.Harness` wire values. The JSON key stays
- * `provider` (see `transcript.ts`) even though these are harness identifiers —
- * the same type/key seam the peasant backend has at `pkg/schema/local_api.go`.
+ * Values mirror the backend `bestiary.Harness` wire values. The local-API JSON
+ * key is `harness` (see `transcript.ts`), matching the peasant backend at
+ * `pkg/schema/local_api.go`.
  */
 export type Provider = "claude-code" | "gemini-cli" | "codex" | "opencode";
 
