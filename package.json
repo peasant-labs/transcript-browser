@@ -1,7 +1,7 @@
 {
   "name": "@peasant-labs/transcript-browser-monorepo",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "description": "Shared, framework-agnostic transcript browser for AI agent session transcripts.",
   "license": "UNLICENSED",
   "packageManager": "pnpm@10.33.2",
