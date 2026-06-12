@@ -21,6 +21,7 @@ const PROVIDER_TOKEN: Record<Provider, string> = {
   "gemini-cli": "var(--tb-provider-gemini)",
   opencode: "var(--tb-provider-opencode)",
   codex: "var(--tb-provider-codex)",
+  cursor: "var(--tb-provider-cursor)",
 };
 
 export interface ProviderIconProps {
@@ -85,6 +86,11 @@ export function ProviderIcon({
         </svg>
       );
     case "codex":
+      return <Code2 size={size} aria-hidden className={cn("tb-shrink-0", className)} style={style} />;
+    case "cursor":
+      // Cursor has no widely-recognised standalone mark — reuse the Code2 glyph
+      // under its own provider token so it can diverge from Codex later.
+      return <Code2 size={size} aria-hidden className={cn("tb-shrink-0", className)} style={style} />;
     default:
       return <Code2 size={size} aria-hidden className={cn("tb-shrink-0", className)} style={style} />;
   }

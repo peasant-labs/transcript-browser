@@ -11,6 +11,7 @@ const PROVIDER_LABEL: Record<Provider, string> = {
   "gemini-cli": "Gemini CLI",
   opencode: "OpenCode",
   codex: "Codex",
+  cursor: "Cursor",
 };
 
 export function providerLabel(provider: Provider | string | undefined): string {
