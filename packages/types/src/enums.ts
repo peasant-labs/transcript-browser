@@ -61,7 +61,7 @@ export type StopReason = (typeof StopReason)[keyof typeof StopReason];
  * key is `harness` (see `transcript.ts`), matching the peasant backend at
  * `pkg/schema/local_api.go`.
  */
-export type Provider = "claude-code" | "gemini-cli" | "codex" | "opencode";
+export type Provider = "claude-code" | "gemini-cli" | "codex" | "opencode" | "cursor";
 
 /** Speaker role for a single turn. */
 export type Role = "user" | "assistant" | "tool" | "system";

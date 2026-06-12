@@ -63,6 +63,7 @@ export const themeTokens = {
   providerGemini: "--tb-provider-gemini",
   providerOpencode: "--tb-provider-opencode",
   providerCodex: "--tb-provider-codex",
+  providerCursor: "--tb-provider-cursor",
 
   // Typography
   fontSans: "--tb-font-sans",

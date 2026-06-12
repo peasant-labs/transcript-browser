@@ -72,6 +72,7 @@
   --tb-provider-gemini: hsl(217 89% 61%);
   --tb-provider-opencode: hsl(174 60% 38%);
   --tb-provider-codex: hsl(25 6% 30%);
+  --tb-provider-cursor: hsl(220 12% 32%);
 
   /* ── Typography ───────────────────────────────────────────────────────── */
   --tb-font-sans: "Chivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -137,4 +138,5 @@
   --tb-provider-gemini: hsl(217 85% 70%);
   --tb-provider-opencode: hsl(174 52% 52%);
   --tb-provider-codex: hsl(25 5% 78%);
+  --tb-provider-cursor: hsl(220 8% 75%);
 }
