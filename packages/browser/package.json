@@ -1,6 +1,6 @@
 {
   "name": "@peasant-labs/transcript-browser",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Framework-agnostic React viewer for AI agent session transcripts.",
   "license": "UNLICENSED",
   "type": "module",
