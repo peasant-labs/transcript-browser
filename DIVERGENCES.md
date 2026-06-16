@@ -63,3 +63,31 @@ No conflicting field types, optionality differences, or value-set differences
 were found between the two apps on any shared type. The only reconciliation was
 extracting the repeated inline `source`/`status` unions into the named
 `SessionSource` / `SessionStatus` aliases.
+
+## Post-reconciliation amendments
+
+Per peasant's map-review-contribute contract (§9.8), the package may be
+extended **additively**. Amendments so far:
+
+- **Wire key `provider` → `harness`.** `SessionDetailPayload.harness: Provider`
+  carries the backend `bestiary.Harness` wire values directly (`claude-code`,
+  `gemini-cli`, `codex`, `opencode`, `cursor`) — the same vocabulary the viewer
+  now keys its icons, labels, and `--tb-provider-*` tokens on. Peasant passes
+  its wire payload (which carries `harness`) straight through; no host-side
+  remap is needed.
+- **Viewer feedback APIs peasant drives** (all additive props/exports on the
+  `<SessionDetail>` composer):
+  - `renderTurnPanel?: (turn) => ReactNode` — a host-owned full-width panel slot
+    at the bottom of each turn card body (below content + tool calls, separated
+    by `.tb-turn-panel`), for multi-row host content (peasant's touched-files
+    list). Return `null` to skip a turn.
+  - `initialTurnIndex?: number` — deep-link target for permalink shapes other
+    than the default `#turn-<index>` hash (peasant uses `?turn=N`); scrolls to
+    that message on mount. The per-turn link button **copies** the deep link to
+    the clipboard (transient "copied" affordance) instead of navigating.
+  - `railLayout?: "tabs" | "split"` — opt-in dual-column rail (`RailColumn`):
+    outline left, filters right (`.tb-detail-grid-split`), instead of one
+    tabbed `RightRail`.
+  - Exported pure helpers hosts reuse: `prefilterTurns` (the turn-dedup the
+    composer applies when `turns` is omitted), `nextNavTurn` (j/k turn-nav index
+    math), and `buildTaskWaterfall` (task → waterfall-segment rollup).

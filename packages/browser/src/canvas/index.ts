@@ -40,5 +40,6 @@ export type {
   ViewerCapabilities,
   ViewerCallbacks,
   RenderTurnActions,
+  RenderTurnPanel,
   DownloadFormat,
 } from "./types.js";

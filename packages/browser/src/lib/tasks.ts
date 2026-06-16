@@ -37,8 +37,14 @@ export interface TaskGroup {
 }
 
 /**
- * Split a turn list into task groups. Each user turn starts a new task;
- * the task ends right before the next user turn (or at the end of the run).
+ * Split a turn list into task groups. Each top-level (depth-0) user turn
+ * starts a new task; the task ends right before the next one (or at the end
+ * of the run).
+ *
+ * Depth-1+ user-role turns are NOT boundaries: in wire data they are content
+ * blocks of an enclosing exchange (e.g. decomposed user-message content
+ * blocks, AskUserQuestion results), not new human prompts. This matches the
+ * depth-0 guard task-scoping hosts apply (peasant `taskScopeTurns`).
  */
 export function computeTasks(turns: TurnDetail[]): TaskGroup[] {
   if (turns.length === 0) return [];
@@ -46,7 +52,7 @@ export function computeTasks(turns: TurnDetail[]): TaskGroup[] {
   const userBoundaries: number[] = [];
   for (let i = 0; i < turns.length; i++) {
     const t = turns[i]!;
-    if (t.role === "user" && t.content?.trim()) {
+    if (t.role === "user" && (t.depth ?? 0) === 0 && t.content?.trim()) {
       userBoundaries.push(i);
     }
   }

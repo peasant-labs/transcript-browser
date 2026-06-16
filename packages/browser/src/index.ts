@@ -40,8 +40,11 @@ export * from "./overlays/index.js";
 
 // --- Pure helpers re-exported for hosts that want to share the viewer's logic
 export { computeTasks, computeTurnLabels, type TaskGroup } from "./lib/tasks.js";
+export { buildTaskWaterfall, type WaterfallSegment } from "./lib/waterfall.js";
 export { phaseLabel } from "./lib/phase.js";
 export { providerLabel } from "./lib/provider.js";
+export { prefilterTurns } from "./lib/turn-filter.js";
+export { nextNavTurn } from "./lib/turnNav.js";
 export { formatRelative, formatDurationMins, formatDateLong } from "./lib/time.js";
 export {
   composeSessionTitle,

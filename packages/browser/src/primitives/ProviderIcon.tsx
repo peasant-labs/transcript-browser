@@ -11,8 +11,8 @@ import type { Provider } from "@peasant-labs/types";
  * is brand-coloured with no Tailwind / app config. With `tone="current"` it
  * inherits the surrounding text colour for monochrome contexts.
  *
- * Codex has no widely-recognised standalone mark, so it falls back to the
- * lucide `Code2` glyph (its token resolves to neutral ink).
+ * Codex and Cursor have no widely-recognised standalone mark, so they fall
+ * back to the lucide `Code2` glyph (their tokens resolve to neutral ink).
  */
 export type ProviderIconTone = "brand" | "current";
 

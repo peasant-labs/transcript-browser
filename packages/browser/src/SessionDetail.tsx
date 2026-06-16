@@ -5,10 +5,11 @@ import { TabStrip } from "./header/TabStrip.js";
 import { StickyHeader } from "./header/StickyHeader.js";
 import { TurnContextBar } from "./header/TurnContextBar.js";
 import { useTriggerOffscreen } from "./header/useTriggerOffscreen.js";
+import { useTurnKeyboardNav } from "./lib/turnNav.js";
 import type { BreadcrumbItem } from "./header/Breadcrumb.js";
 import { TranscriptCanvas } from "./canvas/TranscriptCanvas.js";
 import { ViewModeToggle, type TrajectoryMode } from "./canvas/ViewModeToggle.js";
-import { RightRail } from "./rails/RightRail.js";
+import { RightRail, RailColumn } from "./rails/RightRail.js";
 import { HighlightsView } from "./views/HighlightsView.js";
 import { DiffsView, diffAnchorId } from "./views/DiffsView.js";
 import { FilesView } from "./views/FilesView.js";
@@ -26,8 +27,10 @@ import { ProgressIndicator } from "./overlays/ProgressIndicator.js";
 import { SessionTab, type SessionTabDef } from "./session-detail-types.js";
 import type { TranscriptAnnotation } from "./lib/pattern-detection.js";
 import type { PersonalMedians } from "./lib/scorecard.js";
+import { prefilterTurns } from "./lib/turn-filter.js";
 import type {
   RenderTurnActions,
+  RenderTurnPanel,
   TurnLabel,
   TurnLinkBuilder,
   ViewerCallbacks,
@@ -47,7 +50,9 @@ export interface SessionDetailProps {
 
   /**
    * Pre-filtered + deduped turns to render. Optional — when omitted, the
-   * composer applies the same content-dedup as the source apps to `detail.turns`.
+   * composer applies `prefilterTurns` (exported) to `detail.turns`. Hosts that
+   * pass their own scoped list can call `prefilterTurns` first to hide the
+   * same noise turns the whole-session view hides.
    */
   turns?: TurnDetail[];
 
@@ -74,6 +79,14 @@ export interface SessionDetailProps {
 
   /** Initial tab. Defaults to the full trace. */
   initialTab?: SessionTab;
+  /**
+   * Deep-link target: a turn `index` to scroll to once on mount. Hosts whose
+   * permalink shape isn't the default `#turn-<index>` hash (e.g. a `?turn=N`
+   * query param) read it themselves and pass it here, so "open this link → land
+   * on that message" works regardless of link shape. The built-in `#turn-<index>`
+   * hash is handled automatically and needs no prop.
+   */
+  initialTurnIndex?: number;
   /** Initial trajectory mode (list vs graph). Defaults to `"list"`. */
   initialTrajectoryMode?: TrajectoryMode;
 
@@ -99,6 +112,14 @@ export interface SessionDetailProps {
   /** px offset for the sticky header (host app navbar height). Defaults to 0. */
   stickyTop?: number;
 
+  /**
+   * Rail layout (opt-in). `"tabs"` (default) keeps the single tabbed right rail.
+   * `"split"` flanks the transcript with the rail's two panels as side columns —
+   * the outline to the left, filters to the right — so neither is hidden behind a
+   * tab. Both columns share the tabbed rail's bodies, so they never drift.
+   */
+  railLayout?: "tabs" | "split";
+
   /** Optional error banner text. */
   error?: string;
 
@@ -111,6 +132,14 @@ export interface SessionDetailProps {
   sessionLinkBuilder?: (detail: SessionDetailPayload) => string;
   /** Host-owned per-turn action slot (e.g. a manual-label popover). */
   renderTurnActions?: RenderTurnActions;
+  /**
+   * Host-owned per-turn PANEL slot. Where `renderTurnActions` is a compact
+   * header-inline actions row, this renders as a full-width block at the
+   * bottom of the turn card body — below the content and tool-call list — so
+   * it suits multi-row host content (e.g. a per-turn touched-files list).
+   * Applies to the Trace list view. Return `null` to skip a turn.
+   */
+  renderTurnPanel?: RenderTurnPanel;
   /** Saved/optimistic labels keyed by entry index. */
   savedLabelsByEntry?: Map<number, TurnLabel[]>;
   /** ActionMenu labels. */
@@ -143,15 +172,18 @@ export function SessionDetail({
   scorecard,
   scorecardMedians,
   initialTab = SessionTab.Trace,
+  initialTurnIndex,
   initialTrajectoryMode = "list",
   renderGraph,
   stickyTop = 0,
+  railLayout = "tabs",
   error,
   capabilities,
   callbacks,
   linkBuilder,
   sessionLinkBuilder,
   renderTurnActions,
+  renderTurnPanel,
   savedLabelsByEntry,
   shareLabel,
   contributeLabel,
@@ -160,29 +192,14 @@ export function SessionDetail({
   // -------------------------------------------------------------------------
   // Derived: turn list (host may pass a pre-filtered list; else dedup here)
   // -------------------------------------------------------------------------
-  const turns = useMemo<TurnDetail[]>(() => {
-    if (turnsProp) return turnsProp;
-    const raw = detail.turns ?? [];
-    const filtered = raw.filter((t) => {
-      const hasContent = !!t.content?.trim();
-      const hasTools = (t.toolCalls?.length ?? 0) > 0;
-      if (!hasContent && !hasTools) return false;
-      if (t.role === "system" && !hasTools && (!t.content || t.content.trim().length < 8)) return false;
-      return true;
-    });
-    const deduped: TurnDetail[] = [];
-    for (const curr of filtered) {
-      const prev = deduped[deduped.length - 1];
-      if (prev && prev.role === curr.role && prev.content === curr.content && prev.content.trim() !== "") {
-        const prevHasTools = (prev.toolCalls?.length ?? 0) > 0;
-        const currHasTools = (curr.toolCalls?.length ?? 0) > 0;
-        if (currHasTools && !prevHasTools) deduped[deduped.length - 1] = curr;
-        continue;
-      }
-      deduped.push(curr);
-    }
-    return deduped;
-  }, [turnsProp, detail.turns]);
+  const turns = useMemo<TurnDetail[]>(
+    () => turnsProp ?? prefilterTurns(detail.turns ?? []),
+    [turnsProp, detail.turns],
+  );
+
+  // The wire-level harness id IS the viewer's provider key (icons, graph,
+  // downloads all read it); aliased once so the surfaces below share one source.
+  const provider = detail.harness;
 
   const annotationsByTurn = useMemo(() => {
     const map = new Map<number, { type: string }[]>();
@@ -203,6 +220,9 @@ export function SessionDetail({
   const [activeTab, setActiveTab] = useState<SessionTab>(initialTab);
   const [trajectoryMode, setTrajectoryMode] = useState<TrajectoryMode>(initialTrajectoryMode);
   const [rightRailCollapsed, setRightRailCollapsed] = useState(false);
+  // Split layout: each flanking column collapses independently of the other.
+  const [outlineColCollapsed, setOutlineColCollapsed] = useState(false);
+  const [filtersColCollapsed, setFiltersColCollapsed] = useState(false);
 
   const counts = useMemo(() => computeCounts(turns, annotationsByTurn), [turns, annotationsByTurn]);
 
@@ -327,6 +347,60 @@ export function SessionDetail({
     scrollToTurn(activeMatchTurn);
   }, [activeMatchTurn, scrollToTurn]);
 
+  // Deep-link anchoring: when the page loads (or the hash changes) with a
+  // `#turn-<index>` fragment — the link the per-turn copy button writes — switch
+  // to the trace list and scroll straight to that message. `scrollToTurn` polls
+  // for the row, so it works even before the canvas has finished mounting.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const anchorFromHash = () => {
+      const m = /^#turn-(\d+)$/.exec(window.location.hash);
+      if (!m) return;
+      const idx = Number(m[1]);
+      if (!Number.isFinite(idx)) return;
+      setActiveTab(SessionTab.Trace);
+      setTrajectoryMode("list");
+      requestAnimationFrame(() => scrollToTurn(idx, "auto"));
+    };
+    anchorFromHash();
+    window.addEventListener("hashchange", anchorFromHash);
+    return () => window.removeEventListener("hashchange", anchorFromHash);
+  }, [scrollToTurn]);
+
+  // Host-supplied deep-link target (for permalink shapes other than the default
+  // hash — e.g. a `?turn=N` query param). Behaves like the hash anchor: switch to
+  // the trace list and scroll straight to that message on mount.
+  useEffect(() => {
+    if (initialTurnIndex == null || !Number.isFinite(initialTurnIndex)) return;
+    setActiveTab(SessionTab.Trace);
+    setTrajectoryMode("list");
+    requestAnimationFrame(() => scrollToTurn(initialTurnIndex, "auto"));
+  }, [initialTurnIndex, scrollToTurn]);
+
+  // Vim-style j/k (and ArrowDown/Up) turn navigation (roadmap 4.1). The anchor
+  // follows the top visible turn while you scroll manually; j/k then step from
+  // there. Disabled while search owns the keyboard. The pure index math
+  // (nextNavTurn) is exported + unit-tested by the host.
+  const navTurnRef = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    navTurnRef.current = viewportRange?.start;
+  }, [viewportRange?.start]);
+  const navTurnIndices = useMemo(() => filteredTurns.map((t) => t.index), [filteredTurns]);
+  const getNavCurrent = useCallback(() => navTurnRef.current, []);
+  const onNavTurn = useCallback(
+    (idx: number) => {
+      navTurnRef.current = idx;
+      scrollToTurn(idx);
+    },
+    [scrollToTurn],
+  );
+  useTurnKeyboardNav({
+    enabled: !searchOpen,
+    turnIndices: navTurnIndices,
+    getCurrent: getNavCurrent,
+    onNavigate: onNavTurn,
+  });
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container || turns.length === 0) return;
@@ -427,6 +501,56 @@ export function SessionDetail({
 
   const showGraph = trajectoryMode === "graph" && !!renderGraph;
 
+  // Shared rail wiring — consumed identically by the tabbed `RightRail` and by
+  // each split-layout `RailColumn`, so the two layouts stay in lockstep. Only
+  // `collapsed`/`onCollapsedChange` differ per layout, supplied at the call site.
+  const railProps = {
+    activeTab,
+    turns,
+    activeTurnIndex: viewportRange?.start,
+    onTurnClick: (idx: number) => {
+      if (activeTab !== SessionTab.Trace) {
+        scrollToAnchorTurn(idx);
+        return;
+      }
+      setTrajectoryMode("list");
+      requestAnimationFrame(() => scrollToTurn(idx));
+    },
+    phases: filteredPhases,
+    errorTurnIndices: errorTurns,
+    annotations,
+    onJumpToFile: jumpToFile,
+    filters,
+    counts,
+    onFiltersChange: (f: V2FilterState) => {
+      setFilters(f);
+      setCurrentMatchIdx(0);
+    },
+    viewOptions,
+    onViewOptionsChange: setViewOptions,
+    commits: allCommits,
+    selectedCommit: selectedCheckpoint,
+    onCommitChange: setSelectedCheckpoint,
+    onCommitJump: (c: SessionCommit) => {
+      const ct = new Date(c.timestamp).getTime();
+      const target = turns.find((t) => new Date(t.timestamp).getTime() >= ct);
+      if (!target) return;
+      jumpToTraceTurn(target.index);
+    },
+    onJumpToStart: () => {
+      setActiveTab(SessionTab.Trace);
+      setTrajectoryMode("list");
+      requestAnimationFrame(() => scrollToTurn(turns[0]?.index ?? 0, "auto"));
+    },
+    onJumpToLatest: () => {
+      setActiveTab(SessionTab.Trace);
+      setTrajectoryMode("list");
+      requestAnimationFrame(() => scrollToTurn(turns[turns.length - 1]?.index ?? 0, "auto"));
+    },
+  };
+
+  const split = railLayout === "split";
+
   return (
     <div className={cn("tb-root tb-detail", className)}>
       <StickyHeader
@@ -470,7 +594,28 @@ export function SessionDetail({
 
         <TabStrip tabs={tabs} value={activeTab} onChange={setActiveTab} />
 
-        <div className={cn("tb-detail-grid", rightRailCollapsed && "tb-detail-grid-collapsed")}>
+        <div
+          className={cn(
+            "tb-detail-grid",
+            split && "tb-detail-grid-split",
+            !split && rightRailCollapsed && "tb-detail-grid-collapsed",
+            split && outlineColCollapsed && "tb-detail-grid-lcollapsed",
+            split && filtersColCollapsed && "tb-detail-grid-rcollapsed",
+          )}
+        >
+          {split && (
+            <div className="tb-detail-railwrap tb-detail-railwrap-left">
+              <div className="tb-detail-railsticky" style={{ top: stickyTop + 44 }}>
+                <RailColumn
+                  panel="outline"
+                  {...railProps}
+                  collapsed={outlineColCollapsed}
+                  onCollapsedChange={setOutlineColCollapsed}
+                />
+              </div>
+            </div>
+          )}
+
           <main ref={containerRef} className="tb-detail-main">
             <TurnContextBar
               turns={turns}
@@ -502,13 +647,13 @@ export function SessionDetail({
                       activeMatchIndex: activeMatchTurn,
                       onPhaseActivate: setActivePhaseIndex,
                       onViewportChange: setViewportRange,
-                      provider: detail.harness,
+                      provider,
                     })}
                   </div>
                 ) : (
                   <TranscriptCanvas
                     turns={filteredTurns}
-                    provider={detail.harness}
+                    provider={provider}
                     phases={viewOptions.showHidden ? filteredPhases : []}
                     activePhaseIndex={activePhaseIndex}
                     onPhaseClick={(_p, i) => setActivePhaseIndex(i)}
@@ -524,6 +669,7 @@ export function SessionDetail({
                     phaseStickyTop={stickyTop + 44}
                     linkBuilder={linkBuilder}
                     renderTurnActions={renderTurnActions}
+                    renderTurnPanel={renderTurnPanel}
                     savedLabelsByEntry={savedLabelsByEntry}
                   />
                 )}
@@ -553,54 +699,22 @@ export function SessionDetail({
             )}
           </main>
 
-          <div className="tb-detail-railwrap">
+          <div className={cn("tb-detail-railwrap", split && "tb-detail-railwrap-right")}>
             <div className="tb-detail-railsticky" style={{ top: stickyTop + 44 }}>
-              <RightRail
-                activeTab={activeTab}
-                turns={turns}
-                activeTurnIndex={viewportRange?.start}
-                onTurnClick={(idx) => {
-                  if (activeTab !== SessionTab.Trace) {
-                    scrollToAnchorTurn(idx);
-                    return;
-                  }
-                  setTrajectoryMode("list");
-                  requestAnimationFrame(() => scrollToTurn(idx));
-                }}
-                phases={filteredPhases}
-                errorTurnIndices={errorTurns}
-                annotations={annotations}
-                onJumpToFile={jumpToFile}
-                filters={filters}
-                counts={counts}
-                onFiltersChange={(f) => {
-                  setFilters(f);
-                  setCurrentMatchIdx(0);
-                }}
-                viewOptions={viewOptions}
-                onViewOptionsChange={setViewOptions}
-                commits={allCommits}
-                selectedCommit={selectedCheckpoint}
-                onCommitChange={setSelectedCheckpoint}
-                onCommitJump={(c) => {
-                  const ct = new Date(c.timestamp).getTime();
-                  const target = turns.find((t) => new Date(t.timestamp).getTime() >= ct);
-                  if (!target) return;
-                  jumpToTraceTurn(target.index);
-                }}
-                onJumpToStart={() => {
-                  setActiveTab(SessionTab.Trace);
-                  setTrajectoryMode("list");
-                  requestAnimationFrame(() => scrollToTurn(turns[0]?.index ?? 0, "auto"));
-                }}
-                onJumpToLatest={() => {
-                  setActiveTab(SessionTab.Trace);
-                  setTrajectoryMode("list");
-                  requestAnimationFrame(() => scrollToTurn(turns[turns.length - 1]?.index ?? 0, "auto"));
-                }}
-                collapsed={rightRailCollapsed}
-                onCollapsedChange={setRightRailCollapsed}
-              />
+              {split ? (
+                <RailColumn
+                  panel="filters"
+                  {...railProps}
+                  collapsed={filtersColCollapsed}
+                  onCollapsedChange={setFiltersColCollapsed}
+                />
+              ) : (
+                <RightRail
+                  {...railProps}
+                  collapsed={rightRailCollapsed}
+                  onCollapsedChange={setRightRailCollapsed}
+                />
+              )}
             </div>
           </div>
         </div>

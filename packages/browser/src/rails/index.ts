@@ -1,4 +1,4 @@
-export { RightRail, type RightRailProps } from "./RightRail.js";
+export { RightRail, RailColumn, type RightRailProps, type RailColumnProps, type RailPanel } from "./RightRail.js";
 export { OutlineList, type OutlineListProps } from "./OutlineList.js";
 export { HighlightsOutline, type HighlightsOutlineProps } from "./HighlightsOutline.js";
 export { DiffsOutline, type DiffsOutlineProps } from "./DiffsOutline.js";

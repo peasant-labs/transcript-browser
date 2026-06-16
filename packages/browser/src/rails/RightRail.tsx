@@ -77,6 +77,13 @@ export interface RightRailProps {
 
 type RailTab = "outline" | "filters";
 
+/**
+ * Which single panel a {@link RailColumn} shows. The split (dual-column) layout
+ * renders one `RailColumn` per panel — `outline` to the left of the transcript,
+ * `filters` to the right — instead of folding both into the tabbed `RightRail`.
+ */
+export type RailPanel = "outline" | "filters";
+
 const TOOL_GROUPS: { group: ToolGroup; label: string; Icon: IconCmp }[] = [
   { group: ToolGroup.Edit, label: "File edits", Icon: Pencil },
   { group: ToolGroup.Bash, label: "Bash", Icon: Terminal },
@@ -184,6 +191,126 @@ export function RightRail({
           />
         </div>
       )}
+    </aside>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// RailColumn — one panel for the split (dual-column) layout
+// ---------------------------------------------------------------------------
+
+export interface RailColumnProps extends RightRailProps {
+  /** Which single panel this column shows. */
+  panel: RailPanel;
+}
+
+/**
+ * A single rail panel (outline OR filters) with its own static header — the
+ * building block of the split layout, where the outline sits to the left of the
+ * transcript and the filters to the right (per the "turn 2 tabs into 2 cols"
+ * feedback) instead of being folded behind tabs in {@link RightRail}.
+ *
+ * It shares every body with `RightRail` (same `OutlineTabBody` / `FiltersTabBody`),
+ * so the two layouts never drift. Collapsing is per-panel; collapsed it shows
+ * just an expand affordance, mirroring the tabbed rail's collapsed state. All
+ * state stays host-owned via props.
+ */
+export function RailColumn({ panel, className, ...props }: RailColumnProps) {
+  const {
+    activeTab,
+    turns,
+    activeTurnIndex,
+    phases,
+    errorTurnIndices,
+    annotations,
+    commits,
+    onTurnClick,
+    onJumpToFile,
+    filters,
+    counts,
+    onFiltersChange,
+    viewOptions,
+    onViewOptionsChange,
+    selectedCommit = "all",
+    onCommitChange,
+    onCommitJump,
+    onJumpToStart,
+    onJumpToLatest,
+    collapsed = false,
+    onCollapsedChange,
+  } = props;
+
+  const [toolsExpanded, setToolsExpanded] = useState(true);
+  const setCollapsed = (next: boolean) => onCollapsedChange?.(next);
+
+  const totalFilters = filters.categories.size + filters.toolGroups.size + filters.tags.size;
+  const isOutline = panel === "outline";
+  const title = isOutline ? "User Turns" : "Filters";
+  const Icon = isOutline ? LayoutList : SlidersHorizontal;
+  const count = isOutline ? undefined : totalFilters;
+
+  if (collapsed) {
+    return (
+      <aside className={cn("tb-root tb-rail tb-rail-collapsed", className)} aria-label={`${title} (collapsed)`}>
+        <div className="tb-rail-collapsed-head">
+          <button type="button" onClick={() => setCollapsed(false)} className="tb-rail-icon-btn tb-focus" title={`Expand ${title.toLowerCase()}`} aria-label={`Expand ${title.toLowerCase()}`}>
+            {isOutline ? <ChevronRight size={14} strokeWidth={1.75} /> : <ChevronLeft size={14} strokeWidth={1.75} />}
+          </button>
+        </div>
+        <div className="tb-rail-collapsed-body">
+          <CollapsedTabButton label={title} Icon={Icon} count={count} onClick={() => setCollapsed(false)} />
+        </div>
+      </aside>
+    );
+  }
+
+  return (
+    <aside className={cn("tb-root tb-rail", className)} aria-label={title}>
+      <div className="tb-rail-tabbar">
+        <div className="tb-rail-colhead">
+          <Icon size={13} strokeWidth={1.75} />
+          <span>{title}</span>
+          {count != null && count > 0 && <FilterCountBadge count={count} />}
+        </div>
+        {onCollapsedChange && (
+          <button type="button" onClick={() => setCollapsed(true)} className="tb-rail-icon-btn tb-rail-collapse-btn tb-focus" title={`Collapse ${title.toLowerCase()}`} aria-label={`Collapse ${title.toLowerCase()}`}>
+            {isOutline ? <ChevronLeft size={13} strokeWidth={1.75} /> : <ChevronRight size={13} strokeWidth={1.75} />}
+          </button>
+        )}
+      </div>
+
+      <div className="tb-rail-body">
+        {isOutline ? (
+          <OutlineTabBody
+            activeTab={activeTab}
+            turns={turns}
+            activeTurnIndex={activeTurnIndex}
+            phases={phases}
+            errorTurnIndices={errorTurnIndices}
+            annotations={annotations}
+            commits={commits}
+            onTurnClick={onTurnClick}
+            onJumpToFile={onJumpToFile}
+          />
+        ) : (
+          <FiltersTabBody
+            activeTab={activeTab}
+            filters={filters}
+            counts={counts}
+            onFiltersChange={onFiltersChange}
+            viewOptions={viewOptions}
+            onViewOptionsChange={onViewOptionsChange}
+            commits={commits}
+            selectedCommit={selectedCommit}
+            onCommitChange={onCommitChange}
+            onCommitJump={onCommitJump}
+            onJumpToStart={onJumpToStart}
+            onJumpToLatest={onJumpToLatest}
+            toolsExpanded={toolsExpanded}
+            setToolsExpanded={setToolsExpanded}
+          />
+        )}
+      </div>
     </aside>
   );
 }

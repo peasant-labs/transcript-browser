@@ -8,6 +8,7 @@ import { TaskBoundary } from "./TaskBoundary.js";
 import { computeTasks, computeTurnLabels, type TaskGroup } from "../lib/tasks.js";
 import type {
   RenderTurnActions,
+  RenderTurnPanel,
   TurnLabel,
   TurnLinkBuilder,
 } from "./types.js";
@@ -47,6 +48,11 @@ export interface TranscriptCanvasProps {
   linkBuilder?: TurnLinkBuilder;
   /** Host-owned per-turn action slot (e.g. a manual-label popover). */
   renderTurnActions?: RenderTurnActions;
+  /**
+   * Host-owned per-turn panel slot — a full-width block at the bottom of each
+   * turn card body (below content + tool calls), for multi-row host content.
+   */
+  renderTurnPanel?: RenderTurnPanel;
   /** Saved/optimistic labels keyed by entry index (`turn.index`). */
   savedLabelsByEntry?: Map<number, TurnLabel[]>;
 }
@@ -78,6 +84,7 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
       className,
       linkBuilder,
       renderTurnActions,
+      renderTurnPanel,
       savedLabelsByEntry,
     },
     ref,
@@ -194,6 +201,7 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
                   compact={compact}
                   linkBuilder={linkBuilder}
                   renderActions={renderTurnActions}
+                  renderPanel={renderTurnPanel}
                   savedLabels={savedLabelsByEntry?.get(turn.index)}
                 />
               </div>,

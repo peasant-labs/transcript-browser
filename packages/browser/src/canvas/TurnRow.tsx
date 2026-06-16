@@ -1,4 +1,5 @@
-import { Link as LinkIcon } from "lucide-react";
+import { useCallback, useState } from "react";
+import { Check, Link as LinkIcon } from "lucide-react";
 import { cn } from "../internal/cn.js";
 import { RoleGlyph, type GlyphRole } from "../primitives/RoleGlyph.js";
 import { TokenBadge } from "../primitives/TokenBadge.js";
@@ -8,7 +9,7 @@ import { ProviderIcon } from "../primitives/ProviderIcon.js";
 import { formatRelative } from "../lib/time.js";
 import { TurnContent } from "./TurnContent.js";
 import { ToolCallList } from "./ToolCallList.js";
-import type { RenderTurnActions, TurnLabel, TurnLinkBuilder } from "./types.js";
+import type { RenderTurnActions, RenderTurnPanel, TurnLabel, TurnLinkBuilder } from "./types.js";
 import type { TurnDetail, Provider } from "@peasant-labs/types";
 
 export interface TurnRowProps {
@@ -43,6 +44,13 @@ export interface TurnRowProps {
    * own — the host wires its annotation API here. See ViewerCallbacks.onLabelSave.
    */
   renderActions?: RenderTurnActions;
+  /**
+   * Host-owned panel slot for this turn. Rendered as a full-width block at the
+   * bottom of the card body, below the content and tool-call list — sized for
+   * multi-row host content (file lists, related items), where the header-inline
+   * `renderActions` slot is not. Return `null`/`undefined` to skip the panel.
+   */
+  renderPanel?: RenderTurnPanel;
   /** Saved/optimistic labels on this turn — rendered as chips when present. */
   savedLabels?: TurnLabel[];
 }
@@ -75,6 +83,7 @@ export function TurnRow({
   className,
   linkBuilder,
   renderActions,
+  renderPanel,
   savedLabels,
 }: TurnRowProps) {
   const subagent = turn.role === "assistant" && (turn.depth ?? 0) > 0;
@@ -96,6 +105,33 @@ export function TurnRow({
   const hasError = turn.toolCalls?.some((t) => t.isError) ?? false;
   const anchorHref = linkBuilder ? linkBuilder(turn) : `#turn-${turn.index}`;
   const actions = renderActions?.(turn);
+  const panel = renderPanel?.(turn);
+
+  // Copy the deep-link to this turn rather than navigating to it. A bare hash
+  // (`#turn-N`) is resolved to an absolute URL so the copied link still lands on
+  // the right message when pasted elsewhere; host-built absolute links pass
+  // through unchanged. Loading a page with that hash anchors to this turn — the
+  // composer handles the scroll-on-load (see SessionDetail).
+  const [copied, setCopied] = useState(false);
+  const copyAnchor = useCallback(() => {
+    let url = anchorHref;
+    if (typeof window !== "undefined") {
+      try {
+        url = new URL(anchorHref, window.location.href).toString();
+      } catch {
+        /* keep the raw href if it can't be resolved */
+      }
+    }
+    const done = () => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    };
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(url).then(done, () => {});
+    } else {
+      done();
+    }
+  }, [anchorHref]);
 
   return (
     <article
@@ -148,9 +184,19 @@ export function TurnRow({
         <span className="tb-turn-time" title={new Date(turn.timestamp).toLocaleString()}>
           {formatRelative(turn.timestamp)}
         </span>
-        <a href={anchorHref} aria-label="Link to this turn" className="tb-turn-anchor tb-focus">
-          <LinkIcon size={11} strokeWidth={1.75} />
-        </a>
+        <button
+          type="button"
+          onClick={copyAnchor}
+          aria-label={copied ? "Link copied" : "Copy link to this turn"}
+          title={copied ? "Link copied" : "Copy link to this turn"}
+          className={cn("tb-turn-anchor tb-focus", copied && "tb-turn-anchor-copied")}
+        >
+          {copied ? (
+            <Check size={11} strokeWidth={2} />
+          ) : (
+            <LinkIcon size={11} strokeWidth={1.75} />
+          )}
+        </button>
         <span className="tb-turn-actions">
           {actions}
           {hasError && <ErrorPill />}
@@ -181,6 +227,7 @@ export function TurnRow({
           <TurnContent turn={turn} searchQuery={isSearchMatch ? searchQuery : undefined} />
         )}
         {hasTools && <ToolCallList calls={turn.toolCalls!} expandAll={expandToolCalls} />}
+        {panel ? <div className="tb-turn-panel">{panel}</div> : null}
       </div>
     </article>
   );

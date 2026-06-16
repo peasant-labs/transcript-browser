@@ -105,3 +105,13 @@ export type DownloadFormat = "json" | "jsonl" | "markdown";
  * `null`/`undefined` to render nothing.
  */
 export type RenderTurnActions = (turn: TurnDetail) => ReactNode;
+
+/**
+ * Render-prop for the per-turn PANEL slot. Unlike `RenderTurnActions` (a
+ * header-inline actions row), the panel renders as a full-width block at the
+ * bottom of the turn card body — below the content and tool-call list — so it
+ * suits multi-row host content (e.g. peasant's touched-files list while a
+ * task/file scope is active). Return `null`/`undefined` to render nothing for
+ * a given turn; turns without a panel keep their normal height.
+ */
+export type RenderTurnPanel = (turn: TurnDetail) => ReactNode;

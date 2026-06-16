@@ -112,6 +112,18 @@ The top-level `TranscriptCanvas` takes `turns: TurnDetail[]` (plus optional
 `phases`, `commits`, `provider`, search/view options) as props. You bring the
 data however you like (REST, WS, static JSON); the viewer just renders it.
 
+A derivation the viewer performs (and exports, so hosts can reuse it):
+
+- **Turn prefilter** — when the `turns` prop is omitted, `SessionDetail`
+  applies `prefilterTurns(detail.turns)`: drops empty/noise turns and dedups
+  consecutive same-role same-content turns. Exported as `prefilterTurns` so a
+  host passing its own (scoped) `turns` can run the identical filter first.
+
+The producing agent comes from `SessionDetailPayload.harness` — the backend
+`bestiary.Harness` wire values (`claude-code`, `gemini-cli`, `codex`,
+`opencode`, `cursor`), which the viewer keys its icons/labels/tokens on
+directly.
+
 ### 2. Actions OUT via callbacks + capability flags
 
 Even though this slice ships no action menu, the prop types are designed so
@@ -123,6 +135,7 @@ read-only:
 |---|---|---|
 | `linkBuilder` | `(turn) => string` | Build per-turn anchor hrefs. Defaults to `#turn-{index}` — no hardcoded app routes. |
 | `renderTurnActions` | `(turn) => ReactNode` | Host-owned action slot in each turn header (e.g. a manual-label popover). The viewer ships **no** labelling UI of its own — your app mounts its own annotation control here, keeping its API out of the package. |
+| `renderTurnPanel` | `(turn) => ReactNode` | Host-owned **panel** slot per turn: a full-width block at the bottom of the turn card body, below the content and tool-call list (separated by a hairline, `.tb-turn-panel`). Sized for multi-row host content — e.g. a per-turn touched-files list — where the header-inline `renderTurnActions` row is not. Return `null` to skip a turn. |
 | `savedLabelsByEntry` | `Map<number, TurnLabel[]>` | Render existing labels as chips on the matching turns. |
 
 The shared action surface (declared in `ViewerCallbacks` / `ViewerCapabilities`)
