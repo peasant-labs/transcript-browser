@@ -1,159 +1,186 @@
 import { useMemo, useState } from "react";
+import { TrajectoryGraph, annotateTranscript } from "@peasant-labs/transcript-browser";
 import {
-  SessionDetail,
-  TrajectoryGraph,
-  annotateTranscript,
-} from "@peasant-labs/transcript-browser";
+  TranscriptViewer,
+  adaptTranscript,
+  Segmented,
+  Switch,
+  type ToolCallVM,
+  type TranscriptViewModel,
+} from "@peasant-labs/fairtrade/ui";
 import { ProjectOverview } from "@peasant-labs/analytics";
-import "@peasant-labs/theme/tokens.css";
+import { ScrollText, BarChart3, Moon, Sun } from "@peasant-labs/fairtrade/icons";
+// Atkinson fonts are loaded via <link> + preconnect in index.html (Option B).
+// Do NOT re-import fonts.css here — a CSS @import adds an extra round-trip and
+// can lose the race against first paint, silently falling back to ui-sans-serif.
+//
+// CSS: import the FULL fairtrade bundle (components.css) ALONE. It already carries
+// the tokens (`:root`) + base layer + every component rule, all in their proper
+// Tailwind cascade @layers — identical to the demo's index.css. The standalone
+// `base.css` is deliberately NOT imported: it ships UNLAYERED, and an unlayered
+// `a { color: var(--amber) }` would beat the LAYERED `.crumb a { color: ink-3 }`
+// component override, turning the breadcrumb (and every chrome link) amber.
+import "@peasant-labs/fairtrade/components.css";
 import "@peasant-labs/transcript-browser/styles.css";
 import "@peasant-labs/analytics/styles.css";
 import "@xyflow/react/dist/style.css";
-import { sampleSession, samplePhases, sampleScorecard } from "./sample-session.js";
+import { sampleSession, samplePhases, openToolsSeed } from "./sample-session.js";
 import { sampleSessions } from "./sample-analytics.js";
 
 type View = "transcript" | "analytics";
 
 /**
- * Renders the shared `<SessionDetail>` composer against a realistic sample.
+ * Integration smoke for the adopt-fairtrade migration. The transcript view is
+ * the REAL assembled app rendering through the lifted composite:
  *
- * Demonstrates the agnosticism contract end to end:
- *  - data in via props only (`detail`, `phases`, `annotations`, `scorecard`);
- *  - theming via the `tb-dark` class toggle (no component changes);
- *  - OPTIONAL action capabilities/callbacks (toggle `canEdit` on/off);
- *  - an OPTIONAL host action slot (`renderTurnActions`) — omit it and the
- *    viewer is read-only;
- *  - the graph view enabled via the `renderGraph` render-prop (the host owns
- *    the `@xyflow/react` peer dependency + its stylesheet).
+ *     wire SessionDetailPayload → adaptTranscript() → <TranscriptViewer>
+ *
+ * It renders the SAME session as the canonical fairtrade demo (sess_demo_0001),
+ * so the UAT capture is a true height-matched, same-data side-by-side. The ONE
+ * fairtrade adapter cooks the wire payload once; the lifted composite renders it.
+ * The host plugs transcript-browser's @xyflow `TrajectoryGraph` engine into the
+ * composite's `graphSlot` (the R7 graph-visuals/engine split: aesthetics in
+ * fairtrade, topology/pan/zoom in TB), so this also smokes the graph seam. The
+ * analytics view exercises the kept `@peasant-labs/analytics` project layer.
+ *
+ * HEIGHT: the whole app is a fixed-height (100vh) flex column and the viewer is
+ * mounted into a `flex:1; min-height:0` host. The composite's `.txn-app` is
+ * `height:100%`, so a BOUNDED host is what lets its `.txn-stream` scroll
+ * internally — which is what reveals the sticky scrubber and anchors the keybind
+ * hint. Mounting it in an auto-height page instead would scroll the whole window
+ * and neither would appear.
  */
 export function App() {
   const [dark, setDark] = useState(true);
-  const [labeling, setLabeling] = useState(true);
+  const [canLabel, setCanLabel] = useState(true);
   const [canEdit, setCanEdit] = useState(true);
   const [view, setView] = useState<View>("transcript");
+  // Seed the same three tool calls expanded as the demo so the trace shows real
+  // tool OUTPUTS on first paint; stays host-controllable (the user can toggle).
+  const [openTools, setOpenTools] = useState<Record<string, boolean>>(openToolsSeed);
 
-  // Host-derived annotations: the package never derives these implicitly — the
-  // app calls the exported pure helper and passes the result in.
-  const annotations = useMemo(() => annotateTranscript(sampleSession.turns), []);
+  // The ONE adapter — wire → cooked TranscriptViewModel — built once. The scorecard
+  // rides along on the payload, so the adapter derives the highlights-tab bands.
+  const vm = useMemo<TranscriptViewModel>(
+    () => adaptTranscript(sampleSession as Parameters<typeof adaptTranscript>[0]),
+    [],
+  );
+  // Cooked tool calls by turn index, fed into the graph engine's tool nodes.
+  const toolVMsByTurn = useMemo(
+    () => new Map<number, ToolCallVM[]>(vm.turns.map((t) => [t.index, t.toolCalls])),
+    [vm],
+  );
+  // The graph engine takes the host-derived pattern annotations (the package
+  // never derives them implicitly).
+  const graphAnnotations = useMemo(() => annotateTranscript(sampleSession.turns), []);
 
   return (
-    <div className={dark ? "tb-dark" : undefined}>
-      <main style={{ background: "var(--tb-canvas)", color: "var(--tb-ink)", minHeight: "100vh", fontFamily: "var(--tb-font-sans)" }}>
-        <div
-          style={{
-            position: "sticky",
-            top: 0,
-            zIndex: 80,
-            display: "flex",
-            gap: "0.5rem",
-            alignItems: "center",
-            justifyContent: "flex-end",
-            padding: "0.5rem 1.5rem",
-            background: "var(--tb-surface)",
-            borderBottom: "1px solid var(--tb-rule)",
-          }}
-        >
-          {/* Top-level view switch: the agnostic viewer vs. the analytics layer. */}
-          <div style={{ marginRight: "auto", display: "flex", gap: "0.25rem" }}>
-            <button
-              type="button"
-              onClick={() => setView("transcript")}
-              style={{ fontWeight: view === "transcript" ? 700 : 400 }}
-            >
-              Transcript
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("analytics")}
-              style={{ fontWeight: view === "analytics" ? 700 : 400 }}
-            >
-              Analytics
-            </button>
-          </div>
-          <button type="button" onClick={() => setDark((v) => !v)}>
-            {dark ? "Light" : "Dark"} theme
+    <div
+      data-theme={dark ? "dark" : "light"}
+      style={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        background: "var(--canvas)",
+        color: "var(--ink)",
+        fontFamily: "var(--font-body)",
+      }}
+    >
+      {/* The host app's own header — identity on the left, dev controls (real
+          design-system controls) on the right. A flush flex-row child of the
+          100vh column (no sticky needed; it never scrolls away). */}
+      <header
+        style={{
+          flex: "0 0 auto",
+          display: "flex",
+          alignItems: "center",
+          gap: "1rem",
+          padding: "0.5rem 1.25rem",
+          minHeight: "48px",
+          background: "var(--surface)",
+          borderBottom: "1px solid var(--rule)",
+          fontFamily: "var(--font-mono)",
+        }}
+      >
+        <strong style={{ fontSize: "18px", color: "var(--ink)", letterSpacing: "-0.01em" }}>
+          Transcript Analytics
+        </strong>
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "1rem" }}>
+          <Segmented
+            label="view"
+            value={view}
+            onChange={(v) => setView(v as View)}
+            options={[
+              { value: "transcript", label: "transcript", icon: ScrollText },
+              { value: "analytics", label: "analytics", icon: BarChart3 },
+            ]}
+          />
+          <button
+            type="button"
+            className="navctl sq theme-btn"
+            aria-label="toggle theme"
+            title="toggle theme"
+            onClick={() => setDark((v) => !v)}
+          >
+            <span className="i-moon"><Moon size={16} aria-hidden /></span>
+            <span className="i-sun"><Sun size={16} aria-hidden /></span>
           </button>
-          {view === "transcript" ? (
+          {view === "transcript" && (
             <>
-              <button type="button" onClick={() => setLabeling((v) => !v)}>
-                {labeling ? "Hide" : "Show"} turn action slot
-              </button>
-              <button type="button" onClick={() => setCanEdit((v) => !v)}>
-                canEdit: {canEdit ? "on" : "off"}
-              </button>
+              <Switch checked={canLabel} onChange={setCanLabel} label="canlabel" />
+              <Switch checked={canEdit} onChange={setCanEdit} label="canedit" />
             </>
-          ) : null}
+          )}
         </div>
+      </header>
 
-        {view === "analytics" ? (
-          // The analytics layer: a generated SessionSummary[] fixture passed
-          // straight in as props. The host owns how an opaque contributorId is
-          // displayed via `renderContributor`; sections are toggle-able.
-          <div style={{ padding: "1.5rem" }}>
-            <ProjectOverview
-              sessions={sampleSessions}
-              title="Collective pulse"
-              subtitle={`${sampleSessions.length} sessions · generated fixture`}
-              contributorLimit={10}
-              renderContributor={(row) => (
-                <span style={{ fontWeight: 600, textTransform: "capitalize" }}>
-                  {row.contributorId}
-                </span>
-              )}
-            />
-          </div>
-        ) : (
-        /* The 48px control bar above is the host's own chrome — pass its height
-            as `stickyTop` so the viewer's sticky header sits below it. */
-        <SessionDetail
-          detail={sampleSession}
-          phases={samplePhases}
-          annotations={annotations}
-          scorecard={sampleScorecard}
-          stickyTop={48}
-          breadcrumb={[
-            { label: "Sessions", href: "#sessions" },
-            { label: sampleSession.project ?? "project", href: "#project" },
-            { label: sampleSession.id.slice(0, 8) },
-          ]}
-          // --- Capability flags + callbacks (actions OUT via the contract) ---
-          capabilities={{
-            canEdit,
-            canContribute: true,
-            canCopyLink: true,
-            canDownload: true,
-            canChatWithTrace: true,
-          }}
-          callbacks={{
-            onEdit: () => alert("Host would open its edit dialog"),
-            onContribute: () => alert("Host would open its contribute/share flow"),
-            onCopyLink: (url) => alert(`Host copied: ${url}`),
-            onChatWithTrace: () => alert("Host would open chat-with-trace"),
-          }}
-          // Session-level share link — host owns the route shape.
-          sessionLinkBuilder={(d) => `https://example.test/sessions/${d.id}`}
-          // OPTIONAL per-turn action slot — proves actions flow OUT via a slot,
-          // not baked into the package. Toggle it off for a read-only viewer.
-          renderTurnActions={
-            labeling
-              ? (turn) =>
-                  turn.role === "assistant" ? (
-                    <button
-                      type="button"
-                      style={{ font: "inherit", fontSize: "11px", cursor: "pointer" }}
-                      onClick={() => alert(`Host would label turn #${turn.index}`)}
-                    >
-                      Label
-                    </button>
-                  ) : null
-              : undefined
-          }
-          // The graph view carries the @xyflow/react peer dep, so the host wires
-          // it via a render-prop instead of the package importing it directly.
-          renderGraph={(props) => <TrajectoryGraph {...props} />}
-        />
-        )}
-      </main>
+      {view === "analytics" ? (
+        <div style={{ flex: 1, minHeight: 0, overflow: "auto", padding: "1.5rem" }}>
+          <ProjectOverview
+            sessions={sampleSessions}
+            title="collective pulse"
+            subtitle={`${sampleSessions.length} sessions · generated fixture`}
+            contributorLimit={10}
+            renderContributor={(row) => <span style={{ fontWeight: 600 }}>{row.contributorId}</span>}
+          />
+        </div>
+      ) : (
+        // Bounded host: the composite's `.txn-app` is height:100% of this, so the
+        // trace scrolls internally and the scrubber + keybind hint reveal.
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <TranscriptViewer
+            viewModel={vm}
+            theme={dark ? "dark" : "light"}
+            openTools={openTools}
+            onOpenToolsChange={setOpenTools}
+            capabilities={{
+              canEdit,
+              canLabel,
+              canContribute: true,
+              canChangeVisibility: false,
+              canExport: true,
+            }}
+            callbacks={{
+              onEdit: () => alert("Host would open its edit dialog"),
+              onLabel: (turnIndex: number) => alert(`Host would label turn #${turnIndex}`),
+              onContribute: () => alert("Host would open its contribute/share flow"),
+              onCopyLink: () => alert("Host copied a link"),
+              onExport: (format: string) => alert(`Host would export as ${format}`),
+            }}
+            graphSlot={() => (
+              <TrajectoryGraph
+                turns={sampleSession.turns}
+                toolVMsByTurn={toolVMsByTurn}
+                filteredTurns={sampleSession.turns}
+                phases={samplePhases}
+                annotations={graphAnnotations}
+                searchMatches={[]}
+                provider={sampleSession.harness}
+              />
+            )}
+          />
+        </div>
+      )}
     </div>
   );
 }

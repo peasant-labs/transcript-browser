@@ -1,11 +1,16 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react";
+import { ChevronsUpDown, ChevronDown, ChevronUp } from "@peasant-labs/fairtrade/icons";
 import { cn } from "../internal/cn.js";
-import { parseArgs } from "../canvas/tool-renderers/types.js";
-import type { TurnDetail, ToolCallDetail } from "@peasant-labs/types";
+import type { ToolCallVM } from "@peasant-labs/fairtrade/ui";
 
 export interface FilesViewProps {
-  turns: TurnDetail[];
+  /**
+   * Cooked tool calls keyed by turn index — the adapter's `ToolCallVM[]` per
+   * turn (from `vm`). The view rolls files up from the cooked `filePath` /
+   * `adds` / `dels` (and the wire tool `name` for read/edit/write/delete
+   * classification); it never parses wire.
+   */
+  toolVMsByTurn: Map<number, ToolCallVM[]>;
   /** Absolute path of the project root, used to trim paths to project-relative form. */
   projectRoot?: string;
   /** Fallback jump — fires when the file has no edits, with the last turn that touched it. */
@@ -33,12 +38,14 @@ interface FileEntry {
  * line totals, and a "last touched" anchor. Sortable by path or churn. Ported
  * from peasant's `views/FilesView.tsx`.
  */
-export function FilesView({ turns, projectRoot, onJumpToTurn, onJumpToFile }: FilesViewProps) {
+export function FilesView({ toolVMsByTurn, projectRoot, onJumpToTurn, onJumpToFile }: FilesViewProps) {
   const entries = useMemo<FileEntry[]>(() => {
     const map = new Map<string, FileEntry>();
-    for (const turn of turns) {
-      for (const c of turn.toolCalls ?? []) {
-        const path = c.filePath ?? extractPath(c);
+    // `toolVMsByTurn` preserves turn order, so re-assigning `lastTurnIndex` on
+    // every touch leaves it at the most recent turn that touched the file.
+    for (const [turnIndex, toolCalls] of toolVMsByTurn) {
+      for (const c of toolCalls) {
+        const path = c.filePath;
         if (!path) continue;
         const e =
           map.get(path) ??
@@ -48,22 +55,20 @@ export function FilesView({ turns, projectRoot, onJumpToTurn, onJumpToFile }: Fi
             writes: 0,
             edits: 0,
             deletes: 0,
-            lastTurnIndex: turn.index,
+            lastTurnIndex: turnIndex,
             insertions: 0,
             deletions: 0,
           };
-        e.lastTurnIndex = turn.index;
+        e.lastTurnIndex = turnIndex;
         const n = c.name.toLowerCase();
         if (n === "read" || n === "notebookread") e.reads++;
         else if (n === "edit" || n === "multiedit" || n === "notebookedit") {
           e.edits++;
-          const { adds, dels } = countDiff(c);
-          e.insertions += adds;
-          e.deletions += dels;
+          e.insertions += c.adds ?? 0;
+          e.deletions += c.dels ?? 0;
         } else if (n === "write") {
           e.writes++;
-          const args = parseArgs<{ content?: string }>(c.arguments);
-          e.insertions += args?.content ? args.content.split("\n").length : 0;
+          e.insertions += c.adds ?? 0;
         } else if (n === "delete" || n === "remove") {
           e.deletes++;
         }
@@ -71,7 +76,7 @@ export function FilesView({ turns, projectRoot, onJumpToTurn, onJumpToFile }: Fi
       }
     }
     return Array.from(map.values());
-  }, [turns]);
+  }, [toolVMsByTurn]);
 
   type SortKey = "path" | "churn";
   const [sortKey, setSortKey] = useState<SortKey>("path");
@@ -112,10 +117,10 @@ export function FilesView({ turns, projectRoot, onJumpToTurn, onJumpToFile }: Fi
         <thead>
           <tr className="tb-filesview-thead">
             <Th onClick={() => toggleSort("path")} active={sortKey === "path"} asc={asc}>
-              File
+              file
             </Th>
             <Th onClick={() => toggleSort("churn")} active={sortKey === "churn"} asc={asc} numeric>
-              Lines +/−
+              lines +/−
             </Th>
           </tr>
         </thead>
@@ -174,17 +179,17 @@ function Th({
   numeric?: boolean;
 }) {
   return (
-    <th onClick={onClick} className={cn("tb-filesview-th tb-eyebrow tb-focus", numeric && "tb-filesview-th-num")}>
+    <th onClick={onClick} className={cn("tb-filesview-th tb-eyebrow", numeric && "tb-filesview-th-num")}>
       <span className="tb-filesview-th-inner">
         {children}
         {active ? (
           asc ? (
-            <ArrowUp size={10} strokeWidth={2} />
+            <ChevronUp size={10} strokeWidth={2} />
           ) : (
-            <ArrowDown size={10} strokeWidth={2} />
+            <ChevronDown size={10} strokeWidth={2} />
           )
         ) : (
-          <ArrowUpDown size={10} strokeWidth={2} className="tb-filesview-th-icon" />
+          <ChevronsUpDown size={10} strokeWidth={2} className="tb-filesview-th-icon" />
         )}
       </span>
     </th>
@@ -206,29 +211,4 @@ function relativeToProject(path: string, projectRoot: string | undefined): strin
     return `…/${parts[parts.length - 2]}/${parts[parts.length - 1]}`;
   }
   return path;
-}
-
-function extractPath(call: ToolCallDetail): string | undefined {
-  const args = parseArgs<{ file_path?: string; path?: string }>(call.arguments);
-  return args?.file_path ?? args?.path;
-}
-
-function countDiff(call: ToolCallDetail): { adds: number; dels: number } {
-  const args = parseArgs<{
-    old_string?: string;
-    new_string?: string;
-    edits?: { old_string: string; new_string: string }[];
-  }>(call.arguments);
-  let adds = 0;
-  let dels = 0;
-  const pairs = args?.edits?.length
-    ? args.edits
-    : [{ old_string: args?.old_string ?? "", new_string: args?.new_string ?? "" }];
-  for (const p of pairs) {
-    const a = (p.new_string ?? "").split("\n").length;
-    const b = (p.old_string ?? "").split("\n").length;
-    if (a > b) adds += a - b;
-    if (b > a) dels += b - a;
-  }
-  return { adds, dels };
 }

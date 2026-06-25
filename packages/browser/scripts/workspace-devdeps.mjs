@@ -1,7 +1,7 @@
 // Toggles the sibling workspace packages in/out of this package's
 // devDependencies around `npm pack`.
 //
-// The workspace deps (`@peasant-labs/types`, `@peasant-labs/theme`) are needed
+// The workspace dep (`@peasant-labs/types`) is needed
 // at BUILD time (tsup inlines them into dist), but their `workspace:*` specifier
 // is meaningless to an external `npm`/`file:` consumer and must NOT survive in
 // the published manifest. `prepack` strips them; `postpack` restores them so the
@@ -15,7 +15,7 @@ import { dirname, resolve } from "node:path";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const manifestPath = resolve(here, "../package.json");
-const WORKSPACE_DEPS = ["@peasant-labs/types", "@peasant-labs/theme"];
+const WORKSPACE_DEPS = ["@peasant-labs/types"];
 const WORKSPACE_SPEC = ["workspace", "*"].join(":");
 
 const mode = process.argv[2];

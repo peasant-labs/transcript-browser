@@ -1,10 +1,11 @@
 import { Fragment, forwardRef, useMemo } from "react";
+import { CheckpointMarker, PhaseDivider } from "@peasant-labs/fairtrade/ui";
 import { cn } from "../internal/cn.js";
 import { TurnRow } from "./TurnRow.js";
-import { CheckpointMarker } from "./CheckpointMarker.js";
-import { PhaseDivider } from "./PhaseDivider.js";
 import { EmptyState } from "./EmptyState.js";
-import { TaskBoundary } from "./TaskBoundary.js";
+import { phaseLabel } from "../lib/phase.js";
+import { formatDuration } from "../lib/format-numbers.js";
+import { formatRelative } from "../lib/time.js";
 import { computeTasks, computeTurnLabels, type TaskGroup } from "../lib/tasks.js";
 import type {
   RenderTurnActions,
@@ -12,6 +13,7 @@ import type {
   TurnLabel,
   TurnLinkBuilder,
 } from "./types.js";
+import type { ToolCallVM } from "@peasant-labs/fairtrade/ui";
 import type {
   TurnDetail,
   SessionCommit,
@@ -22,6 +24,12 @@ import type {
 export interface TranscriptCanvasProps {
   /** Turns to render (already filtered + deduped by the host, if desired). */
   turns: TurnDetail[];
+  /**
+   * Cooked tool calls keyed by turn index — the adapter's `ToolCallVM[]` per
+   * turn (parsed once). Threaded to each `TurnRow` so the lifted
+   * `TranscriptToolCall` renders from cooked fields and nothing here parses wire.
+   */
+  toolVMsByTurn?: Map<number, ToolCallVM[]>;
   /** Provider — used to pick the assistant rail icon. */
   provider?: Provider;
   /** Optional phases — rendered as sticky inline dividers between turns. */
@@ -69,6 +77,7 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
   function TranscriptCanvas(
     {
       turns,
+      toolVMsByTurn,
       provider,
       phases = [],
       activePhaseIndex,
@@ -152,14 +161,13 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
       [searchMatchIndices],
     );
 
-    // Task boundaries — a summary divider just before each user prompt (except
-    // the first). Keyed by the display position the boundary sits before.
+    // Task boundaries — a "user turn N" divider before EACH user prompt (the
+    // canonical demo shows one per user turn, carrying that turn's own stats),
+    // keyed by the display position it sits before.
     const taskByStart = useMemo(() => {
       const tasks = computeTasks(turns);
       const map = new Map<number, { task: TaskGroup; ordinal: number }>();
-      for (let i = 1; i < tasks.length; i++) {
-        map.set(tasks[i]!.startIndex, { task: tasks[i - 1]!, ordinal: i });
-      }
+      tasks.forEach((task, i) => map.set(task.startIndex, { task, ordinal: i + 1 }));
       return map;
     }, [turns]);
 
@@ -185,14 +193,39 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
             const taskAt = taskByStart.get(i);
             rows.push(
               <div key={turn.index}>
-                {taskAt && <TaskBoundary task={taskAt.task} index={taskAt.ordinal} />}
+                {taskAt && (
+                  <div className="txn-taskboundary">
+                    <span className="txn-tb-chip">user turn {taskAt.ordinal}</span>
+                    <span className="txn-tb-meta tnum">
+                      {[
+                        taskAt.task.durationMs > 0 ? formatDuration(taskAt.task.durationMs) : null,
+                        `${taskAt.task.toolCallCount} tools`,
+                        `${taskAt.task.filesTouched.length} files`,
+                        taskAt.task.insertions > 0 || taskAt.task.deletions > 0
+                          ? `+${taskAt.task.insertions} −${taskAt.task.deletions}`
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  </div>
+                )}
                 {commitsAt?.map((c) => (
-                  <CheckpointMarker key={`${c.hash}-${i}`} commit={c} />
+                  <CheckpointMarker
+                    key={`${c.hash}-${i}`}
+                    hash={c.hash}
+                    message={c.message}
+                    time={formatRelative(c.timestamp)}
+                    files={c.filesChanged ?? 0}
+                    ins={c.insertions ?? 0}
+                    del={c.deletions ?? 0}
+                  />
                 ))}
                 <TurnRow
                   turn={turn}
                   turnNumber={turnLabels[i] ?? `${i + 1}`}
                   provider={provider}
+                  toolVMs={toolVMsByTurn?.get(turn.index)}
                   searchQuery={searchQuery}
                   isActiveMatch={turn.index === activeMatchTurnIndex}
                   isSearchMatch={matchSet?.has(i)}
@@ -215,11 +248,11 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
           return (
             <section key={`phase-${g.index}-${g.from}`} style={{ position: "relative" }}>
               <PhaseDivider
-                phase={g.phase}
-                index={g.index}
+                label={phaseLabel(g.phase.type)}
+                range={`turns ${g.from + 1}–${g.to + 1}`}
                 active={g.index === activePhaseIndex}
-                onClick={onPhaseClick}
-                stickyTop={phaseStickyTop}
+                onClick={() => onPhaseClick?.(g.phase!, g.index!)}
+                stickyTop={`${phaseStickyTop}px`}
               />
               {rows}
             </section>
@@ -227,7 +260,15 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
         })}
 
         {commitsByPosition.get(turns.length)?.map((c, i) => (
-          <CheckpointMarker key={`tail-${c.hash}-${i}`} commit={c} />
+          <CheckpointMarker
+            key={`tail-${c.hash}-${i}`}
+            hash={c.hash}
+            message={c.message}
+            time={formatRelative(c.timestamp)}
+            files={c.filesChanged ?? 0}
+            ins={c.insertions ?? 0}
+            del={c.deletions ?? 0}
+          />
         ))}
       </div>
     );

@@ -10,32 +10,29 @@ fetching, or auth:
    `outcomeDistribution`, `medianAndP90` (per metric, via `sessionStats`),
    `perContributorBreakdown`, plus `computeProjectAnalytics` (runs them all).
    **No React, no I/O** — import them in a CLI, a report, or a server handler.
-2. **`<ProjectOverview>`** — a configurable React dashboard (recharts charts + a
-   contributor table) that takes either raw `SessionSummary[]` *or* a
+2. **`<ProjectOverview>`** — a configurable React dashboard (fairtrade charts +
+   a contributor table) that takes either raw `SessionSummary[]` *or* a
    pre-computed `ProjectAnalytics` bundle as props.
 
 This is a **separate package** from `@peasant-labs/transcript-browser` on
-purpose: analytics-only consumers get `recharts` + `clsx` and **never** pull in
-the viewer's heavy deps (`shiki`, `@xyflow/react`, `react-markdown`).
+purpose: analytics-only consumers get fairtrade charts + `clsx` and **never**
+pull in the viewer's heavy deps (`shiki`, `@xyflow/react`, `react-markdown`).
 
 ## Install
 
 The published package is **self-contained**: the sibling `@peasant-labs/types`
-is bundled into `dist/` (both JS and `.d.ts`), so a consumer installs **only**
-this package plus the React peers. `recharts` is a normal dependency (npm pulls
-it in transitively); it stays external so it dedupes with any `recharts` you
-already use.
+is bundled into `dist/` (both JS and `.d.ts`), and fairtrade owns the charting
+implementation. A consumer installs **only** this package plus the React peers.
 
 ```bash
 npm install @peasant-labs/analytics react react-dom
 ```
 
 Import the **single** bundled stylesheet once at your app root — it already
-contains both the `--tb-*` theme tokens and the `tb-a-`-prefixed component
-styles:
+contains the fairtrade theme tokens and the `tb-a-`-prefixed component styles:
 
 ```ts
-import "@peasant-labs/analytics/styles.css"; // tokens + component CSS, all in one
+import "@peasant-labs/analytics/styles.css"; // fairtrade tokens + component CSS
 ```
 
 ## Usage
@@ -114,9 +111,9 @@ Same three rules as `@peasant-labs/transcript-browser`:
 2. **Identity/routes OUT via a render-prop.** `renderContributor` lets the host
    own how an opaque `contributorId` is displayed (name, avatar, link). The
    package ships none of that.
-3. **Theming via CSS variables only.** Every surface — cards, table, *and the
-   recharts charts* — paints from `--tb-*` tokens. Override a token to re-theme;
-   the charts re-resolve their palette when an ancestor toggles `tb-dark`.
+3. **Theming via CSS variables only.** Every surface — cards, table, and
+   fairtrade charts — paints from fairtrade tokens. Override a token to
+   re-theme.
 
 ## Exports
 
@@ -134,6 +131,6 @@ Same three rules as `@peasant-labs/transcript-browser`:
 
 ## Dependencies
 
-`recharts` (charts) is a real dependency kept external so it dedupes with the
-consumer's copy; `clsx` (class joining) is a small bundled dependency. `react` /
-`react-dom` are the only required peers. No UI kit, no router, no data layer.
+`@peasant-labs/fairtrade` owns the charts; `clsx` (class joining) is a small
+bundled dependency. `react` / `react-dom` are the only required peers. No UI kit,
+no router, no data layer.

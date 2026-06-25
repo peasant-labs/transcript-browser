@@ -11,32 +11,33 @@ export interface TabStripProps {
 }
 
 /**
- * Underline-style tab strip. Active tab has a 2px ink underline; inactive tabs
- * are quiet ink-3. Ported from peasant's `header/TabStrip.tsx`.
+ * Session tab strip — the canonical `.txn-tabs` markup. The active tab is
+ * emphasised with the design system's thin amber underline (CSS, via
+ * `.txn-tab.active`); inactive tabs read faded. Each tab carries its count in a
+ * `.cnt` tnum span. (No leading marker / amber text — that affordance belongs to
+ * the demo's outer nav, not the session tabs.)
  */
 export function TabStrip({ tabs, value, onChange, className, rightSlot }: TabStripProps) {
   return (
-    <div className={cn("tb-tabstrip", className)} role="tablist">
-      <div className="tb-tabstrip-tabs">
-        {tabs.map((t) => {
-          const active = t.id === value;
-          return (
-            <button
-              key={t.id}
-              role="tab"
-              aria-selected={active}
-              onClick={() => onChange(t.id)}
-              className={cn("tb-tabstrip-tab tb-focus", active && "tb-tabstrip-tab-active")}
-            >
-              <span>{t.label}</span>
-              {t.count != null && (
-                <span className={cn("tb-tabstrip-count tb-tnum", active && "tb-tabstrip-count-active")}>{t.count.toLocaleString()}</span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-      {rightSlot && <div className="tb-tabstrip-right">{rightSlot}</div>}
+    <div className={cn("tabs txn-tabs", className)} role="tablist" aria-label="session views">
+      {tabs.map((t) => {
+        const active = t.id === value;
+        return (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            tabIndex={active ? 0 : -1}
+            onClick={() => onChange(t.id)}
+            className={cn("tab txn-tab", active && "active")}
+          >
+            {t.label}
+            {t.count != null && <span className="cnt tnum"> {t.count.toLocaleString()}</span>}
+          </button>
+        );
+      })}
+      {rightSlot}
     </div>
   );
 }

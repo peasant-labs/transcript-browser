@@ -15,10 +15,11 @@ available as the bare list view.
 ## Install
 
 The published package is **self-contained**: the sibling `@peasant-labs/types`
-and `@peasant-labs/theme` packages are bundled into `dist/` (both the JS and the
-`.d.ts`), so a consumer installs **only** this package plus the React peers. It
-works with `npm` (including via a `file:` tarball/path) — no workspace protocol
-and no `@peasant-labs/*` siblings required.
+package is bundled into `dist/` (both the JS and the `.d.ts`) and the stylesheet
+includes the published fairtrade CSS exports. A consumer installs **only** this
+package plus the React peers. It works with `npm` (including via a `file:`
+tarball/path) — no workspace protocol and no `@peasant-labs/*` siblings
+required.
 
 ```bash
 # npm (e.g. from a published tarball or a file: path)
@@ -31,11 +32,11 @@ Only `react` and `react-dom` are required peers; `@xyflow/react` is an optional
 peer needed solely for the graph view.
 
 Import the **single** bundled stylesheet once at your app root — it already
-contains both the `--tb-*` theme tokens and the `tb-`-prefixed component styles,
-so there is no separate theme CSS to install:
+contains the fairtrade theme tokens and the `tb-`-prefixed component styles, so
+there is no separate theme CSS to install:
 
 ```ts
-import "@peasant-labs/transcript-browser/styles.css"; // tokens + component CSS, all in one
+import "@peasant-labs/transcript-browser/styles.css"; // fairtrade tokens + component CSS
 // Only if you use the graph view:
 import "@xyflow/react/dist/style.css";
 ```
@@ -90,7 +91,8 @@ import { TranscriptCanvas } from "@peasant-labs/transcript-browser";
 <TranscriptCanvas turns={detail.turns} provider={detail.provider} commits={detail.gitContext?.commits} />;
 ```
 
-Wrap (or set on any ancestor) `class="tb-dark"` to flip the viewer to the dark
+Set `data-theme="light"` or `data-theme="dark"` on any ancestor to flip the
+viewer. Dark is the default, so omitting the attribute uses the canonical dark
 palette. No re-render or prop change required.
 
 ### The graph view (`@xyflow/react` peer dependency)
@@ -187,14 +189,13 @@ package — the host wires each affordance and owns its own modals.
 
 ### 3. Theming via CSS variables only
 
-The viewer paints **exclusively** from `--tb-*` custom properties — no hardcoded
-colours, fonts, brand strings or routes. Override any variable to re-theme the
-whole viewer; the token contract is shipped inside the bundled
-`@peasant-labs/transcript-browser/styles.css`. Key tokens: `--tb-canvas`,
-`--tb-surface`, `--tb-ink[-2/-3/-4]`,
-`--tb-rule[-strong]`, `--tb-rail`, `--tb-accent`, `--tb-positive/caution/negative`
-(+ `-soft`), `--tb-diff-*`, `--tb-role-user/assistant` (+ `-soft`),
-`--tb-provider-*`, `--tb-font-sans/mono`.
+The viewer paints **exclusively** from fairtrade semantic custom properties —
+no hardcoded colours, fonts, brand strings or routes. Override any variable to
+re-theme the whole viewer; the token contract is shipped inside the bundled
+`@peasant-labs/transcript-browser/styles.css`. Key tokens: `--canvas`,
+`--surface`, `--ink[-2/-3/-4/-5]`, `--rule[-strong]`, `--rail`, `--amber`,
+`--teal`, `--success/warning/danger` (+ `-soft`), `--add-*`, `--del-*`,
+`--edge`, `--edge-error`, `--font-body`, and `--font-mono`.
 
 ## Exports
 
@@ -219,32 +220,19 @@ whole viewer; the token contract is shipped inside the bundled
   `useTriggerOffscreen`.
 - **Overlays:** `SearchBar` (+ `useSearchHotkey`), `ProgressIndicator`,
   `ShareDialog`.
-- **Primitives:** `CodeBlock`, `Markdown`, `DiffView`, `TokenBadge`,
-  `DurationBadge`, `OutcomeChip`, `ErrorPill`, `RoleGlyph`, `Chip`, `ToolIcon`,
-  `ProviderIcon`, `Kbd`.
-- **`primitives` (shadcn-style UI surface):** a namespaced set of generic UI
-  primitives — `Badge`, `Button`, `Card`/`CardContent`, `Checkbox`,
-  `Collapsible`/`CollapsibleTrigger`/`CollapsibleContent`, `Input`,
-  `Select`/`SelectTrigger`/`SelectValue`/`SelectContent`/`SelectItem`,
-  `Skeleton`, `Table` (+ `TableHeader`/`TableBody`/`TableRow`/`TableHead`/
-  `TableCell`), `Tooltip`/`TooltipTrigger`/`TooltipContent`/`TooltipProvider`,
-  `Popover`/`PopoverTrigger`/`PopoverContent`. Ported from the village viewer
-  redesign and re-expressed in the `--tb-*` token model. Imported under a
-  namespace to avoid colliding with the transcript primitives above (both expose
-  a `Tooltip`):
+- **Domain primitives:** `CodeBlock`, `Markdown`, `DiffView`, `OutcomeChip`,
+  `ErrorPill`, `RoleGlyph`, `ToolIcon`, `ProviderIcon`.
+- **`primitives` generic UI surface:** a compatibility namespace that re-exports
+  fairtrade UI primitives such as `Button`, `Chip`, `Card`, `Checkbox`,
+  `Input`, `Select`, `DataTable`, `Skeleton`, `Tooltip`, `Popover`, and `Kbd`:
 
   ```tsx
   import { primitives } from "@peasant-labs/transcript-browser";
-  const { Button, Badge, Select, SelectTrigger, SelectValue, SelectContent, SelectItem } = primitives;
+  const { Button, Chip, Select, DataTable, Tooltip, Kbd } = primitives;
   ```
 
-  They keep the shadcn-style API (CVA `variant`/`size` props, the
-  `Select`/`Collapsible`/`Tooltip`/`Popover` compositions, `aria-*` + `data-slot`
-  attributes) but carry **no Tailwind and no Radix**: every visual is a
-  `tb-`-prefixed class backed by `--tb-*` variables, and the interactive
-  primitives (checkbox, collapsible, select, tooltip, popover) are reimplemented
-  dependency-free. Fully agnostic — no village imports, brand strings, routes or
-  data fetching.
+  Generic visual behavior comes from `@peasant-labs/fairtrade`; transcript-
+  browser keeps only domain-specific transcript components.
 - **Helpers (pure):** `computeTasks`, `computeTurnLabels`, `phaseLabel`,
   `providerLabel`, `formatRelative`, `formatTokens`, `formatDuration`,
   `parseArgs`, `composeSessionTitle`, `summarizePrompt`, `projectLabel`,
@@ -258,12 +246,9 @@ whole viewer; the token contract is shipped inside the bundled
 
 ## Dependencies
 
-Runtime deps are kept lean and framework-neutral: `lucide-react` (icons),
-`shiki` (syntax highlighting), `react-markdown` + `remark-gfm` (markdown),
-`diff` (inline diffs), `clsx` (class joining), `class-variance-authority` (the
-CVA `variant`/`size` API for the `primitives` surface — class composition only,
-no Tailwind). `@xyflow/react` is an **optional peer dependency** — needed only
-for the graph view. No UI kit, no router, no data layer. (Radix
-tooltips/popovers/dialogs/selects/checkboxes from the source apps were replaced
-with dependency-free CSS tooltips, self-contained dropdown menus/listboxes, a
-context-based collapsible, and a host-owned action slot.)
+Runtime deps are kept lean and framework-neutral: `@peasant-labs/fairtrade`
+(tokens, base CSS, generic UI, chart transitive deps), `lucide-react` (domain
+icons), `shiki` (syntax
+highlighting), `react-markdown` + `remark-gfm` (markdown), `diff` (inline
+diffs), and `clsx` (class joining). `@xyflow/react` is an **optional peer
+dependency** — needed only for the graph view. No router and no data layer.

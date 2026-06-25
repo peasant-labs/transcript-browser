@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Check } from "lucide-react";
+import { Check } from "@peasant-labs/fairtrade/icons";
 import { cn } from "../internal/cn.js";
 
 export interface FilterCheckboxProps {
@@ -36,7 +36,7 @@ export function FilterCheckbox({
       disabled={disabled}
       onClick={() => onCheckedChange(!checked)}
       className={cn(
-        "tb-fcheck tb-focus",
+        "tb-fcheck",
         indent ? "tb-fcheck-indent" : "tb-fcheck-flush",
         disabled && "tb-fcheck-disabled",
         className,

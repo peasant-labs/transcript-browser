@@ -7,20 +7,20 @@
  *
  *  1. PURE METRIC FUNCTIONS over `SessionSummary[]` — no React, no I/O, no app
  *     coupling. Import these alone (e.g. in a CLI, a report, a server handler)
- *     without pulling in React or recharts at runtime.
+ *     without pulling in React or charting code at runtime.
  *
- *  2. The `<ProjectOverview>` REACT COMPONENT — recharts charts + a contributor
- *     table, configurable via the `sections` prop, themed entirely from the
- *     `--tb-*` CSS variables. Data flows IN via props (`sessions` OR a
+ *  2. The `<ProjectOverview>` REACT COMPONENT — fairtrade charts + a
+ *     contributor table, configurable via the `sections` prop, themed entirely
+ *     from the fairtrade CSS variables. Data flows IN via props (`sessions` OR a
  *     pre-computed `analytics` bundle); the host renders the contributor cell
  *     so the package never assumes a name, route or brand.
  *
  * Required styles (import once at your app root):
  *   import "@peasant-labs/analytics/styles.css"; // tokens + component CSS
  *
- * `react`/`react-dom` are peer deps; `recharts` is a real dependency. The
- * `SessionSummary` type is bundled inline (no `@peasant-labs/types` install
- * needed). See README.md for the agnosticism contract.
+ * `react`/`react-dom` are peer deps; fairtrade owns the charting dependency.
+ * The `SessionSummary` type is bundled inline (no `@peasant-labs/types`
+ * install needed). See README.md for the agnosticism contract.
  */
 
 // --- Pure metric functions (no React) --------------------------------------

@@ -2,6 +2,7 @@ import type { Node, Edge } from "@xyflow/react";
 import type { TurnDetail, Phase, PhaseType } from "@peasant-labs/types";
 import type { TranscriptAnnotation } from "../lib/pattern-detection.js";
 import type { TurnNodeData, ToolCallNodeData } from "./types.js";
+import type { ToolCallVM } from "@peasant-labs/fairtrade/ui";
 import { NODE_DIMENSIONS, EDGE_DEFAULTS } from "./constants.js";
 
 /**
@@ -23,16 +24,16 @@ interface FlowGraph {
 
 // All phases resolve to neutral except error/retry-loop which use the danger tint.
 const PHASE_EDGE_COLOR: Record<PhaseType, string> = {
-  planning: "#737373",
-  exploration: "#737373",
-  implementation: "#737373",
-  testing: "#737373",
-  error: "#b91c1c",
-  debug: "#737373",
-  "retry-loop": "#b91c1c",
-  "user-correction": "#737373",
-  recovery: "#737373",
-  abandonment: "#737373",
+  planning: "var(--edge)",
+  exploration: "var(--edge)",
+  implementation: "var(--edge)",
+  testing: "var(--edge)",
+  error: "var(--edge-error)",
+  debug: "var(--edge)",
+  "retry-loop": "var(--edge-error)",
+  "user-correction": "var(--edge)",
+  recovery: "var(--edge)",
+  abandonment: "var(--edge)",
 };
 
 function buildAnnotationMap(
@@ -59,6 +60,8 @@ function buildPhaseLookup(phases: Phase[]): Map<number, PhaseType> {
 
 export interface TurnsToFlowOptions {
   turns: TurnDetail[];
+  /** Cooked tool calls by turn index — supplies each tool node's preview. */
+  toolVMsByTurn?: Map<number, ToolCallVM[]>;
   phases: Phase[];
   annotations: TranscriptAnnotation[];
   searchMatches: number[];
@@ -69,6 +72,7 @@ export interface TurnsToFlowOptions {
 
 export function turnsToFlow({
   turns,
+  toolVMsByTurn,
   phases,
   annotations,
   searchMatches,
@@ -139,9 +143,14 @@ export function turnsToFlow({
         (tc) => tc.isError || (tc.exitCode !== undefined && tc.exitCode !== 0),
       );
 
+      // Cooked one-line previews for this turn's tools (no wire parse in the node).
+      const previewById: Record<string, string> = {};
+      for (const tc of toolVMsByTurn?.get(turn.index) ?? []) previewById[tc.id] = tc.preview;
+
       const toolNodeData: ToolCallNodeData = {
         turnIndex: turn.index,
         toolCalls,
+        previewById,
         totalDurationMs: totalDuration,
         hasError,
         isFilteredOut,
@@ -167,7 +176,7 @@ export function turnsToFlow({
         targetHandle: "tool-target",
         type: "straight",
         style: {
-          stroke: "#a3a3a3",
+          stroke: "var(--edge)",
           strokeWidth: 1,
           strokeDasharray: "4 4",
           ...(isFilteredOut ? { opacity: 0.2 } : {}),

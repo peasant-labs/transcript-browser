@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "@peasant-labs/analytics": "workspace:*",
+    "@peasant-labs/fairtrade": "^0.0.3",
     "@peasant-labs/types": "workspace:*",
-    "@peasant-labs/theme": "workspace:*",
     "@peasant-labs/transcript-browser": "workspace:*",
     "@xyflow/react": "^12.0.0",
     "react": "^19.0.0",

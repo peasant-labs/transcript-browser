@@ -1,5 +1,4 @@
-import { Fragment } from "react";
-import { cn } from "../internal/cn.js";
+import { Breadcrumb as FairtradeBreadcrumb } from "@peasant-labs/fairtrade/ui";
 
 export interface BreadcrumbItem {
   label: string;
@@ -12,34 +11,12 @@ export interface BreadcrumbProps {
 }
 
 /**
- * Monochrome breadcrumb with a literal " / " separator. The last item renders
- * as plain ink; everything before is a quiet link. Ported from peasant's
- * `header/Breadcrumb.tsx`; the Next.js `<Link>` is replaced with a plain `<a>`
- * (the host supplies fully-formed hrefs — no router coupling).
+ * Breadcrumb — consumes the design system's Breadcrumb (ChevronRight
+ * separators, current-page styling). The host supplies fully-formed hrefs (no
+ * router coupling). The optional `className` is kept as a layout wrapper so call
+ * sites can position the crumb without the bespoke breadcrumb chrome.
  */
 export function Breadcrumb({ items, className }: BreadcrumbProps) {
-  return (
-    <nav aria-label="Breadcrumb" className={cn("tb-breadcrumb", className)}>
-      {items.map((item, i) => {
-        const isLast = i === items.length - 1;
-        const node =
-          isLast || !item.href ? (
-            <span className={cn("tb-truncate", isLast ? "tb-breadcrumb-current" : "tb-breadcrumb-link")} title={item.label}>
-              {item.label}
-            </span>
-          ) : (
-            <a href={item.href} className="tb-breadcrumb-link tb-truncate" title={item.label}>
-              {item.label}
-            </a>
-          );
-
-        return (
-          <Fragment key={i}>
-            {i > 0 && <span className="tb-breadcrumb-sep" aria-hidden>/</span>}
-            {node}
-          </Fragment>
-        );
-      })}
-    </nav>
-  );
+  const crumb = <FairtradeBreadcrumb items={items} />;
+  return className ? <div className={className}>{crumb}</div> : crumb;
 }

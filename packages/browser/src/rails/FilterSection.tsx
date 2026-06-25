@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "@peasant-labs/fairtrade/icons";
 import { cn } from "../internal/cn.js";
 
 export interface FilterSectionProps {
@@ -33,7 +33,7 @@ export function FilterSection({
         {staticTitle ? (
           <span className="tb-eyebrow">{title}</span>
         ) : (
-          <button type="button" onClick={() => setOpen((v) => !v)} className="tb-fsection-toggle tb-focus" aria-expanded={open}>
+          <button type="button" onClick={() => setOpen((v) => !v)} className="tb-fsection-toggle" aria-expanded={open}>
             <ChevronRight size={11} strokeWidth={2} className={cn("tb-fsection-chevron", open && "tb-chevron-open")} />
             <span className="tb-eyebrow">{title}</span>
           </button>

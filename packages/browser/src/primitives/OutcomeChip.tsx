@@ -1,20 +1,30 @@
 import { useMemo } from "react";
-import { CheckCircle2, CircleDot, XCircle } from "lucide-react";
-import { Chip, type ChipVariant } from "./Chip.js";
+import { Chip, Tooltip } from "@peasant-labs/fairtrade/ui";
+import { ShieldCheck, CircleDot, AlertTriangle } from "@peasant-labs/fairtrade/icons";
+import { cn } from "../internal/cn.js";
 
 /**
  * OutcomeChip — semantic-coloured outcome badge with a hover tooltip. Surfaces
  * an assigned session outcome and explains, on hover, what it means and (when
  * present) which signals drove it.
+ *
+ * DOMAIN component: the value here is mapping the several backend outcome string
+ * shapes (`resolved`/`partial`/`failed`, `resolved`/`not_resolved`,
+ * `positive`/`negative`) onto one normalised visual + explanation. The chip
+ * chrome itself is NOT re-implemented — it composes fairtrade `<Chip tone>`
+ * (ok/warn/err), so the semantic tone colours come from the design system, not
+ * a TB duplicate.
  */
 
 type OutcomeTone = "positive" | "partial" | "negative";
+/** fairtrade Chip semantic tones (`.chip-ok` / `.chip-warn` / `.chip-err`). */
+type ChipTone = "ok" | "warn" | "err";
 
 interface OutcomeVisual {
   tone: OutcomeTone;
   label: string;
-  variant: ChipVariant;
-  icon: typeof CheckCircle2;
+  chipTone: ChipTone;
+  icon: typeof ShieldCheck;
   explanation: string;
 }
 
@@ -31,16 +41,16 @@ function resolveOutcome(raw: string | undefined): OutcomeVisual | undefined {
     case "positive":
       return {
         tone: "positive",
-        label: "Resolved",
-        variant: "success",
-        icon: CheckCircle2,
+        label: "resolved",
+        chipTone: "ok",
+        icon: ShieldCheck,
         explanation: "Resolved — the session reached a successful end state.",
       };
     case "partial":
       return {
         tone: "partial",
-        label: "Partial",
-        variant: "warning",
+        label: "partial",
+        chipTone: "warn",
         icon: CircleDot,
         explanation: "Partial — made progress but didn't fully resolve.",
       };
@@ -49,9 +59,9 @@ function resolveOutcome(raw: string | undefined): OutcomeVisual | undefined {
     case "negative":
       return {
         tone: "negative",
-        label: "Not resolved",
-        variant: "danger",
-        icon: XCircle,
+        label: "not resolved",
+        chipTone: "err",
+        icon: AlertTriangle,
         explanation: "Failed — ended without resolving.",
       };
     default:
@@ -79,7 +89,6 @@ export function OutcomeChip({ outcome, reasons, className }: OutcomeChipProps) {
   const visual = useMemo(() => resolveOutcome(outcome), [outcome]);
   if (!visual) return null;
 
-  const Icon = visual.icon;
   const cleanReasons = (reasons ?? []).map((r) => r.trim()).filter(Boolean);
   const explanation =
     cleanReasons.length > 0
@@ -87,14 +96,16 @@ export function OutcomeChip({ outcome, reasons, className }: OutcomeChipProps) {
       : visual.explanation;
 
   return (
-    <Chip
-      variant={visual.variant}
-      icon={<Icon size={11} strokeWidth={1.75} />}
-      tooltip={explanation}
-      className={className}
-    >
-      {visual.label}
-    </Chip>
+    <Tooltip id={`tb-outcome-${visual.tone}-tooltip`} content={explanation}>
+      <Chip
+        tone={visual.chipTone}
+        icon={visual.icon}
+        chrome
+        className={cn("tb-chip-help", className)}
+      >
+        {visual.label}
+      </Chip>
+    </Tooltip>
   );
 }
 

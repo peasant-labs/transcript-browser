@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, GitCommit } from "lucide-react";
+import { ChevronDown, GitCommit } from "@peasant-labs/fairtrade/icons";
 import { cn } from "../internal/cn.js";
 import { formatRelative } from "../lib/time.js";
 import type { SessionCommit } from "@peasant-labs/types";
@@ -45,7 +45,7 @@ export function CheckpointSelector({ commits, value, onChange, onJump }: Checkpo
 
   return (
     <div ref={rootRef} className="tb-checkpoint">
-      <button type="button" onClick={() => setOpen((v) => !v)} className="tb-checkpoint-trigger tb-focus" aria-expanded={open}>
+      <button type="button" onClick={() => setOpen((v) => !v)} className="tb-checkpoint-trigger" aria-expanded={open}>
         <GitCommit size={12} strokeWidth={1.75} className="tb-toolicon-muted tb-shrink-0" />
         <span className="tb-checkpoint-label tb-truncate">{label}</span>
         <ChevronDown size={12} strokeWidth={2} className="tb-toolicon-muted tb-shrink-0" />
@@ -53,7 +53,7 @@ export function CheckpointSelector({ commits, value, onChange, onJump }: Checkpo
       {open && (
         <div className="tb-checkpoint-panel" role="listbox">
           <CheckpointRow
-            label="All checkpoints"
+            label="all checkpoints"
             sub={`${commits.length} ${commits.length === 1 ? "commit" : "commits"}`}
             active={value === "all"}
             onClick={() => {
@@ -105,7 +105,7 @@ function CheckpointRow({
   onClick: () => void;
 }) {
   return (
-    <button type="button" onClick={onClick} className={cn("tb-checkpoint-row tb-focus", active && "tb-checkpoint-row-active")}>
+    <button type="button" onClick={onClick} className={cn("tb-checkpoint-row", active && "tb-checkpoint-row-active")}>
       <span className="tb-checkpoint-row-label tb-truncate">{label}</span>
       <span className="tb-checkpoint-row-sub tb-truncate">{sub}</span>
     </button>

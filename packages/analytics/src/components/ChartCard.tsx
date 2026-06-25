@@ -13,8 +13,8 @@ export interface ChartCardProps {
 
 /**
  * A titled card wrapping a chart (or any content). The chart itself is passed
- * as `children` — typically a `<ResponsiveContainer>` from recharts. Paints
- * from `--tb-*` tokens; carries no chart logic of its own.
+ * as `children`, usually a fairtrade chart component. Paints from fairtrade
+ * tokens; carries no chart logic of its own.
  */
 export function ChartCard({
   title,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Check, Copy, Globe, Lock, X } from "lucide-react";
+import { Check, Copy, Globe, Lock, X } from "@peasant-labs/fairtrade/icons";
 import { cn } from "../internal/cn.js";
 
 export type Visibility = "private" | "public";
@@ -53,41 +53,41 @@ export function ShareDialog({ open, onClose, shareUrl, visibility = "private", o
     <div className="tb-root tb-sharedialog-backdrop" role="dialog" aria-modal aria-label="Share session" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} className="tb-sharedialog">
         <header className="tb-sharedialog-head">
-          <h2 className="tb-sharedialog-title">Share session</h2>
-          <button type="button" onClick={onClose} className="tb-sharedialog-close tb-focus" aria-label="Close">
+          <h2 className="tb-sharedialog-title">share session</h2>
+          <button type="button" onClick={onClose} className="tb-sharedialog-close" aria-label="Close">
             <X size={14} strokeWidth={1.75} />
           </button>
         </header>
 
         <div className="tb-sharedialog-body">
           <div>
-            <label className="tb-eyebrow tb-sharedialog-label">Share link</label>
+            <label className="tb-eyebrow tb-sharedialog-label">share link</label>
             <div className="tb-sharedialog-linkrow">
               <input ref={inputRef} type="text" value={shareUrl} readOnly className="tb-mono tb-sharedialog-input" />
-              <button type="button" onClick={handleCopy} className="tb-sharedialog-copy tb-focus">
+              <button type="button" onClick={handleCopy} className="tb-sharedialog-copy">
                 {copied ? <Check size={13} strokeWidth={2} /> : <Copy size={13} strokeWidth={1.75} />}
-                {copied ? "Copied" : "Copy"}
+                {copied ? "copied" : "copy"}
               </button>
             </div>
           </div>
 
           {onVisibilityChange && (
             <div>
-              <label className="tb-eyebrow tb-sharedialog-label">Visibility</label>
+              <label className="tb-eyebrow tb-sharedialog-label">visibility</label>
               <div className="tb-sharedialog-visibility">
                 <VisibilityButton
                   active={visibility === "private"}
                   onClick={() => onVisibilityChange("private")}
                   icon={<Lock size={12} strokeWidth={1.75} />}
-                  label="Private"
-                  desc="Only you can view"
+                  label="private"
+                  desc="only you can view"
                 />
                 <VisibilityButton
                   active={visibility === "public"}
                   onClick={() => onVisibilityChange("public")}
                   icon={<Globe size={12} strokeWidth={1.75} />}
-                  label="Public"
-                  desc="Anyone with the link"
+                  label="public"
+                  desc="anyone with the link"
                 />
               </div>
             </div>
@@ -117,7 +117,7 @@ function VisibilityButton({
   desc: string;
 }) {
   return (
-    <button type="button" onClick={onClick} className={cn("tb-sharedialog-vbtn tb-focus", active && "tb-sharedialog-vbtn-active")}>
+    <button type="button" onClick={onClick} className={cn("tb-sharedialog-vbtn", active && "tb-sharedialog-vbtn-active")}>
       <span className="tb-sharedialog-vbtn-label">
         {icon}
         {label}

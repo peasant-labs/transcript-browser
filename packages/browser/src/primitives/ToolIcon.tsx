@@ -14,7 +14,7 @@ import {
   FileSearch,
   CheckSquare,
   type LucideIcon,
-} from "lucide-react";
+} from "@peasant-labs/fairtrade/icons";
 import { cn } from "../internal/cn.js";
 import { ToolCallKind } from "@peasant-labs/types";
 

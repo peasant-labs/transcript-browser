@@ -1,204 +1,345 @@
-import type { Phase, SessionDetailPayload, SessionScorecard } from "@peasant-labs/types";
+import type {
+  Phase,
+  SessionDetailPayload,
+  SessionScorecard,
+  ToolCallDetail,
+  TurnDetail,
+} from "@peasant-labs/types";
 
 /**
- * A realistic hand-written sample, typed against the shared
- * SessionDetailPayload. Exercises the full canvas: user/assistant turns, a
- * thinking turn, several tool calls (Read, Bash w/ non-zero exit, Edit diff,
- * Grep), a tool error, a subagent turn, multiple user turns (so task
- * boundaries appear), and a final resolved outcome.
+ * The SAME recorded session the canonical fairtrade demo renders
+ * (`sess_demo_0001` / transcript-browser — "Port the transcript canvas into the
+ * shared package"). This file is a faithful port of the demo mockup's
+ * `buildWire()` (fairtrade `src/mockups/inuse/TranscriptApp.jsx`): the editorial
+ * fixtures below are projected into the canonical wire `SessionDetailPayload`,
+ * which the example feeds through the ONE adapter `adaptTranscript()` exactly
+ * like the demo. Rendering the same data lets the UAT capture stitch a true
+ * height-matched, same-data side-by-side of the demo vs the assembled app.
+ *
+ * WIRE FAITHFULNESS (the reason tool outputs render): on the real wire a tool
+ * call's `arguments` AND `result` are JSON-ENCODED STRINGS — so a plain-text
+ * result like file contents or stdout is carried as `JSON.stringify(text)`. The
+ * adapter's sole parse boundary `JSON.parse`s them back; a RAW (non-JSON) string
+ * would parse to `undefined` and the output would silently vanish. Every builder
+ * below therefore JSON-encodes args + result, matching the demo's `toolToWire`.
  */
-export const sampleSession: SessionDetailPayload = {
-  id: "sess_demo_0001",
-  harness: "claude-code",
-  startTime: "2026-05-28T10:00:00Z",
-  endTime: "2026-05-28T10:08:30Z",
-  durationMins: 8.5,
-  totalTokens: 18420,
-  tokensIn: 12200,
-  tokensOut: 6220,
-  turnCount: 8,
-  toolCallCount: 5,
-  project: "transcript-browser",
-  model: "claude-opus-4-7",
-  outcome: "resolved",
-  workingDirectory: "/Users/dev/transcript-browser",
-  gitContext: {
-    branch: "feat/canvas",
-    user: "Dev",
-    email: "dev@example.com",
-    remote: "git@github.com:peasant-labs/transcript-browser.git",
-    workingDirectory: "/Users/dev/transcript-browser",
-    startCommit: "a1b2c3d",
-    commits: [
+
+/* ── editorial fixtures (verbatim from the demo mockup) ─────────────────────── */
+
+/** A tool fixture in the demo's editorial shape (pre-wire). */
+interface ToolFixture {
+  id: string;
+  kind: "read" | "grep" | "bash" | "edit" | "task";
+  name: string;
+  /** read: file path + excerpt. */
+  path?: string;
+  excerpt?: string;
+  /** grep: pattern/scope/type + results. */
+  pattern?: string;
+  scope?: string;
+  glob?: string;
+  results?: string;
+  /** bash: command (+ description) + stdout + exit + duration. */
+  command?: string;
+  description?: string;
+  stdout?: string;
+  exit?: number;
+  duration?: string;
+  /** edit: file path + the hunk + churn. */
+  adds?: number;
+  dels?: number;
+  hunk?: { sign: "ctx" | "add" | "del"; a?: string; b?: string; t: string }[];
+  /** task/subagent: agent + description + prompt + result. */
+  agent?: string;
+  status?: string;
+  task?: string;
+  owner?: string;
+  promptBody?: string;
+  result?: string;
+}
+
+/** A turn fixture in the demo's editorial shape (pre-wire). */
+interface TurnFixture {
+  id: number;
+  role: "user" | "assistant";
+  depth?: number;
+  subagent?: string;
+  final?: boolean;
+  error?: boolean;
+  tokens?: { in: number; out: number };
+  thinking?: { words: number; text: string };
+  body?: string;
+  tools?: ToolFixture[];
+  checkpoint?: { hash: string; msg: string; files: number; adds: number; dels: number };
+}
+
+const HARNESS = "claude-code";
+
+const TURNS: TurnFixture[] = [
+  {
+    id: 0,
+    role: "user",
+    tokens: { in: 280, out: 0 },
+    body:
+      "Port the transcript canvas into the shared package. Start by reading the existing renderer before extracting it.",
+  },
+  {
+    id: 1,
+    role: "assistant",
+    tokens: { in: 1840, out: 920 },
+    thinking: {
+      words: 84,
+      text:
+        "The renderer lives under web/src/components/session-detail/v2/canvas. I should read TurnRow.tsx first to understand how role glyphs + tool calls compose, then trace rendererFor to see the per-tool dispatch before I move anything into packages/browser.",
+    },
+    body:
+      "Let me look at the current renderer before extracting it. I will read **TurnRow.tsx** and find where `rendererFor` is wired so the move preserves the per-tool dispatch.",
+    tools: [
       {
-        hash: "9f3c1ad8e2",
-        message: "feat(canvas): port TurnRow + tool renderers",
-        timestamp: "2026-05-28T10:05:10Z",
-        filesChanged: 7,
-        insertions: 312,
-        deletions: 24,
+        id: "t1a",
+        kind: "read",
+        name: "Read",
+        path: "web/src/components/session-detail/v2/canvas/TurnRow.tsx",
+        excerpt:
+          'export function TurnRow({ turn, depth }: TurnRowProps) {\n  const Glyph = roleGlyph(turn.role)\n  const tokens = formatTokens(turn.usage)\n  return (\n    <div className="turn-row" data-depth={depth}>\n      <RoleGlyph as={Glyph} provider={turn.provider} />\n      <TurnHeader label={turn.label} time={turn.time} />\n      <Markdown source={turn.content} />\n      <ToolCallList calls={turn.toolCalls} />\n    </div>\n  )\n}',
       },
     ],
   },
-  turns: [
-    {
-      index: 0,
-      role: "user",
-      content:
-        "Port the transcript canvas into the shared package. Start by reading the existing renderer.",
-      timestamp: "2026-05-28T10:00:00Z",
-      entryType: "text",
+  {
+    id: 2,
+    role: "assistant",
+    tokens: { in: 2100, out: 640 },
+    body: "Now locate every call site of `rendererFor` so the dispatch table comes across intact.",
+    tools: [
+      {
+        id: "t2a",
+        kind: "grep",
+        name: "Grep",
+        pattern: "rendererFor",
+        scope: "web/src",
+        glob: "*.ts",
+        results:
+          "web/src/canvas/rendererFor.ts:12   export function rendererFor(kind: ToolKind) {\nweb/src/canvas/ToolCallRow.tsx:31   const Renderer = rendererFor(call.kind)\nweb/src/canvas/index.ts:4          export { rendererFor } from \"./rendererFor\"\nweb/src/session-detail/v2/canvas/TurnRow.tsx:58  rendererFor(call.kind)",
+      },
+    ],
+  },
+  {
+    id: 3,
+    role: "user",
+    tokens: { in: 90, out: 0 },
+    body: "Looks right. Run a typecheck across the workspace before you start moving files.",
+  },
+  {
+    id: 4,
+    role: "assistant",
+    error: true,
+    tokens: { in: 2400, out: 1180 },
+    body: "Running the workspace typecheck first. It surfaces a strict-mode error in the tasks helper.",
+    tools: [
+      {
+        id: "t4a",
+        kind: "bash",
+        name: "Bash",
+        command: "pnpm -r typecheck",
+        description: "workspace-wide typescript check",
+        stdout:
+          "packages/browser typecheck$ tsc -p tsconfig.json --noEmit\nsrc/lib/tasks.ts(48,9): error TS2532: Object is possibly 'undefined'.\n   46 |   const groups = groupByTask(turns)\n   47 |   const first = groups[0]\n>  48 |   return first.turns[0].index\n      |          ^^^^^\nELIFECYCLE  Command failed with exit code 2.",
+        duration: "4.1s",
+        exit: 2,
+      },
+    ],
+  },
+  {
+    id: 5,
+    role: "assistant",
+    tokens: { in: 2600, out: 1320 },
+    thinking: {
+      words: 41,
+      text:
+        "`groups[0]` is possibly undefined under noUncheckedIndexedAccess. Guard it and return null for the empty case so the caller can fall back to turn 0.",
     },
-    {
-      index: 1,
-      role: "assistant",
-      content: "Let me look at the current renderer before extracting it.",
-      timestamp: "2026-05-28T10:00:20Z",
-      entryType: "thinking",
-      hasThinking: true,
-      tokensIn: 1200,
-      tokensOut: 180,
-    },
-    {
-      index: 2,
-      role: "assistant",
-      content: "I read the file and the tool-renderer registry.",
-      timestamp: "2026-05-28T10:00:55Z",
-      entryType: "tool_use",
-      tokensIn: 4200,
-      tokensOut: 640,
-      toolCalls: [
-        {
-          id: "tc_read_1",
-          name: "Read",
-          toolKind: "read",
-          filePath: "web/src/components/session-detail/v2/canvas/TurnRow.tsx",
-          arguments: '{"file_path":"web/.../canvas/TurnRow.tsx","offset":1,"limit":40}',
-          result:
-            "export function TurnRow({ turn }: TurnRowProps) {\n  const subagent = turn.role === 'assistant';\n  return <article className=\"turn\">...</article>;\n}",
-          durationMs: 240,
-        },
-        {
-          id: "tc_grep_1",
-          name: "Grep",
-          toolKind: "search",
-          arguments: '{"pattern":"rendererFor","path":"web/src","glob":"*.ts"}',
-          result:
-            "canvas/tool-renderers/index.ts:18:export function rendererFor(call) {\ncanvas/ToolCallRow.tsx:9:import { rendererFor } from './tool-renderers';",
-          durationMs: 90,
-        },
-      ],
-    },
-    {
-      index: 3,
-      role: "assistant",
-      content: "Running the test suite to capture the baseline.",
-      timestamp: "2026-05-28T10:02:10Z",
-      entryType: "tool_use",
-      tokensIn: 2100,
-      tokensOut: 320,
-      toolCalls: [
-        {
-          id: "tc_bash_1",
-          name: "Bash",
-          toolKind: "execute",
-          arguments: '{"command":"pnpm -r typecheck","description":"Typecheck all packages"}',
-          result:
-            "src/lib/tasks.ts(48,9): error TS2532: Object is possibly 'undefined'.\nExit status 2",
-          exitCode: 2,
-          isError: true,
-          durationMs: 4200,
-        },
-      ],
-    },
-    {
-      index: 4,
-      role: "assistant",
-      content: "Fixing the strict-mode index access, then re-running.",
-      timestamp: "2026-05-28T10:03:30Z",
-      entryType: "tool_use",
-      tokensIn: 1800,
-      tokensOut: 520,
-      toolCalls: [
-        {
-          id: "tc_edit_1",
-          name: "Edit",
-          toolKind: "edit",
-          filePath: "packages/browser/src/lib/tasks.ts",
-          arguments: JSON.stringify({
-            file_path: "packages/browser/src/lib/tasks.ts",
-            old_string:
-              "  for (let i = 0; i < turns.length; i++) {\n    if (turns[i].role === 'user') {",
-            new_string:
-              "  for (let i = 0; i < turns.length; i++) {\n    const t = turns[i]!;\n    if (t.role === 'user') {",
-          }),
-          result: "",
-          durationMs: 60,
-        },
-      ],
-    },
-    {
-      index: 5,
-      role: "assistant",
-      content: "Delegating the README contract write-up to a subagent.",
-      timestamp: "2026-05-28T10:04:40Z",
-      entryType: "tool_use",
-      depth: 0,
-      tokensIn: 900,
-      tokensOut: 140,
-      toolCalls: [
-        {
-          id: "tc_task_1",
-          name: "Task",
-          toolKind: "other",
-          arguments: JSON.stringify({
-            description: "Document the props/callback/capability contract",
-            subagent_type: "docs-writer",
-            prompt:
-              "Write the README section describing the agnosticism contract: data in via props, actions out via callbacks + capability flags.",
-          }),
-          result: "Drafted README.md contract section (78 lines).",
-          durationMs: 18200,
-        },
-      ],
-    },
-    {
-      index: 6,
-      role: "assistant",
-      content:
-        "Documented the contract: every callback and capability flag is optional, so the viewer renders read-only by default.",
-      timestamp: "2026-05-28T10:06:05Z",
-      entryType: "text",
-      depth: 1,
-      agentName: "docs-writer",
-      tokensIn: 600,
-      tokensOut: 380,
-    },
-    {
-      index: 7,
-      role: "assistant",
-      content:
-        "All packages typecheck and build. The canvas renders the sample session end to end.\n\n```bash\npnpm -r build && pnpm -r typecheck\n```",
-      timestamp: "2026-05-28T10:08:30Z",
-      entryType: "result",
-      stopReason: "end_turn",
-      tokensIn: 400,
-      tokensOut: 320,
-    },
-  ],
-};
-
-/** Optional phase overlay — drives the sticky phase dividers. */
-export const samplePhases: Phase[] = [
-  { type: "exploration", startTurn: 0, endTurn: 2, badges: [] },
-  { type: "debug", startTurn: 3, endTurn: 4, badges: [{ type: "error", count: 1 }] },
-  { type: "implementation", startTurn: 5, endTurn: 7, badges: [] },
+    body: "The index access is unguarded under strict mode. Adding a null-guard so the empty-task case falls through cleanly.",
+    tools: [
+      {
+        id: "t5a",
+        kind: "edit",
+        name: "Edit",
+        path: "packages/browser/src/lib/tasks.ts",
+        adds: 3,
+        dels: 1,
+        hunk: [
+          { sign: "ctx", a: "46", b: "46", t: "  const groups = groupByTask(turns)" },
+          { sign: "del", a: "47", t: "  const first = groups[0]" },
+          { sign: "add", b: "47", t: "  const first = groups[0]" },
+          { sign: "add", b: "48", t: "  if (!first || first.turns.length === 0) return null" },
+          { sign: "add", b: "49", t: "  return first.turns[0]!.index" },
+          { sign: "del", a: "48", t: "  return first.turns[0].index" },
+        ],
+      },
+    ],
+  },
+  {
+    id: 6,
+    role: "assistant",
+    tokens: { in: 1900, out: 980 },
+    body: "Verifying the fix: the workspace typechecks clean now, so I will commit the canvas port.",
+    tools: [
+      {
+        id: "t6a",
+        kind: "bash",
+        name: "Bash",
+        command: "pnpm -r typecheck",
+        stdout:
+          "packages/browser typecheck$ tsc -p tsconfig.json --noEmit\nweb typecheck$ tsc -p tsconfig.json --noEmit\n\n  3 packages checked, 0 errors",
+        duration: "5.6s",
+        exit: 0,
+      },
+    ],
+    checkpoint: { hash: "9f3c1ad", msg: "feat(canvas): port TurnRow + tool renderers", files: 7, adds: 312, dels: 24 },
+  },
+  {
+    id: 7,
+    role: "assistant",
+    depth: 1,
+    subagent: "docs-writer",
+    tokens: { in: 1700, out: 1140 },
+    body: "Spawned a subagent to document the props/callback/capability contract for the extracted package.",
+    tools: [
+      {
+        id: "t7a",
+        kind: "task",
+        name: "Task",
+        agent: "docs-writer",
+        status: "completed",
+        task: "Document the props/callback/capability contract",
+        owner: "main",
+        promptBody:
+          "Write the README contract section for `<SessionDetail>`: every prop, every host callback (onDownload, linkBuilder, renderTurnActions), and the capability flags that gate the action menu.",
+        result: "Drafted README.md contract section (78 lines). Documented 14 props, 3 callbacks, 4 capability flags.",
+      },
+    ],
+  },
+  {
+    id: 8,
+    role: "assistant",
+    final: true,
+    tokens: { in: 980, out: 720 },
+    body:
+      "All packages typecheck and build. The canvas now lives in `packages/browser` and `web` consumes it through the shared export.",
+    tools: [
+      {
+        id: "t8a",
+        kind: "bash",
+        name: "Bash",
+        command: "pnpm -r build && pnpm -r typecheck",
+        stdout:
+          "packages/browser build$ tsup\n  ESM dist/index.mjs 41.2 KB\n  CJS dist/index.js  43.9 KB\nweb build$ vite build\n  ✓ built in 6.41s\n\n  3 packages built, 0 errors",
+        duration: "12.0s",
+        exit: 0,
+      },
+    ],
+  },
 ];
 
+/* ── wire builders (mirror the demo's toolToWire / turnToWire) ──────────────── */
+
+/** `"4.1s"` → `4100` ms. */
+function secs(d: string | undefined): number | undefined {
+  const m = typeof d === "string" ? d.match(/([\d.]+)s/) : null;
+  return m && m[1] != null ? Math.round(parseFloat(m[1]) * 1000) : undefined;
+}
+
+/** A demo tool fixture → canonical `ToolCallDetail` (JSON-encoded arguments + result). */
+function toolToWire(tool: ToolFixture): ToolCallDetail {
+  let args: Record<string, unknown> = {};
+  let result = "";
+  let toolKind: ToolCallDetail["toolKind"];
+  let filePath: string | undefined;
+  let exitCode: number | undefined;
+  let isError = false;
+  let durationMs: number | undefined;
+
+  switch (tool.kind) {
+    case "read":
+      args = { file_path: tool.path, offset: 1, limit: 40 };
+      result = JSON.stringify(tool.excerpt ?? "");
+      toolKind = "read";
+      filePath = tool.path;
+      break;
+    case "grep":
+      args = { pattern: tool.pattern, path: tool.scope, type: tool.glob };
+      result = JSON.stringify(tool.results ?? "");
+      toolKind = "search";
+      break;
+    case "bash":
+      args = { command: tool.command, ...(tool.description ? { description: tool.description } : {}) };
+      result = JSON.stringify(tool.stdout ?? "");
+      toolKind = "execute";
+      exitCode = tool.exit;
+      isError = tool.exit !== 0;
+      durationMs = secs(tool.duration);
+      break;
+    case "edit": {
+      // Reconstruct pre/post text from the editorial hunk so the wire carries REAL
+      // edit content and the adapter's LCS diff runs on it (matching the demo).
+      const hunk = tool.hunk ?? [];
+      const oldText = hunk.filter((d) => d.sign === "ctx" || d.sign === "del").map((d) => d.t).join("\n");
+      const newText = hunk.filter((d) => d.sign === "ctx" || d.sign === "add").map((d) => d.t).join("\n");
+      args = { file_path: tool.path, old_string: oldText, new_string: newText };
+      result = JSON.stringify("ok");
+      toolKind = "edit";
+      filePath = tool.path;
+      break;
+    }
+    case "task":
+      args = { subagent_type: tool.agent, status: tool.status, description: tool.task, owner: tool.owner, prompt: tool.promptBody };
+      result = JSON.stringify(tool.result ?? "");
+      toolKind = "other";
+      break;
+  }
+
+  const wire: ToolCallDetail = { id: tool.id, name: tool.name, arguments: JSON.stringify(args), result };
+  if (toolKind) wire.toolKind = toolKind;
+  if (filePath) wire.filePath = filePath;
+  if (exitCode != null) wire.exitCode = exitCode;
+  if (isError) wire.isError = true;
+  if (durationMs != null) wire.durationMs = durationMs;
+  return wire;
+}
+
+/** map a turn id → a monotonic RFC3339 timestamp (drives commit anchoring). */
+const TS_BASE = Date.parse("2026-06-17T09:12:00Z");
+const turnTimestamp = (id: number) => new Date(TS_BASE + id * 60_000).toISOString();
+
+/** A demo turn fixture → canonical `TurnDetail`. */
+function turnToWire(t: TurnFixture): TurnDetail {
+  // Fold tool-sibling thinking into the turn content as a <thinking>…</thinking>
+  // block so the ADAPTER (not a VM overlay) extracts it back out — the demo's
+  // render-when-present convention.
+  const content = t.thinking ? `<thinking>${t.thinking.text}</thinking>\n${t.body ?? ""}` : t.body ?? "";
+  const wire: TurnDetail = {
+    index: t.id,
+    role: t.role,
+    content,
+    timestamp: turnTimestamp(t.id),
+    depth: t.depth ?? 0,
+  };
+  if (t.thinking) wire.hasThinking = true;
+  if (t.tools) wire.toolCalls = t.tools.map(toolToWire);
+  if (t.subagent) wire.agentName = t.subagent;
+  if (t.final) wire.stopReason = "end_turn";
+  if (t.tokens) {
+    wire.tokensIn = t.tokens.in;
+    wire.tokensOut = t.tokens.out;
+  }
+  return wire;
+}
+
 /**
- * Optional scorecard fixture — proves the SessionScorecard card renders when
- * data is supplied. Remove it (or pass `scorecard={null}`) and the card simply
- * doesn't appear; the viewer still works.
+ * Optional scorecard fixture — the per-session quality signals. Attaching it to
+ * the payload lets the adapter's `assessScorecard` DERIVE the three verdict bands
+ * (token / prompt / loop efficiency) the highlights-tab Scorecard renders. Remove
+ * it and the card simply does not appear; the viewer still works.
  */
 export const sampleScorecard: SessionScorecard = {
   totalTokens: 18420,
@@ -214,3 +355,62 @@ export const sampleScorecard: SessionScorecard = {
   costTotalUsd: 0.42,
   outcome: "resolved",
 };
+
+const checkpoint = TURNS.find((t) => t.checkpoint)?.checkpoint;
+
+/**
+ * The canonical wire payload (folded turns + nested gitContext for the
+ * checkpoint), built exactly like the demo's `buildWire()` so the example renders
+ * the SAME session through `adaptTranscript()`.
+ */
+export const sampleSession: SessionDetailPayload = {
+  id: "sess_demo_0001",
+  harness: HARNESS,
+  startTime: turnTimestamp(0),
+  endTime: turnTimestamp(8),
+  durationMins: 8,
+  totalTokens: 18420,
+  tokensIn: 12200,
+  tokensOut: 6200,
+  turnCount: 8,
+  toolCallCount: 5,
+  project: "transcript-browser",
+  model: "claude-opus-4-7",
+  workingDirectory: "/Users/dev/transcript-browser",
+  outcome: "resolved",
+  turns: TURNS.map(turnToWire),
+  scorecard: sampleScorecard,
+  gitContext: {
+    branch: "lift/transcript-canvas",
+    user: "Dev",
+    email: "dev@example.com",
+    workingDirectory: "/Users/dev/transcript-browser",
+    startCommit: "a1b2c3d",
+    commits: checkpoint
+      ? [
+          {
+            hash: checkpoint.hash,
+            message: checkpoint.msg,
+            // ~30s after the checkpoint turn (id 6) so the adapter anchors it there.
+            timestamp: new Date(TS_BASE + 6 * 60_000 + 30_000).toISOString(),
+            filesChanged: checkpoint.files,
+            insertions: checkpoint.adds,
+            deletions: checkpoint.dels,
+          },
+        ]
+      : [],
+  },
+};
+
+/** Optional phase overlay — drives the trajectory graph's phase bands. */
+export const samplePhases: Phase[] = [
+  { type: "exploration", startTurn: 0, endTurn: 2, badges: [] },
+  { type: "debug", startTurn: 3, endTurn: 4, badges: [{ type: "error", count: 1 }] },
+  { type: "implementation", startTurn: 5, endTurn: 8, badges: [] },
+];
+
+/**
+ * Seed the same three tool calls expanded as the canonical demo (the rest default
+ * closed) so the trace canvas shows real tool OUTPUTS on first paint.
+ */
+export const openToolsSeed: Record<string, boolean> = { t1a: true, t4a: true, t5a: true };

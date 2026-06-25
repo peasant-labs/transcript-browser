@@ -1,55 +1,40 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Pencil, FilePlus2 } from "lucide-react";
+import { ChevronDown, ChevronUp } from "@peasant-labs/fairtrade/icons";
+import {
+  Chip,
+  TranscriptDiffEntryCard,
+  type DiffEntryVM,
+} from "@peasant-labs/fairtrade/ui";
 import { cn } from "../internal/cn.js";
-import { DiffView } from "../primitives/DiffView.js";
-import { ErrorPill } from "../primitives/ErrorPill.js";
-import { Chip } from "../primitives/Chip.js";
-import { parseArgs } from "../canvas/tool-renderers/types.js";
-import type { TurnDetail, ToolCallDetail } from "@peasant-labs/types";
+import { DIFFS_GROUPBY_LABELS } from "../lib/labels.js";
 
 export interface DiffsViewProps {
-  turns: TurnDetail[];
+  /**
+   * Cooked diff entries — the adapter's `vm.diffs` (one `DiffEntryVM` per
+   * Edit / MultiEdit / Write, with `path`/`adds`/`dels`/`hunks`/`turn` already
+   * computed). The view groups + links them; it never parses wire.
+   */
+  diffs: DiffEntryVM[];
   onJumpToTurn?: (turnIndex: number) => void;
-}
-
-interface DiffEntry {
-  turnIndex: number;
-  call: ToolCallDetail;
-  /** 'edit' shows DiffView, 'write' shows the new content as an additions diff. */
-  kind: "edit" | "write";
 }
 
 /**
  * Stacked inline diffs from every Edit / MultiEdit / Write tool call in the
- * session, in turn order. Each entry links back to its turn. Ported from
- * peasant's `views/DiffsView.tsx`.
+ * session, in turn order. Each entry links back to its turn. The file-change
+ * cards themselves are the lifted, canonical `TranscriptDiffEntryCard` (cooked
+ * `DiffEntryVM`); this view owns only the group-by-file/turn chrome + per-file
+ * roll-up the lifted primitive does not host.
  */
-export function DiffsView({ turns, onJumpToTurn }: DiffsViewProps) {
-  const entries = useMemo<DiffEntry[]>(() => {
-    const out: DiffEntry[] = [];
-    for (const turn of turns) {
-      for (const c of turn.toolCalls ?? []) {
-        const n = c.name.toLowerCase();
-        if (n === "edit" || n === "multiedit" || n === "notebookedit") {
-          out.push({ turnIndex: turn.index, call: c, kind: "edit" });
-        } else if (n === "write") {
-          out.push({ turnIndex: turn.index, call: c, kind: "write" });
-        }
-      }
-    }
-    return out;
-  }, [turns]);
-
+export function DiffsView({ diffs, onJumpToTurn }: DiffsViewProps) {
   const byFile = useMemo(() => {
-    const map = new Map<string, DiffEntry[]>();
-    for (const e of entries) {
-      const path = e.call.filePath ?? "(unknown)";
-      const list = map.get(path) ?? [];
-      list.push(e);
-      map.set(path, list);
+    const map = new Map<string, DiffEntryVM[]>();
+    for (const d of diffs) {
+      const list = map.get(d.path) ?? [];
+      list.push(d);
+      map.set(d.path, list);
     }
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [entries]);
+  }, [diffs]);
 
   const [groupByFile, setGroupByFile] = useState(true);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
@@ -63,7 +48,7 @@ export function DiffsView({ turns, onJumpToTurn }: DiffsViewProps) {
     });
   }
 
-  if (entries.length === 0) {
+  if (diffs.length === 0) {
     return <div className="tb-view-empty">No edits or writes in this session yet.</div>;
   }
 
@@ -71,14 +56,14 @@ export function DiffsView({ turns, onJumpToTurn }: DiffsViewProps) {
     <div className="tb-view-stack tb-diffsview">
       <header className="tb-diffsview-head">
         <p className="tb-diffsview-count">
-          {entries.length.toLocaleString()} edits across {byFile.length.toLocaleString()}{" "}
+          {diffs.length.toLocaleString()} edits across {byFile.length.toLocaleString()}{" "}
           {byFile.length === 1 ? "file" : "files"}
         </p>
         <div role="tablist" aria-label="Group diffs by" className="tb-segmented">
           {(
             [
-              { value: true, label: "By file" },
-              { value: false, label: "By turn" },
+              { value: true, label: DIFFS_GROUPBY_LABELS.byFile },
+              { value: false, label: DIFFS_GROUPBY_LABELS.byTurn },
             ] as const
           ).map(({ value, label }) => (
             <button
@@ -87,7 +72,7 @@ export function DiffsView({ turns, onJumpToTurn }: DiffsViewProps) {
               role="tab"
               aria-selected={groupByFile === value}
               onClick={() => setGroupByFile(value)}
-              className={cn("tb-segmented-btn tb-focus", groupByFile === value && "tb-segmented-btn-active")}
+              className={cn("tb-segmented-btn", groupByFile === value && "tb-segmented-btn-active")}
             >
               {label}
             </button>
@@ -106,8 +91,12 @@ export function DiffsView({ turns, onJumpToTurn }: DiffsViewProps) {
               onJumpToTurn={onJumpToTurn}
             />
           ))
-        : entries.map((e, i) => (
-            <DiffEntryCard key={`${e.call.id}-${i}`} entry={e} onJumpToTurn={onJumpToTurn} />
+        : diffs.map((e, i) => (
+            <TranscriptDiffEntryCard
+              key={`${e.toolCallId ?? e.path}-${i}`}
+              entry={e}
+              onJump={() => onJumpToTurn?.(e.turn ?? 0)}
+            />
           ))}
     </div>
   );
@@ -121,33 +110,21 @@ function FileGroup({
   onJumpToTurn,
 }: {
   path: string;
-  entries: DiffEntry[];
+  entries: DiffEntryVM[];
   collapsed: boolean;
   onToggle: () => void;
   onJumpToTurn?: (i: number) => void;
 }) {
-  const adds = entries.reduce(
-    (n, e) =>
-      n +
-      (e.kind === "edit"
-        ? Math.max(0, countLines(eitherNew(e.call)) - countLines(eitherOld(e.call)))
-        : countLines(eitherNew(e.call))),
-    0,
-  );
-  const dels = entries.reduce(
-    (n, e) =>
-      n +
-      (e.kind === "edit" ? Math.max(0, countLines(eitherOld(e.call)) - countLines(eitherNew(e.call))) : 0),
-    0,
-  );
+  const adds = entries.reduce((n, e) => n + e.adds, 0);
+  const dels = entries.reduce((n, e) => n + e.dels, 0);
   return (
     <section id={`diff-file-${diffAnchorId(path)}`} data-diff-path={path} className="tb-diffgroup">
       <header className="tb-diffgroup-head">
-        <button type="button" onClick={onToggle} className="tb-diffgroup-toggle tb-focus">
+        <button type="button" onClick={onToggle} className="tb-diffgroup-toggle">
           {collapsed ? <ChevronDown size={13} strokeWidth={2} /> : <ChevronUp size={13} strokeWidth={2} />}
           <span className="tb-mono tb-diffgroup-path tb-truncate">{path}</span>
         </button>
-        <Chip variant="subtle">
+        <Chip>
           {entries.length} {entries.length === 1 ? "edit" : "edits"}
         </Chip>
         <span className="tb-mono tb-tnum tb-diffgroup-churn">
@@ -159,63 +136,17 @@ function FileGroup({
       {!collapsed && (
         <div className="tb-diffgroup-body">
           {entries.map((e, i) => (
-            <DiffEntryCard key={`${e.call.id}-${i}`} entry={e} onJumpToTurn={onJumpToTurn} flat />
+            <TranscriptDiffEntryCard
+              key={`${e.toolCallId ?? e.path}-${i}`}
+              entry={e}
+              byTurn
+              onJump={() => onJumpToTurn?.(e.turn ?? 0)}
+            />
           ))}
         </div>
       )}
     </section>
   );
-}
-
-function DiffEntryCard({
-  entry,
-  onJumpToTurn,
-  flat,
-}: {
-  entry: DiffEntry;
-  onJumpToTurn?: (i: number) => void;
-  flat?: boolean;
-}) {
-  const { call, kind, turnIndex } = entry;
-  const path = call.filePath ?? "(unknown)";
-  const Icon = kind === "edit" ? Pencil : FilePlus2;
-
-  return (
-    <div className={cn("tb-diffcard", flat && "tb-diffcard-flat")}>
-      <header className={cn("tb-diffcard-head", flat && "tb-diffcard-head-flat")}>
-        <div className="tb-diffcard-id">
-          <Icon size={12} strokeWidth={1.75} className="tb-toolicon-muted tb-shrink-0" />
-          <span className="tb-mono tb-diffcard-label tb-truncate">{flat ? `turn ${turnIndex + 1}` : path}</span>
-          {call.isError && <ErrorPill />}
-        </div>
-        <button type="button" onClick={() => onJumpToTurn?.(turnIndex)} className="tb-diffcard-jump tb-focus">
-          Jump to turn →
-        </button>
-      </header>
-      <div className="tb-diffcard-body">
-        <DiffView
-          oldText={kind === "edit" ? eitherOld(call) : ""}
-          newText={kind === "edit" ? eitherNew(call) : (parseArgs<{ content?: string }>(call.arguments)?.content ?? "")}
-          filePath={flat ? undefined : path}
-          maxLines={kind === "edit" ? 120 : 200}
-        />
-      </div>
-    </div>
-  );
-}
-
-function eitherOld(call: ToolCallDetail): string {
-  const args = parseArgs<{ old_string?: string; edits?: { old_string: string }[] }>(call.arguments);
-  if (args?.edits?.length) return args.edits.map((e) => e.old_string).join("\n");
-  return args?.old_string ?? "";
-}
-function eitherNew(call: ToolCallDetail): string {
-  const args = parseArgs<{ new_string?: string; content?: string; edits?: { new_string: string }[] }>(call.arguments);
-  if (args?.edits?.length) return args.edits.map((e) => e.new_string).join("\n");
-  return args?.new_string ?? args?.content ?? "";
-}
-function countLines(s: string): number {
-  return s ? s.split("\n").length : 0;
 }
 
 /** Sanitize a path into a safe DOM id fragment. */

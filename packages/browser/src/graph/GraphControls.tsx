@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Maximize2, Minus, Plus, RotateCcw } from "lucide-react";
+import { Maximize2, Minus, Plus, RotateCcw } from "@peasant-labs/fairtrade/icons";
 import { useReactFlow } from "@xyflow/react";
 import { cn } from "../internal/cn.js";
 
@@ -38,7 +38,7 @@ function Btn({ label, onClick, children }: { label: string; onClick: () => void;
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="tb-graph-controls-btn tb-focus"
+      className="tb-graph-controls-btn"
     >
       {children}
     </button>

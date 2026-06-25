@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Coins, FileText, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
+import { Coins, FileText, RefreshCw, TrendingUp, TrendingDown } from "@peasant-labs/fairtrade/icons";
 import { cn } from "../internal/cn.js";
 import type { SessionScorecard as SessionScorecardData } from "@peasant-labs/types";
 import {
@@ -50,8 +50,8 @@ export function SessionScorecard({ scorecard, medians, className }: SessionScore
   return (
     <section aria-label="Session self-assessment" className={cn("tb-scorecard", className)}>
       <header className="tb-scorecard-head">
-        <span className="tb-scorecard-title">How this session went</span>
-        <span className="tb-eyebrow">Self-assessment</span>
+        <span className="tb-scorecard-title">how this session went</span>
+        <span className="tb-eyebrow">self-assessment</span>
       </header>
       <div className="tb-scorecard-grid">
         {verdicts.map((v) => (

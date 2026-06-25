@@ -1,6 +1,5 @@
 import { useMemo } from "react";
-import { CornerDownLeft } from "lucide-react";
-import { cn } from "../internal/cn.js";
+import { TurnContextBar as FairtradeTurnContextBar } from "@peasant-labs/fairtrade/ui";
 import { computeTasks, type TaskGroup } from "../lib/tasks.js";
 import type { TurnDetail } from "@peasant-labs/types";
 
@@ -17,8 +16,11 @@ export interface TurnContextBarProps {
 }
 
 /**
- * Sticky strip naming the active user turn and echoing its prompt. Ported from
- * peasant's `header/TurnContextBar.tsx`.
+ * DOMAIN wrapper around the design system's TurnContextBar. It keeps the
+ * transcript-specific logic — deriving the active user turn from the visible
+ * entry index, the next task, and the visibility gate — then renders the
+ * consumed fairtrade chrome (sticky strip, eyebrow + echoed prompt + "next").
+ * The bespoke tb-contextbar chrome was removed.
  */
 export function TurnContextBar({ turns, activeEntryIndex, visible, top = 0, onJumpToTurn, className }: TurnContextBarProps) {
   const tasks = useMemo<TaskGroup[]>(() => computeTasks(turns), [turns]);
@@ -41,43 +43,15 @@ export function TurnContextBar({ turns, activeEntryIndex, visible, top = 0, onJu
 
   if (!active || !visible) return null;
 
-  const prompt = active.task.prompt.trim().replace(/\s+/g, " ");
-
+  const nextTask = active.nextTask;
   return (
-    <div role="region" aria-label="Current user turn" style={{ top }} className={cn("tb-contextbar", className)}>
-      <div className="tb-contextbar-inner">
-        <button
-          type="button"
-          onClick={() => onJumpToTurn?.(active.task.promptEntryIndex)}
-          className="tb-contextbar-main tb-focus"
-          title={prompt}
-        >
-          <span className="tb-eyebrow tb-contextbar-eyebrow" aria-label={`User turn ${active.ordinal}`}>
-            <span>User turn</span>
-            <span className="tb-mono tb-tnum tb-contextbar-ordinal">{active.ordinal}</span>
-          </span>
-          {prompt && (
-            <>
-              <span className="tb-contextbar-dot" aria-hidden>
-                ·
-              </span>
-              <span className="tb-contextbar-prompt tb-truncate">{prompt}</span>
-            </>
-          )}
-        </button>
-
-        {onJumpToTurn && active.nextTask && (
-          <button
-            type="button"
-            onClick={() => onJumpToTurn(active.nextTask!.promptEntryIndex)}
-            className="tb-eyebrow tb-contextbar-next tb-focus"
-            title="Jump to next user prompt"
-          >
-            <span>Next</span>
-            <CornerDownLeft size={11} strokeWidth={1.75} className="tb-contextbar-next-icon" />
-          </button>
-        )}
-      </div>
-    </div>
+    <FairtradeTurnContextBar
+      prompt={active.task.prompt}
+      ordinal={active.ordinal}
+      stickyTop={`${top}px`}
+      onJump={onJumpToTurn ? () => onJumpToTurn(active.task.promptEntryIndex) : undefined}
+      onNext={onJumpToTurn && nextTask ? () => onJumpToTurn(nextTask.promptEntryIndex) : undefined}
+      className={className}
+    />
   );
 }

@@ -1,11 +1,11 @@
 import { useMemo } from "react";
-import { FileDiff } from "lucide-react";
+import { Pencil } from "@peasant-labs/fairtrade/icons";
 import { cn } from "../internal/cn.js";
-import { rollupFiles, type FileRollup } from "../lib/file-rollup.js";
-import type { TurnDetail } from "@peasant-labs/types";
+import type { FileRollup } from "../lib/file-rollup.js";
 
 export interface DiffsOutlineProps {
-  turns: TurnDetail[];
+  /** Per-file rollups — computed once by the composer from the cooked VM. */
+  files: FileRollup[];
   /** Preferred jump — scrolls to the file's section in the Diffs view. */
   onJumpToFile?: (path: string, firstTurnIndex: number) => void;
   /** Fallback when no Diffs-view anchor is wired. */
@@ -17,22 +17,22 @@ export interface DiffsOutlineProps {
  * Outline for the Diffs tab — files with edits/writes only, sorted by churn.
  * Ported from peasant's `rails/DiffsOutline.tsx`.
  */
-export function DiffsOutline({ turns, onJumpToFile, onJumpToTurn, className }: DiffsOutlineProps) {
-  const files = useMemo<FileRollup[]>(
+export function DiffsOutline({ files, onJumpToFile, onJumpToTurn, className }: DiffsOutlineProps) {
+  const edited = useMemo(
     () =>
-      rollupFiles(turns)
+      files
         .filter((f) => f.edits + f.writes > 0)
         .sort((a, b) => b.insertions + b.deletions - (a.insertions + a.deletions)),
-    [turns],
+    [files],
   );
 
-  if (files.length === 0) {
+  if (edited.length === 0) {
     return <div className={cn("tb-outline-empty", className)}>No edits or writes in this session yet.</div>;
   }
 
   return (
     <nav className={cn("tb-outline", className)} aria-label="Diffs outline">
-      {files.map((f) => (
+      {edited.map((f) => (
         <button
           key={f.path}
           type="button"
@@ -41,10 +41,10 @@ export function DiffsOutline({ turns, onJumpToFile, onJumpToTurn, className }: D
             if (onJumpToFile) onJumpToFile(f.path, anchor);
             else onJumpToTurn?.(anchor);
           }}
-          className="tb-outline-srow tb-focus"
+          className="tb-outline-srow"
         >
           <span className="tb-outline-srow-icon">
-            <FileDiff size={12} strokeWidth={1.75} />
+            <Pencil size={12} strokeWidth={1.75} />
           </span>
           <span className="tb-outline-srow-body">
             <span className="tb-mono tb-outline-srow-label tb-truncate" title={f.path}>

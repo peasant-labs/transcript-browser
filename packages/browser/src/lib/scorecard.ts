@@ -11,6 +11,7 @@
  */
 
 import type { SessionScorecard, QualitySession } from "@peasant-labs/types";
+import { computePersonalMedians as ftComputePersonalMedians } from "@peasant-labs/fairtrade/ui";
 
 /** Band severity, worst-to-best ordering matters for `worst()`. */
 export type Band = "healthy" | "caution" | "risk";
@@ -94,33 +95,23 @@ export interface PersonalMedians {
 }
 
 /**
- * Compute per-metric medians across a set of the user's sessions. Returns
- * undefined fields when no usable sample exists. The host supplies the sessions
- * (e.g. from its quality channel); the viewer never fetches them.
+ * Compute per-metric medians across a set of the user's sessions, degrading to
+ * `{}` when no usable sample exists. The host supplies the sessions (e.g. from
+ * its quality channel); the viewer never fetches them.
+ *
+ * R9 single-impl: delegates to the one shared fairtrade analytics util
+ * (`@peasant-labs/fairtrade/ui`) — the same home as computeTasks /
+ * annotateTranscript — via a thin typed wrapper that keeps peasant's
+ * `@peasant-labs/types` `QualitySession` input + the `PersonalMedians` shape. The
+ * boundary cast bridges the known wire-type drift; runtime-safe — fairtrade reads
+ * only totalTokens / retryTokensWasted / specQualityScore / withinSessionReverts.
  */
 export function computePersonalMedians(
   sessions: QualitySession[] | undefined,
 ): PersonalMedians {
-  if (!sessions || sessions.length === 0) return {};
-  const shares: number[] = [];
-  const specs: number[] = [];
-  const reverts: number[] = [];
-  for (const s of sessions) {
-    if (s.totalTokens > 0 && Number.isFinite(s.retryTokensWasted)) {
-      shares.push(s.retryTokensWasted / s.totalTokens);
-    }
-    if (Number.isFinite(s.specQualityScore) && s.specQualityScore > 0) {
-      specs.push(s.specQualityScore);
-    }
-    if (Number.isFinite(s.withinSessionReverts)) {
-      reverts.push(s.withinSessionReverts);
-    }
-  }
-  return {
-    retryShare: median(shares),
-    specQualityScore: median(specs),
-    withinSessionReverts: median(reverts),
-  };
+  return ftComputePersonalMedians(
+    sessions as Parameters<typeof ftComputePersonalMedians>[0],
+  );
 }
 
 /** Format a comparison line for a percentage-style headline. */
@@ -205,7 +196,7 @@ function assessToken(sc: SessionScorecard, medians: PersonalMedians): AxisVerdic
 
   return {
     id: "token",
-    title: "Token efficiency",
+    title: "token efficiency",
     headline,
     hasData,
     band: hasData ? worst(bands) : "healthy",
@@ -261,7 +252,7 @@ function assessPrompt(sc: SessionScorecard, medians: PersonalMedians): AxisVerdi
 
   return {
     id: "prompt",
-    title: "Prompt quality",
+    title: "prompt quality",
     headline,
     hasData,
     band: hasData ? worst(bands) : "healthy",
@@ -304,7 +295,7 @@ function assessLoop(sc: SessionScorecard, medians: PersonalMedians): AxisVerdict
 
   return {
     id: "loop",
-    title: "Loop efficiency",
+    title: "loop efficiency",
     headline,
     hasData,
     band: hasData ? worst(bands) : "healthy",

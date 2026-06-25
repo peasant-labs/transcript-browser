@@ -1,6 +1,6 @@
-import { AlertCircle } from "lucide-react";
+import { AlertCircle } from "@peasant-labs/fairtrade/icons";
+import { Chip, Tooltip } from "@peasant-labs/fairtrade/ui";
 import { cn } from "../internal/cn.js";
-import { Tooltip } from "../internal/Tooltip.js";
 
 export interface ErrorPillProps {
   label?: string;
@@ -12,24 +12,25 @@ export interface ErrorPillProps {
 }
 
 /**
- * Compact inline error marker. A hover tooltip explaining the marker is baked
- * in, so every call site inherits it with no change.
+ * Compact inline error marker. A DOMAIN wrapper around the design system's
+ * semantic chip: it composes <Chip tone="err"> (the canonical clay error tone +
+ * mono chrome) with the AlertCircle glyph and bakes in a hover tooltip, so every
+ * call site inherits the explanation with no change. The error tone is no longer
+ * a bespoke TB pill — it reads from the design system.
  */
 export function ErrorPill({
-  label = "Error",
+  label = "error",
   count,
   className,
-  tooltip = "A tool call returned an error.",
+  tooltip = "a tool call returned an error.",
 }: ErrorPillProps) {
+  const hasCount = count != null && count !== "";
   return (
-    <Tooltip content={tooltip}>
-      <span className={cn("tb-errorpill", className)}>
-        <AlertCircle size={12} strokeWidth={1.75} className="tb-shrink-0" aria-hidden />
-        <span className="tb-eyebrow">{label}</span>
-        {count != null && count !== "" && (
-          <span className="tb-errorpill-count">{count}</span>
-        )}
-      </span>
+    <Tooltip id={`tb-errorpill-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`} content={tooltip}>
+      <Chip tone="err" icon={AlertCircle} chrome className={cn("tb-chip-help", className)}>
+        {label}
+        {hasCount ? ` ${count}` : ""}
+      </Chip>
     </Tooltip>
   );
 }

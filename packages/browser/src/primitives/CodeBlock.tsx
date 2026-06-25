@@ -19,7 +19,7 @@ export interface CodeBlockProps {
  * Syntax-highlighted code block using Shiki, dual-themed against
  * `github-light` and `github-dark`. Renders an unstyled `<pre>` fallback
  * before highlighting resolves, so layout doesn't shift. Theme selection is
- * driven by the `.tb-dark` ancestor class (see styles.css), so the block
+ * driven by the `[data-theme="dark"]` ancestor class (see styles.css), so the block
  * follows the viewer's theme with no extra wiring.
  */
 export function CodeBlock({

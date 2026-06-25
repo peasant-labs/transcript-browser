@@ -8,13 +8,12 @@ import { defineConfig } from "tsup";
  *  - The sibling workspace package `@peasant-labs/types` is INLINED via
  *    `noExternal` (JS + `.d.ts`) so a consumer never needs it installed.
  *  - `react` / `react-dom` stay EXTERNAL (peer deps — the host owns React).
- *  - `recharts` stays EXTERNAL and is a real npm `dependency`: it is a large
- *    charting library with its own React peer and d3 transitive deps, so we let
- *    npm install + dedupe it for the consumer rather than inlining a second
- *    copy into our bundle. (Contrast the browser package, which bundles only
- *    small leaf deps.)
+ *  - Fairtrade's chart components own chart rendering, so analytics does not
+ *    carry a separate charting dependency.
  *
- * `clsx` is a tiny leaf dependency and is bundled by default.
+ * `@peasant-labs/fairtrade` and `clsx` are EXTERNALIZED by default — tsup keeps
+ * every package.json `dependency` external, so they stay real npm
+ * `dependencies` the consumer installs (NOT inlined into the bundle).
  */
 export default defineConfig({
   entry: ["src/index.ts"],
@@ -24,26 +23,24 @@ export default defineConfig({
   },
   clean: true,
   sourcemap: true,
-  external: ["react", "react-dom", "recharts"],
+  external: ["react", "react-dom"],
   noExternal: ["@peasant-labs/types"],
-  // Concatenate the theme tokens (`--tb-*` variables) and the analytics
-  // component styles into a single `dist/styles.css`, so a consumer needs ONE
-  // CSS import (`@peasant-labs/analytics/styles.css`) with no
-  // `@peasant-labs/theme` dependency.
+  // Ship DOMAIN-ONLY CSS. `dist/styles.css` carries ONLY the `tb-a-`-prefixed
+  // domain rules — it does NOT re-bundle fairtrade fonts/tokens/base. Per-package
+  // re-bundling meant an app loading both this and @peasant-labs/transcript-browser
+  // shipped the fairtrade sheets 2–3×. The consumer imports the fairtrade CSS
+  // ONCE at the app root, then each package's domain styles.
   onSuccess: async () => {
-    const tokens = readFileSync(
-      resolve(__dirname, "../theme/src/tokens.css"),
-      "utf8",
-    );
     const styles = readFileSync(resolve(__dirname, "src/styles.css"), "utf8");
     const banner =
-      "/*\n * @peasant-labs/analytics — bundled stylesheet.\n" +
-      " * Self-contained: theme tokens (--tb-*) + tb-prefixed component styles.\n" +
-      " * Import once at your app root:\n" +
+      "/*\n * @peasant-labs/analytics — DOMAIN-ONLY stylesheet (`tb-a-`-prefixed).\n" +
+      " * Does NOT include fairtrade fonts/tokens/base — import those ONCE at your\n" +
+      " * app root BEFORE this sheet:\n" +
+      ' *   import "@peasant-labs/fairtrade/fonts.css";\n' +
+      ' *   import "@peasant-labs/fairtrade/tokens.css";\n' +
+      ' *   import "@peasant-labs/fairtrade/base.css";\n' +
+      ' *   import "@peasant-labs/fairtrade/components.css";\n' +
       ' *   import "@peasant-labs/analytics/styles.css";\n */\n';
-    writeFileSync(
-      resolve(__dirname, "dist/styles.css"),
-      `${banner}\n${tokens}\n${styles}`,
-    );
+    writeFileSync(resolve(__dirname, "dist/styles.css"), `${banner}\n${styles}`);
   },
 });

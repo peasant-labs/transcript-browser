@@ -64,7 +64,7 @@ export function TurnContent({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="tb-showmore tb-focus"
+          className="tb-showmore"
         >
           {expanded ? "Show less" : `Show ${lineCount - COLLAPSE_LINES_THRESHOLD} more lines`}
         </button>

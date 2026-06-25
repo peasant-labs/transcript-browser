@@ -20,6 +20,7 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "clean": "rm -rf dist",
     "prepack": "tsup && node scripts/workspace-devdeps.mjs strip",
     "postpack": "node scripts/workspace-devdeps.mjs restore"
@@ -35,24 +36,24 @@
     }
   },
   "dependencies": {
-    "class-variance-authority": "^0.7.1",
+    "@peasant-labs/fairtrade": "^0.0.3",
     "clsx": "^2.1.1",
     "diff": "^7.0.0",
-    "lucide-react": "^0.469.0",
     "react-markdown": "^9.0.1",
     "remark-gfm": "^4.0.0",
     "shiki": "^1.24.4"
   },
   "devDependencies": {
-    "@peasant-labs/theme": "workspace:*",
     "@peasant-labs/types": "workspace:*",
     "@types/diff": "^7.0.0",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.1",
     "@xyflow/react": "^12.0.0",
+    "@types/node": "^22.10.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tsup": "^8.3.5",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
   }
 }
