@@ -2,9 +2,8 @@
  * Node dimensions, spacing, and edge style constants for the trajectory graph.
  * Ported verbatim from peasant's `components/session-detail/canvas/constants.ts`.
  *
- * Edge colours are concrete values here (React Flow edge `style.stroke` does not
- * resolve CSS custom properties reliably across SVG markers), matching the
- * source. Node/minimap colours that CAN use tokens use `--tb-*` vars.
+ * Edge colours use viewer-specific fairtrade extras declared locally in
+ * styles.css (`--edge` and `--edge-error`).
  */
 
 export const NODE_DIMENSIONS = {
@@ -22,11 +21,11 @@ export const NODE_DIMENSIONS = {
 } as const;
 
 export const EDGE_DEFAULTS = {
-  sequentialColor: "#737373",
-  sequentialColorDark: "#525252",
+  sequentialColor: "var(--edge)",
+  sequentialColorDark: "var(--edge)",
   sequentialWidth: 1.5,
   phaseTransitionWidth: 2,
-  subagentSpawnColor: "#404040",
-  subagentReturnColor: "#737373",
-  errorColor: "#b91c1c",
+  subagentSpawnColor: "var(--edge)",
+  subagentReturnColor: "var(--edge)",
+  errorColor: "var(--edge-error)",
 } as const;

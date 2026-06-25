@@ -1,0 +1,13 @@
+# Visual-capture artifacts are EPHEMERAL — never tracked. The harness writes
+# capture PNGs + composites + manifests/logs into a caller-chosen output dir
+# (demo/, tb/, sxs/, MANIFEST*, *.log); defaults land in /tmp, but if a run
+# points its BASE inside this folder these patterns keep them out of git.
+#
+# Allowlist: only the tracked harness scripts + docs live here. Add a new
+# `!path` line to track any future script.
+*
+!.gitignore
+!README.md
+!probe-tb.mjs
+!tb-shoot.mjs
+!stitch-sxs.mjs

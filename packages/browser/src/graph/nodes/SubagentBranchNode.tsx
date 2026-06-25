@@ -1,22 +1,17 @@
 import { memo } from "react";
 import type { NodeProps } from "@xyflow/react";
-import { RoleGlyph } from "../../primitives/RoleGlyph.js";
+import { GraphSubagentBranch } from "@peasant-labs/fairtrade/ui";
 import type { SubagentLaneData } from "../types.js";
 
 /**
- * Branch header for a subagent swimlane. Marks the start of a nested agent's
- * turns. Monochrome. Ported from peasant's `graph/nodes/SubagentBranchNode.tsx`.
+ * Branch header for a subagent swimlane, used as a React Flow node. After the R7
+ * graph split this is a thin ENGINE wrapper that maps its `SubagentLaneData` onto
+ * fairtrade's presentation-only `GraphSubagentBranch` (the lane header has no
+ * handles). Topology/positioning is unchanged — the engine still places the lane.
  */
 function SubagentBranchNodeImpl({ data }: NodeProps) {
   const { agentName, depth } = data as SubagentLaneData;
-  return (
-    <div className="tb-gnode-lane">
-      <RoleGlyph role="subagent" size={12} className="tb-toolicon-muted tb-shrink-0" />
-      <span className="tb-eyebrow tb-gnode-lane-eyebrow">Subagent</span>
-      <span className="tb-gnode-lane-name">{agentName}</span>
-      <span className="tb-gnode-lane-depth">d{depth}</span>
-    </div>
-  );
+  return <GraphSubagentBranch agentName={agentName} depth={depth} />;
 }
 
 export const SubagentBranchNode = memo(SubagentBranchNodeImpl);

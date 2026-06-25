@@ -3,21 +3,21 @@
  *
  * The analytics layer ships its own CSS so a consuming app needs NO Tailwind,
  * NO preprocessor and NO design-system wiring. Every class is `tb-a-`-prefixed
- * to avoid collisions, and every colour/type value resolves from the `--tb-*`
- * tokens declared in `@peasant-labs/theme`. The published `styles.css` already
- * concatenates the tokens + these styles — import the one file:
+ * to avoid collisions, and every colour/type value resolves from the fairtrade
+ * tokens declared in `@peasant-labs/fairtrade`. The published `styles.css`
+ * already concatenates the tokens + these styles — import the one file:
  *
  *   import "@peasant-labs/analytics/styles.css";
  *
- * Re-theme by overriding the `--tb-*` variables — never by editing this file.
+ * Re-theme by overriding the fairtrade variables — never by editing this file.
  * Fallbacks are inlined so it still renders (light theme) without the tokens.
  */
 
 /* ── Root ───────────────────────────────────────────────────────────────── */
 .tb-a-root {
-  color: var(--tb-ink, #0f0e0d);
-  font-family: var(--tb-font-sans, ui-sans-serif, system-ui, sans-serif);
-  font-size: 14px;
+  color: var(--ink, #0f0e0d);
+  font-family: var(--font-body, ui-sans-serif, system-ui, sans-serif);
+  font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
@@ -31,119 +31,83 @@
   font-feature-settings: "tnum";
 }
 .tb-a-mono {
-  font-family: var(--tb-font-mono, ui-monospace, monospace);
-  font-size: 12px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 16px;
 }
 
 /* ── Overview header ────────────────────────────────────────────────────── */
 .tb-a-overview__head {
-  margin-bottom: var(--tb-space-4, 1rem);
+  margin-bottom: var(--sp-4, 1rem);
 }
 .tb-a-overview__title {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--tb-ink, #0f0e0d);
+  letter-spacing: 0;
+  color: var(--ink, #0f0e0d);
 }
 .tb-a-overview__subtitle {
   margin: 0.25rem 0 0;
-  font-size: 13px;
-  color: var(--tb-ink-3, #767064);
+  font-size: 16px;
+  color: var(--ink-3, #767064);
 }
 
-/* ── KPI stat tiles ─────────────────────────────────────────────────────── */
-.tb-a-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: var(--tb-space-3, 0.75rem);
-  margin-bottom: var(--tb-space-4, 1rem);
-}
-.tb-a-stat {
-  padding: var(--tb-space-3, 0.75rem) var(--tb-space-4, 1rem);
-  background: var(--tb-surface, #fff);
-  border: 1px solid var(--tb-rule, #e6e2da);
-  border-radius: var(--tb-radius-md, 0);
-}
-.tb-a-stat__label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--tb-ink-3, #767064);
-}
-.tb-a-stat__value {
-  margin-top: 0.25rem;
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--tb-ink, #0f0e0d);
-}
-.tb-a-stat__hint {
-  margin-top: 0.125rem;
-  font-size: 11px;
-  color: var(--tb-ink-4, #aaa49a);
-}
+/* KPI stat tiles now consume fairtrade StatGrid/StatTile (`st-*`); the local
+   `tb-a-stat*` duplicates were deleted as part of the consume-don't-duplicate
+   unwind. The median·p90 `tb-a-statgrid`/`tb-a-statrow` rows below stay local —
+   they are a domain figure (median + p90 pair) with no fairtrade equivalent. */
 
 /* ── Chart grid + cards ─────────────────────────────────────────────────── */
 .tb-a-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--tb-space-3, 0.75rem);
+  gap: var(--sp-3, 0.75rem);
 }
 .tb-a-card {
   display: flex;
   flex-direction: column;
-  padding: var(--tb-space-4, 1rem);
-  background: var(--tb-surface, #fff);
-  border: 1px solid var(--tb-rule, #e6e2da);
-  border-radius: var(--tb-radius-md, 0);
+  padding: var(--sp-4, 1rem);
+  background: var(--surface, #fff);
+  border: 1px solid var(--rule, #e6e2da);
+  border-radius: 0;
   min-width: 0;
 }
 .tb-a-card + .tb-a-card,
 .tb-a-grid + .tb-a-card {
-  margin-top: var(--tb-space-3, 0.75rem);
+  margin-top: var(--sp-3, 0.75rem);
 }
 .tb-a-card__head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--tb-space-2, 0.5rem);
-  margin-bottom: var(--tb-space-3, 0.75rem);
+  gap: var(--sp-2, 0.5rem);
+  margin-bottom: var(--sp-3, 0.75rem);
 }
 .tb-a-card__title {
   margin: 0;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 600;
-  color: var(--tb-ink, #0f0e0d);
+  color: var(--ink, #0f0e0d);
 }
 .tb-a-card__subtitle {
   margin: 0.125rem 0 0;
-  font-size: 11px;
+  font-size: 16px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--tb-ink-4, #aaa49a);
+  color: var(--ink-4, #aaa49a);
 }
 .tb-a-card__aside {
-  font-size: 12px;
-  color: var(--tb-ink-3, #767064);
+  font-size: 16px;
+  color: var(--ink-3, #767064);
 }
 .tb-a-card__figure {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
-  color: var(--tb-ink-2, #4d473f);
+  color: var(--ink-2, #4d473f);
 }
 .tb-a-card__body {
   flex: 1;
   min-width: 0;
-}
-
-/* recharts surface tweaks — keep axis/legend text in the ink scale */
-.tb-a-card .recharts-cartesian-axis-tick-value,
-.tb-a-card .recharts-legend-item-text {
-  fill: var(--tb-ink-3, #767064) !important;
-  color: var(--tb-ink-3, #767064) !important;
-}
-.tb-a-card .recharts-surface:focus {
-  outline: none;
 }
 
 /* ── Median/p90 stat rows ───────────────────────────────────────────────── */
@@ -156,29 +120,29 @@
   align-items: baseline;
   justify-content: space-between;
   padding: 0.5rem 0;
-  border-bottom: 1px solid var(--tb-rule, #e6e2da);
+  border-bottom: 1px solid var(--rule, #e6e2da);
 }
 .tb-a-statrow:last-child {
   border-bottom: none;
 }
 .tb-a-statrow__label {
-  font-size: 13px;
-  color: var(--tb-ink-2, #4d473f);
+  font-size: 16px;
+  color: var(--ink-2, #4d473f);
 }
 .tb-a-statrow__pair {
   display: inline-flex;
   align-items: baseline;
   gap: 0.4rem;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
-  color: var(--tb-ink, #0f0e0d);
+  color: var(--ink, #0f0e0d);
 }
 .tb-a-statrow__sep {
-  color: var(--tb-ink-4, #aaa49a);
+  color: var(--ink-4, #aaa49a);
   font-weight: 400;
 }
 .tb-a-statrow__p90 {
-  color: var(--tb-ink-3, #767064);
+  color: var(--ink-3, #767064);
   font-weight: 500;
 }
 
@@ -189,27 +153,27 @@
 .tb-a-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 16px;
 }
 .tb-a-table__th {
   text-align: left;
   padding: 0.4rem 0.6rem;
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--tb-ink-3, #767064);
-  border-bottom: 1px solid var(--tb-rule-strong, #cfc8bd);
+  color: var(--ink-3, #767064);
+  border-bottom: 1px solid var(--rule-strong, #cfc8bd);
   white-space: nowrap;
 }
 .tb-a-table__td {
   padding: 0.45rem 0.6rem;
-  color: var(--tb-ink, #0f0e0d);
-  border-bottom: 1px solid var(--tb-rule, #e6e2da);
+  color: var(--ink, #0f0e0d);
+  border-bottom: 1px solid var(--rule, #e6e2da);
   white-space: nowrap;
 }
 .tb-a-table__row:hover .tb-a-table__td {
-  background: var(--tb-surface-hover, #f3f1ec);
+  background: var(--surface-hover, #f3f1ec);
 }
 .tb-a-table__num {
   text-align: right;
@@ -221,6 +185,6 @@
   align-items: center;
   justify-content: center;
   min-height: 80px;
-  font-size: 13px;
-  color: var(--tb-ink-4, #aaa49a);
+  font-size: 16px;
+  color: var(--ink-4, #aaa49a);
 }

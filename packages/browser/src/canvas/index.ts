@@ -4,12 +4,13 @@ export {
 } from "./TranscriptCanvas.js";
 export { TurnRow, type TurnRowProps } from "./TurnRow.js";
 export { TurnContent, type TurnContentProps } from "./TurnContent.js";
-export { ToolCallRow, type ToolCallRowProps } from "./ToolCallRow.js";
-export { ToolCallList, type ToolCallListProps } from "./ToolCallList.js";
 export { ThinkingBlock, type ThinkingBlockProps } from "./ThinkingBlock.js";
-export { PhaseDivider, type PhaseDividerProps } from "./PhaseDivider.js";
-export { CheckpointMarker, type CheckpointMarkerProps } from "./CheckpointMarker.js";
-export { TaskBoundary, type TaskBoundaryProps } from "./TaskBoundary.js";
+// Single-transcript tool rendering is now the lifted, cooked-VM-driven
+// TranscriptToolCall / TranscriptToolBody from @peasant-labs/fairtrade/ui; TB's
+// own ToolCallList / ToolCallRow / per-kind tool-renderers (and the wire
+// `parseArgs`) were deleted in the adopt-fairtrade migration. PhaseDivider /
+// TaskBoundary / CheckpointMarker likewise come from the fairtrade
+// TranscriptMarkers family; the canvas maps domain data to their props.
 export { EmptyState, type EmptyStateProps } from "./EmptyState.js";
 export {
   ViewModeToggle,
@@ -17,22 +18,9 @@ export {
   type TrajectoryMode,
 } from "./ViewModeToggle.js";
 
-export {
-  rendererFor,
-  ReadRenderer,
-  EditRenderer,
-  WriteRenderer,
-  BashRenderer,
-  GrepRenderer,
-  WebFetchRenderer,
-  TaskRenderer,
-  DefaultRenderer,
-  parseArgs,
-  preview,
-  basename,
-  langFromPath,
-  type ToolRendererProps,
-} from "./tool-renderers/index.js";
+// Parse-free compact-label helpers (the only survivors of the old tool-renderers
+// module — used by the outline rails + highlight/annotation views).
+export { preview, basename, langFromPath } from "./tool-renderers/types.js";
 
 export type {
   TurnLabel,

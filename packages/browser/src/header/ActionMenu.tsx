@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Check, Download, Link as LinkIcon, MessageSquareText, MoreHorizontal, Pencil, Share2, Users } from "lucide-react";
+import { Check, Download, Link as LinkIcon, MessageSquareText, MoreHorizontal, Pencil, Share2, Users } from "@peasant-labs/fairtrade/icons";
 import { cn } from "../internal/cn.js";
+import { ACTION_LABELS } from "../lib/labels.js";
 import type { SessionDetailPayload } from "@peasant-labs/types";
 import type { ViewerCallbacks, ViewerCapabilities, DownloadFormat } from "../canvas/types.js";
 
@@ -50,8 +51,8 @@ export function ActionMenu({
   capabilities = {},
   callbacks = {},
   linkBuilder,
-  shareLabel = "Share",
-  contributeLabel = "Contribute",
+  shareLabel = ACTION_LABELS.share,
+  contributeLabel = ACTION_LABELS.contribute,
   className,
 }: ActionMenuProps) {
   const { canContribute, canCopyLink, canEdit, canDownload, canChatWithTrace } = capabilities;
@@ -116,7 +117,7 @@ export function ActionMenu({
       {showShareMenu && (
         <Menu
           trigger={
-            <span className="tb-actionmenu-share tb-focus" role="button" title={shareLabel} tabIndex={0}>
+            <span className="tb-actionmenu-share" role="button" title={shareLabel} tabIndex={0}>
               <Share2 size={13} strokeWidth={1.75} />
               {shareLabel}
             </span>
@@ -142,7 +143,7 @@ export function ActionMenu({
                   icon={copied ? <Check size={12} strokeWidth={2} className="tb-ink-positive" /> : <LinkIcon size={12} strokeWidth={1.75} />}
                   onClick={handleCopyLink}
                 >
-                  {copied ? "Copied" : "Copy link"}
+                  {copied ? ACTION_LABELS.copied : ACTION_LABELS.copyLink}
                 </MenuItem>
               )}
             </>
@@ -153,7 +154,7 @@ export function ActionMenu({
       {showOverflow && (
         <Menu
           trigger={
-            <span className="tb-actionmenu-more tb-focus" role="button" aria-label="More actions" title="More actions" tabIndex={0}>
+            <span className="tb-actionmenu-more" role="button" aria-label="More actions" title="More actions" tabIndex={0}>
               <MoreHorizontal size={14} strokeWidth={1.75} />
             </span>
           }
@@ -171,7 +172,7 @@ export function ActionMenu({
                       onEdit?.();
                     }}
                   >
-                    Edit
+                    edit
                   </MenuItem>
                   {showDownload || showChat ? <div className="tb-menu-divider" /> : null}
                 </>
@@ -179,13 +180,13 @@ export function ActionMenu({
               {showDownload && (
                 <>
                   <MenuItem icon={<Download size={12} strokeWidth={1.75} />} onClick={() => handleDownload("json")}>
-                    Download JSON
+                    download json
                   </MenuItem>
                   <MenuItem icon={<Download size={12} strokeWidth={1.75} />} onClick={() => handleDownload("jsonl")}>
-                    Download JSONL
+                    download jsonl
                   </MenuItem>
                   <MenuItem icon={<Download size={12} strokeWidth={1.75} />} onClick={() => handleDownload("markdown")}>
-                    Download Markdown
+                    download markdown
                   </MenuItem>
                 </>
               )}
@@ -199,7 +200,7 @@ export function ActionMenu({
                       onChatWithTrace?.();
                     }}
                   >
-                    Chat with trace
+                    chat with trace
                   </MenuItem>
                 </>
               )}

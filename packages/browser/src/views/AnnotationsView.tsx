@@ -1,6 +1,7 @@
 import { useMemo } from "react";
-import { Chip, type ChipVariant } from "../primitives/Chip.js";
+import { Chip, Tooltip } from "@peasant-labs/fairtrade/ui";
 import { preview } from "../canvas/tool-renderers/types.js";
+import { ANNOTATION_TYPE_LABELS } from "../lib/labels.js";
 import type { TurnDetail } from "@peasant-labs/types";
 import type { TranscriptAnnotation } from "../lib/pattern-detection.js";
 
@@ -16,19 +17,20 @@ export interface AnnotationsViewProps {
 }
 
 type AnnotationType = TranscriptAnnotation["type"];
+/** fairtrade Chip semantic tones (`.chip-ok` / `.chip-warn` / `.chip-err`). */
+type ChipTone = "ok" | "warn" | "err";
 
-const TYPE_LABEL: Record<AnnotationType, string> = {
-  error: "Error",
-  retry: "Retry",
-  revert: "Reverted edit",
-  subagent: "Subagent",
-};
+const TYPE_LABEL = ANNOTATION_TYPE_LABELS;
 
-const TYPE_VARIANT: Record<AnnotationType, ChipVariant> = {
-  error: "danger",
-  retry: "warning",
-  revert: "warning",
-  subagent: "subtle",
+/**
+ * Semantic annotation types compose a fairtrade `<Chip tone>` (no TB tone
+ * duplicate). `subagent` carries no semantic tone — it renders a neutral
+ * fairtrade `<Chip>` (no tone).
+ */
+const TYPE_TONE: Partial<Record<AnnotationType, ChipTone>> = {
+  error: "err",
+  retry: "warn",
+  revert: "warn",
 };
 
 const TYPE_EXPLANATION: Record<AnnotationType, string> = {
@@ -78,7 +80,7 @@ export function AnnotationsView({ annotations, turns, onJumpToTurn }: Annotation
                 key={turnIndex}
                 data-anchor-turn={turnIndex}
                 onClick={() => onJumpToTurn?.(turnIndex)}
-                className="tb-annview-row tb-focus"
+                className="tb-annview-row"
               >
                 <header className="tb-annview-row-head">
                   <span className="tb-mono tb-tnum tb-annview-turn">
@@ -86,9 +88,17 @@ export function AnnotationsView({ annotations, turns, onJumpToTurn }: Annotation
                   </span>
                   <span className="tb-annview-chips">
                     {anns.map((a, i) => (
-                      <Chip key={i} variant={TYPE_VARIANT[a.type] ?? "subtle"} tooltip={TYPE_EXPLANATION[a.type]}>
-                        {TYPE_LABEL[a.type] ?? a.type}
-                      </Chip>
+                      <Tooltip key={i} id={`tb-annview-${a.type}-${turnIndex}-${i}`} content={TYPE_EXPLANATION[a.type]}>
+                        {TYPE_TONE[a.type] ? (
+                          <Chip tone={TYPE_TONE[a.type]} className="tb-chip-help">
+                            {TYPE_LABEL[a.type] ?? a.type}
+                          </Chip>
+                        ) : (
+                          <Chip className="tb-chip-help">
+                            {TYPE_LABEL[a.type] ?? a.type}
+                          </Chip>
+                        )}
+                      </Tooltip>
                     ))}
                   </span>
                 </header>

@@ -1,14 +1,13 @@
 import { useCallback, useState } from "react";
-import { Check, Link as LinkIcon } from "lucide-react";
+import { Check, Link as LinkIcon, CornerDownRight, User, Wrench, AlertTriangle, Coins } from "@peasant-labs/fairtrade/icons";
+import { ProviderIcon, PROVIDER_ACCENT } from "@peasant-labs/fairtrade/ui";
 import { cn } from "../internal/cn.js";
-import { RoleGlyph, type GlyphRole } from "../primitives/RoleGlyph.js";
-import { TokenBadge } from "../primitives/TokenBadge.js";
-import { ErrorPill } from "../primitives/ErrorPill.js";
-import { Chip } from "../primitives/Chip.js";
-import { ProviderIcon } from "../primitives/ProviderIcon.js";
+import { formatTokens } from "../lib/format-numbers.js";
 import { formatRelative } from "../lib/time.js";
+import { providerLabel } from "../lib/provider.js";
+import { ROLE_LABELS, SUBAGENT_LABEL } from "../lib/labels.js";
 import { TurnContent } from "./TurnContent.js";
-import { ToolCallList } from "./ToolCallList.js";
+import { TranscriptToolCall, type ToolCallVM } from "@peasant-labs/fairtrade/ui";
 import type { RenderTurnActions, RenderTurnPanel, TurnLabel, TurnLinkBuilder } from "./types.js";
 import type { TurnDetail, Provider } from "@peasant-labs/types";
 
@@ -21,6 +20,13 @@ export interface TurnRowProps {
   turnNumber: string | number;
   /** Provider — used to pick the assistant rail icon. */
   provider?: Provider;
+  /**
+   * The cooked tool calls for this turn — the adapter's `ToolCallVM[]` (parsed
+   * `args`/`output`, one-line `preview`, classified `kind`/`group`, computed
+   * `diff`). Rendered by the lifted `TranscriptToolCall`, which reads these
+   * fields directly and NEVER parses wire. Parallel to `turn.toolCalls` by id.
+   */
+  toolVMs?: ToolCallVM[];
   /** Active search term, propagated to TurnContent. */
   searchQuery?: string;
   /** True for the turn the current search match points at. */
@@ -38,42 +44,27 @@ export interface TurnRowProps {
   // --- Agnostic action contract (all optional; read-only when absent) ---
   /** Build the anchor href for this turn. Defaults to `#turn-{index}`. */
   linkBuilder?: TurnLinkBuilder;
-  /**
-   * Host-owned action slot for this turn (e.g. a "Label" popover). Rendered in
-   * the header's trailing actions area. The viewer ships no labelling UI of its
-   * own — the host wires its annotation API here. See ViewerCallbacks.onLabelSave.
-   */
+  /** Host-owned action slot for this turn (e.g. a "label" popover). */
   renderActions?: RenderTurnActions;
-  /**
-   * Host-owned panel slot for this turn. Rendered as a full-width block at the
-   * bottom of the card body, below the content and tool-call list — sized for
-   * multi-row host content (file lists, related items), where the header-inline
-   * `renderActions` slot is not. Return `null`/`undefined` to skip the panel.
-   */
+  /** Host-owned panel slot for this turn (full-width block below the body). */
   renderPanel?: RenderTurnPanel;
   /** Saved/optimistic labels on this turn — rendered as chips when present. */
   savedLabels?: TurnLabel[];
 }
 
-const ROLE_LABEL: Record<string, string> = {
-  user: "You",
-  assistant: "Assistant",
-  tool: "Tool",
-  system: "System",
-};
-
 /**
- * A single row in the transcript canvas. Renders the rail glyph, header
- * (role · #label · time · anchor · tokens · error pill · host actions), any
- * saved labels, the markdown body, and the tool-call list.
- *
- * The vertical rail is drawn by TranscriptCanvas as one absolutely-positioned
- * line, so rows just align to it.
+ * A single transcript turn, rendered with the canonical `.txn-*` markup (the
+ * in-use demo's structure): a `.turn.txn-turn` card whose role class (user /
+ * asst / sub) carries the accent, a mono `.txn-turnhead` (role label + number +
+ * time + copy-anchor + token badge), and the markdown body + tool calls. The
+ * assistant leads with its real, accent-tinted provider mark; user stays teal /
+ * subagent mauve via the role class.
  */
 export function TurnRow({
   turn,
   turnNumber,
   provider,
+  toolVMs,
   searchQuery,
   isActiveMatch,
   isSearchMatch,
@@ -87,32 +78,40 @@ export function TurnRow({
   savedLabels,
 }: TurnRowProps) {
   const subagent = turn.role === "assistant" && (turn.depth ?? 0) > 0;
-  const glyphRole: GlyphRole = subagent ? "subagent" : (turn.role as GlyphRole);
-  // Conversational roles (top-level user / assistant) carry a role-tinted
-  // background + accent bar. Tool / system / subagent rows stay monochrome.
-  const colorRole: "user" | "assistant" | null =
-    turn.role === "user"
-      ? "user"
-      : turn.role === "assistant" && !subagent
-        ? "assistant"
-        : null;
+  const isUser = turn.role === "user";
+  const isAssistant = turn.role === "assistant" && !subagent;
+  // Role class drives the canonical accent (border + tint): user=teal,
+  // asst=amber, sub=mauve. Tool/system turns stay monochrome (no role class).
+  const roleClass = isUser ? "user" : subagent ? "sub" : isAssistant ? "asst" : null;
+  // The assistant IS the agent → tint its role label + mark with the provider
+  // accent (PROVIDER_ACCENT[harness]), falling back to amber. A token var so it
+  // re-themes under [data-theme].
+  const asstAccent = isAssistant
+    ? `var(--${(provider && PROVIDER_ACCENT[provider]) || "amber"})`
+    : undefined;
   const roleLabel = subagent
-    ? `Subagent${turn.agentName ? ` · ${turn.agentName}` : ""}`
-    : (ROLE_LABEL[turn.role] ?? turn.role);
-  const useProviderIcon = turn.role === "assistant" && !subagent && !!provider;
+    ? `${SUBAGENT_LABEL}${turn.agentName ? ` · ${turn.agentName}` : ""}`
+    : isAssistant && provider
+      ? providerLabel(provider)
+      : (ROLE_LABELS[turn.role] ?? turn.role);
+
   const hasContent = !!turn.content?.trim();
-  const hasTools = (turn.toolCalls?.length ?? 0) > 0;
+  const tools = toolVMs ?? [];
+  const hasTools = tools.length > 0;
   const hasError = turn.toolCalls?.some((t) => t.isError) ?? false;
   const anchorHref = linkBuilder ? linkBuilder(turn) : `#turn-${turn.index}`;
   const actions = renderActions?.(turn);
   const panel = renderPanel?.(turn);
+  const totalTokens = (turn.tokensIn ?? 0) + (turn.tokensOut ?? 0);
+  const tokenTitle =
+    turn.tokensIn != null && turn.tokensOut != null
+      ? `${turn.tokensIn.toLocaleString()} in · ${turn.tokensOut.toLocaleString()} out`
+      : undefined;
 
-  // Copy the deep-link to this turn rather than navigating to it. A bare hash
-  // (`#turn-N`) is resolved to an absolute URL so the copied link still lands on
-  // the right message when pasted elsewhere; host-built absolute links pass
-  // through unchanged. Loading a page with that hash anchors to this turn — the
-  // composer handles the scroll-on-load (see SessionDetail).
   const [copied, setCopied] = useState(false);
+  // Per-tool expand state for the lifted (controlled) TranscriptToolCall rows.
+  // `expandToolCalls` (the view option) force-opens every row on top of this.
+  const [openTools, setOpenTools] = useState<Record<string, boolean>>({});
   const copyAnchor = useCallback(() => {
     let url = anchorHref;
     if (typeof window !== "undefined") {
@@ -133,102 +132,107 @@ export function TurnRow({
     }
   }, [anchorHref]);
 
-  return (
-    <article
-      id={`turn-${turn.index}`}
-      data-turn-index={turn.index}
-      className={cn(
-        "tb-turn",
-        compact && "tb-turn-compact",
-        colorRole === "user" && "tb-turn-user",
-        colorRole === "assistant" && "tb-turn-assistant",
-        isActiveMatch && "tb-turn-active",
-        className,
-      )}
-    >
-      {colorRole && (
-        <span
-          aria-hidden
-          className={cn(
-            "tb-turn-accent",
-            colorRole === "user" ? "tb-turn-accent-user" : "tb-turn-accent-assistant",
-          )}
-        />
-      )}
-
-      <span
-        className={cn(
-          "tb-turn-glyph",
-          colorRole === "user" && "tb-turn-glyph-user",
-          colorRole === "assistant" && "tb-turn-glyph-assistant",
-          isActiveMatch && "tb-turn-glyph-active",
-        )}
-      >
-        {useProviderIcon ? (
-          <ProviderIcon provider={provider!} size={12} />
+  const head = (
+    <div className="txn-turnhead">
+      <span className="txn-rolelabel" style={asstAccent ? { color: asstAccent } : undefined}>
+        {isAssistant ? (
+          <ProviderIcon harness={provider!} accent />
+        ) : subagent ? (
+          <CornerDownRight size={14} aria-hidden />
+        ) : isUser ? (
+          <User size={14} aria-hidden />
         ) : (
-          <RoleGlyph role={glyphRole} size={12} />
+          <Wrench size={14} aria-hidden />
         )}
+        {roleLabel}
       </span>
-
-      {isActiveMatch && <span className="tb-turn-active-bar" aria-hidden />}
-
-      <header className="tb-turn-header">
-        <span className={cn("tb-turn-role", turn.role === "user" && "tb-turn-role-user")}>
-          {roleLabel}
+      {subagent && turn.depth != null && <span className="txn-depth tnum">depth {turn.depth}</span>}
+      <span className="txn-turnnum tnum">#{turnNumber}</span>
+      <span className="txn-turntime" title={new Date(turn.timestamp).toLocaleString()}>
+        {formatRelative(turn.timestamp)}
+      </span>
+      <button
+        type="button"
+        onClick={copyAnchor}
+        aria-label={copied ? "link copied" : "copy link to this turn"}
+        title={copied ? "link copied" : "copy link to this turn"}
+        className="txn-anchor"
+      >
+        {copied ? <Check size={13} aria-hidden /> : <LinkIcon size={13} aria-hidden />}
+      </button>
+      {actions ? <span className="txn-actions">{actions}</span> : null}
+      {hasError && (
+        <span className="chip chip-err txn-pill">
+          <AlertTriangle size={12} aria-hidden /> error
         </span>
-        {turn.depth != null && turn.depth > 0 && !subagent && (
-          <span className="tb-turn-depth">depth {turn.depth}</span>
-        )}
-        <span className="tb-turn-number">#{turnNumber}</span>
-        <span className="tb-turn-time" title={new Date(turn.timestamp).toLocaleString()}>
-          {formatRelative(turn.timestamp)}
+      )}
+      {totalTokens > 0 && (
+        <span className="txn-tokbadge tnum" title={tokenTitle}>
+          <Coins size={12} aria-hidden /> {formatTokens(totalTokens)}
         </span>
-        <button
-          type="button"
-          onClick={copyAnchor}
-          aria-label={copied ? "Link copied" : "Copy link to this turn"}
-          title={copied ? "Link copied" : "Copy link to this turn"}
-          className={cn("tb-turn-anchor tb-focus", copied && "tb-turn-anchor-copied")}
-        >
-          {copied ? (
-            <Check size={11} strokeWidth={2} />
-          ) : (
-            <LinkIcon size={11} strokeWidth={1.75} />
-          )}
-        </button>
-        <span className="tb-turn-actions">
-          {actions}
-          {hasError && <ErrorPill />}
-          <TokenBadge
-            tokens={(turn.tokensIn ?? 0) + (turn.tokensOut ?? 0) || undefined}
-            tokensIn={turn.tokensIn}
-            tokensOut={turn.tokensOut}
-          />
-        </span>
-      </header>
+      )}
+    </div>
+  );
 
+  const body = (
+    <>
       {savedLabels && savedLabels.length > 0 && (
-        <div className="tb-turn-labels">
+        <div className="txn-savedchips">
           {savedLabels.map((l, i) => (
-            <Chip
-              key={l.id || `${l.typeId}-${l.value}-${i}`}
-              variant="outline"
-              tooltip={`${l.typeName}: ${l.value}`}
-            >
+            <span key={l.id || `${l.typeId}-${l.value}-${i}`} className="chip">
               {l.typeName} · {l.value}
-            </Chip>
+            </span>
           ))}
         </div>
       )}
+      {hasContent && <TurnContent turn={turn} searchQuery={isSearchMatch ? searchQuery : undefined} />}
+      {hasTools && (
+        <div className="tb-toolcall-list">
+          {tools.map((tc) => (
+            <TranscriptToolCall
+              key={tc.id}
+              tool={tc}
+              open={expandToolCalls || !!openTools[tc.id]}
+              onToggle={() => setOpenTools((s) => ({ ...s, [tc.id]: !s[tc.id] }))}
+            />
+          ))}
+        </div>
+      )}
+      {panel ? <div className="tb-turn-panel">{panel}</div> : null}
+    </>
+  );
 
-      <div>
-        {hasContent && (
-          <TurnContent turn={turn} searchQuery={isSearchMatch ? searchQuery : undefined} />
-        )}
-        {hasTools && <ToolCallList calls={turn.toolCalls!} expandAll={expandToolCalls} />}
-        {panel ? <div className="tb-turn-panel">{panel}</div> : null}
-      </div>
-    </article>
+  const cardClass = cn(
+    "turn txn-turn",
+    roleClass,
+    isActiveMatch && "txn-active",
+    compact && "txn-compact",
+    className,
+  );
+
+  return (
+    <div id={`turn-${turn.index}`} data-turn-index={turn.index} className="txn-turnwrap">
+      {subagent ? (
+        <div className="subtask txn-subtask" data-harness={provider}>
+          <div className="subtask-head">
+            <CornerDownRight size={13} aria-hidden /> <span className="who">{turn.agentName}</span> subagent
+          </div>
+          <div className={cardClass}>
+            {head}
+            {body}
+          </div>
+          <div className="subtask-foot">
+            <span className="elbow">
+              <CornerDownRight size={13} aria-hidden /> returned to {provider ? providerLabel(provider) : "main"}
+            </span>
+          </div>
+        </div>
+      ) : (
+        <div className={cardClass} data-harness={isAssistant ? provider : undefined}>
+          {head}
+          {body}
+        </div>
+      )}
+    </div>
   );
 }

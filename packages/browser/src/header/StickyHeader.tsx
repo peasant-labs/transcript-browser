@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { cn } from "../internal/cn.js";
-import { ProviderIcon } from "../primitives/ProviderIcon.js";
+import { ProviderIcon } from "@peasant-labs/fairtrade/ui";
 import { ActionMenu } from "./ActionMenu.js";
 import { HorizontalScrubber } from "../rails/HorizontalScrubber.js";
 import { composeSessionTitle } from "../lib/title.js";
@@ -95,7 +95,7 @@ export function StickyHeader({
         )}
 
         <span className="tb-stickyhead-provider">
-          <ProviderIcon provider={detail.harness} size={12} />
+          <ProviderIcon harness={detail.harness} size={12} />
           {detail.model && <span className="tb-mono tb-tnum tb-stickyhead-model">{detail.model}</span>}
         </span>
 

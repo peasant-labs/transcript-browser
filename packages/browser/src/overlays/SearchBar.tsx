@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
-import { ChevronDown, ChevronUp, Search, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Search, X } from "@peasant-labs/fairtrade/icons";
 import { cn } from "../internal/cn.js";
-import { Kbd } from "../primitives/Kbd.js";
+import { Kbd } from "@peasant-labs/fairtrade/ui";
 
 export interface SearchBarProps {
   open: boolean;
@@ -68,17 +68,17 @@ export function SearchBar({ open, query, onQueryChange, matchCount, currentMatch
       <span className="tb-mono tb-tnum tb-searchbar-count">
         {matchCount > 0 ? `${currentMatch}/${matchCount}` : query ? "0 matches" : ""}
       </span>
-      <button type="button" onClick={onPrev} disabled={matchCount === 0} className={cn("tb-searchbar-nav tb-focus", matchCount === 0 && "tb-searchbar-nav-disabled")} aria-label="Previous match (↑ or Shift+Enter)">
+      <button type="button" onClick={onPrev} disabled={matchCount === 0} className={cn("tb-searchbar-nav", matchCount === 0 && "tb-searchbar-nav-disabled")} aria-label="Previous match (↑ or Shift+Enter)">
         <ChevronUp size={13} strokeWidth={1.75} />
       </button>
-      <button type="button" onClick={onNext} disabled={matchCount === 0} className={cn("tb-searchbar-nav tb-focus", matchCount === 0 && "tb-searchbar-nav-disabled")} aria-label="Next match (↓ or Enter)">
+      <button type="button" onClick={onNext} disabled={matchCount === 0} className={cn("tb-searchbar-nav", matchCount === 0 && "tb-searchbar-nav-disabled")} aria-label="Next match (↓ or Enter)">
         <ChevronDown size={13} strokeWidth={1.75} />
       </button>
       <span className="tb-searchbar-hint">
         <Kbd>⎋</Kbd>
         <span>close</span>
       </span>
-      <button type="button" onClick={onClose} className="tb-searchbar-nav tb-focus" aria-label="Close search">
+      <button type="button" onClick={onClose} className="tb-searchbar-nav" aria-label="Close search">
         <X size={13} strokeWidth={1.75} />
       </button>
     </div>

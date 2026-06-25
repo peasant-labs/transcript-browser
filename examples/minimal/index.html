@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>transcript-browser — minimal example</title>
+    <!-- Atkinson Hyperlegible + Atkinson Hyperlegible Mono via Google Fonts.
+         Preconnect warms the connections before the parser sees the stylesheet
+         request, eliminating the silent ui-sans-serif fallback that occurs when
+         the font request loses the race against first paint.
+         Source: @peasant-labs/fairtrade dist/lib/fonts.css Option B (verbatim). -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Atkinson+Hyperlegible+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
   </head>
   <body>
     <div id="root"></div>

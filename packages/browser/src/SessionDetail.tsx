@@ -6,6 +6,7 @@ import { StickyHeader } from "./header/StickyHeader.js";
 import { TurnContextBar } from "./header/TurnContextBar.js";
 import { useTriggerOffscreen } from "./header/useTriggerOffscreen.js";
 import { useTurnKeyboardNav } from "./lib/turnNav.js";
+import { TAB_LABELS } from "./lib/labels.js";
 import type { BreadcrumbItem } from "./header/Breadcrumb.js";
 import { TranscriptCanvas } from "./canvas/TranscriptCanvas.js";
 import { ViewModeToggle, type TrajectoryMode } from "./canvas/ViewModeToggle.js";
@@ -28,6 +29,9 @@ import { SessionTab, type SessionTabDef } from "./session-detail-types.js";
 import type { TranscriptAnnotation } from "./lib/pattern-detection.js";
 import type { PersonalMedians } from "./lib/scorecard.js";
 import { prefilterTurns } from "./lib/turn-filter.js";
+import { rollupFiles } from "./lib/file-rollup.js";
+import { adaptTranscript } from "@peasant-labs/fairtrade/ui";
+import type { ToolCallVM, TranscriptViewModel } from "@peasant-labs/fairtrade/ui";
 import type {
   RenderTurnActions,
   RenderTurnPanel,
@@ -98,6 +102,8 @@ export interface SessionDetailProps {
    */
   renderGraph?: (props: {
     turns: TurnDetail[];
+    /** Cooked tool calls by turn index — the graph's tool nodes render previews from these. */
+    toolVMsByTurn: Map<number, ToolCallVM[]>;
     filteredTurns: TurnDetail[];
     phases: Phase[];
     annotations: TranscriptAnnotation[];
@@ -160,7 +166,7 @@ const STICKY_PAD = 24;
  * It owns only *view* state (active tab, trajectory mode, filters, search,
  * scroll tracking, sticky-header visibility) — never data. All data flows IN
  * via props; all actions flow OUT via the `callbacks` / `linkBuilder` /
- * `renderTurnActions` contract; theming is via `--tb-*`. There is no fetching,
+ * `renderTurnActions` contract; theming is via fairtrade. There is no fetching,
  * no router, no env access, and no app-specific string anywhere below.
  */
 export function SessionDetail({
@@ -176,7 +182,7 @@ export function SessionDetail({
   initialTrajectoryMode = "list",
   renderGraph,
   stickyTop = 0,
-  railLayout = "tabs",
+  railLayout = "split",
   error,
   capabilities,
   callbacks,
@@ -200,6 +206,26 @@ export function SessionDetail({
   // The wire-level harness id IS the viewer's provider key (icons, graph,
   // downloads all read it); aliased once so the surfaces below share one source.
   const provider = detail.harness;
+
+  // The ONE wire→view-model projection. The fairtrade adapter parses the wire
+  // (tool `arguments`/`result` JSON, git drift) exactly ONCE here, into the
+  // cooked `TranscriptViewModel` every lifted component renders. Built from the
+  // SAME `turns` this composer displays, so the cooked `vm.turns` are parallel
+  // to the wire turns by index — the lifted tool rows (via `toolVMsByTurn`), the
+  // Diffs/Files tabs (via `vm.diffs`/`vm.files`), and the file count all read
+  // cooked fields and NEVER JSON.parse. (Cast bridges the known #125/#126
+  // `@peasant-labs/types` ↔ fairtrade wire drift; runtime-safe.)
+  const vm = useMemo<TranscriptViewModel>(
+    () => adaptTranscript({ ...detail, turns } as Parameters<typeof adaptTranscript>[0]),
+    [detail, turns],
+  );
+  const toolVMsByTurn = useMemo(
+    () => new Map<number, ToolCallVM[]>(vm.turns.map((t) => [t.index, t.toolCalls])),
+    [vm],
+  );
+  // Per-file rollups for the Diffs/Files outline rails — computed once from the
+  // cooked tool calls (no wire parse).
+  const fileRollups = useMemo(() => rollupFiles(toolVMsByTurn), [toolVMsByTurn]);
 
   const annotationsByTurn = useMemo(() => {
     const map = new Map<number, { type: string }[]>();
@@ -226,24 +252,9 @@ export function SessionDetail({
 
   const counts = useMemo(() => computeCounts(turns, annotationsByTurn), [turns, annotationsByTurn]);
 
-  const distinctFileCount = useMemo(() => {
-    const set = new Set<string>();
-    for (const t of turns) {
-      for (const c of t.toolCalls ?? []) {
-        let path: string | undefined = c.filePath ?? undefined;
-        if (!path) {
-          try {
-            const args = JSON.parse(c.arguments) as { file_path?: string; path?: string };
-            path = args?.file_path ?? args?.path;
-          } catch {
-            /* ignore non-JSON args */
-          }
-        }
-        if (path) set.add(path);
-      }
-    }
-    return set.size;
-  }, [turns]);
+  // Distinct files touched = the cooked Files index length (the adapter
+  // aggregates unique paths across every tool call; no wire parse here).
+  const distinctFileCount = vm.files.length;
 
   const filteredTurns = useMemo(
     () => turns.filter((t) => applyFilter(t, filters, annotationsByTurn)),
@@ -473,11 +484,11 @@ export function SessionDetail({
   // Tabs
   // -------------------------------------------------------------------------
   const tabs: SessionTabDef[] = [
-    { id: SessionTab.Highlights, label: "Highlights" },
-    { id: SessionTab.Trace, label: "Full trace", count: turns.length },
-    { id: SessionTab.Diffs, label: "Diffs", count: counts.toolGroups["edit"] ?? 0 },
-    { id: SessionTab.Files, label: "Files", count: distinctFileCount },
-    { id: SessionTab.Annotations, label: "Annotations", count: annotations.length },
+    { id: SessionTab.Highlights, label: TAB_LABELS.highlights },
+    { id: SessionTab.Trace, label: TAB_LABELS.trace, count: turns.length },
+    { id: SessionTab.Diffs, label: TAB_LABELS.diffs, count: counts.toolGroups["edit"] ?? 0 },
+    { id: SessionTab.Files, label: TAB_LABELS.files, count: distinctFileCount },
+    { id: SessionTab.Annotations, label: TAB_LABELS.annotations, count: annotations.length },
   ];
 
   const firstUserPrompt = turns.find((t) => t.role === "user");
@@ -507,6 +518,8 @@ export function SessionDetail({
   const railProps = {
     activeTab,
     turns,
+    fileRollups,
+    provider,
     activeTurnIndex: viewportRange?.start,
     onTurnClick: (idx: number) => {
       if (activeTab !== SessionTab.Trace) {
@@ -639,6 +652,7 @@ export function SessionDetail({
                   <div className="tb-detail-graphwrap">
                     {renderGraph!({
                       turns,
+                      toolVMsByTurn,
                       filteredTurns,
                       phases: filteredPhases,
                       annotations,
@@ -653,6 +667,7 @@ export function SessionDetail({
                 ) : (
                   <TranscriptCanvas
                     turns={filteredTurns}
+                    toolVMsByTurn={toolVMsByTurn}
                     provider={provider}
                     phases={viewOptions.showHidden ? filteredPhases : []}
                     activePhaseIndex={activePhaseIndex}
@@ -688,10 +703,10 @@ export function SessionDetail({
               />
             )}
 
-            {activeTab === SessionTab.Diffs && <DiffsView turns={turns} onJumpToTurn={jumpToTraceTurn} />}
+            {activeTab === SessionTab.Diffs && <DiffsView diffs={vm.diffs} onJumpToTurn={jumpToTraceTurn} />}
 
             {activeTab === SessionTab.Files && (
-              <FilesView turns={turns} projectRoot={detail.project ?? undefined} onJumpToTurn={jumpToTraceTurn} onJumpToFile={jumpToFile} />
+              <FilesView toolVMsByTurn={toolVMsByTurn} projectRoot={detail.project ?? undefined} onJumpToTurn={jumpToTraceTurn} onJumpToFile={jumpToFile} />
             )}
 
             {activeTab === SessionTab.Annotations && (

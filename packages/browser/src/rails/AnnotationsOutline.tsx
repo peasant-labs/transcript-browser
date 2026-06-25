@@ -1,8 +1,9 @@
 import { useMemo } from "react";
-import { AlertTriangle, RotateCcw, Undo2, Bot } from "lucide-react";
+import { Tooltip } from "@peasant-labs/fairtrade/ui";
+import { AlertTriangle, RefreshCw, RotateCcw, CornerDownRight } from "@peasant-labs/fairtrade/icons";
 import { cn } from "../internal/cn.js";
-import { Tooltip } from "../internal/Tooltip.js";
 import { preview } from "../canvas/tool-renderers/types.js";
+import { ANNOTATION_TYPE_LABELS } from "../lib/labels.js";
 import type { TurnDetail } from "@peasant-labs/types";
 import type { TranscriptAnnotation } from "../lib/pattern-detection.js";
 
@@ -16,12 +17,7 @@ export interface AnnotationsOutlineProps {
 
 type AnnotationType = TranscriptAnnotation["type"];
 
-const TYPE_LABEL: Record<AnnotationType, string> = {
-  error: "Error",
-  retry: "Retry",
-  revert: "Reverted edit",
-  subagent: "Subagent",
-};
+const TYPE_LABEL = ANNOTATION_TYPE_LABELS;
 
 const TYPE_ORDER: AnnotationType[] = ["error", "retry", "revert", "subagent"];
 
@@ -65,9 +61,9 @@ export function AnnotationsOutline({
         const list = grouped.get(type);
         if (!list || list.length === 0) return null;
         return (
-          <section key={type} className="tb-annoutline-group">
+          <section key={type} data-anntype={type} className="tb-annoutline-group">
             <header className="tb-annoutline-head">
-              <Tooltip content={TYPE_EXPLANATION[type]}>
+              <Tooltip id={`tb-annoutline-${type}-tooltip`} content={TYPE_EXPLANATION[type]}>
                 <span className="tb-eyebrow tb-annoutline-type tb-chip-help">
                   <span className="tb-ink-muted">
                     <TypeIcon type={type} />
@@ -86,7 +82,7 @@ export function AnnotationsOutline({
                     key={i}
                     type="button"
                     onClick={() => onJumpToTurn?.(a.turnIndex)}
-                    className={cn("tb-annoutline-row tb-focus", active && "tb-outline-row-active")}
+                    className={cn("tb-annoutline-row", active && "tb-outline-row-active")}
                   >
                     <span className="tb-annoutline-rowhead">
                       <span className="tb-mono tb-tnum tb-annoutline-turn">turn {a.turnIndex + 1}</span>
@@ -109,10 +105,10 @@ function TypeIcon({ type }: { type: AnnotationType }) {
     case "error":
       return <AlertTriangle size={11} strokeWidth={1.75} />;
     case "retry":
-      return <RotateCcw size={11} strokeWidth={1.75} />;
+      return <RefreshCw size={11} strokeWidth={1.75} />;
     case "revert":
-      return <Undo2 size={11} strokeWidth={1.75} />;
+      return <RotateCcw size={11} strokeWidth={1.75} />;
     case "subagent":
-      return <Bot size={11} strokeWidth={1.75} />;
+      return <CornerDownRight size={11} strokeWidth={1.75} />;
   }
 }

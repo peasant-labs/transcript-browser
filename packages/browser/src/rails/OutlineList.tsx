@@ -1,7 +1,7 @@
 import { useMemo } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "@peasant-labs/fairtrade/icons";
 import { cn } from "../internal/cn.js";
-import { formatDuration } from "../primitives/DurationBadge.js";
+import { formatDuration } from "../lib/format-numbers.js";
 import { preview } from "../canvas/tool-renderers/types.js";
 import { computeTasks, type TaskGroup } from "../lib/tasks.js";
 import type { TurnDetail } from "@peasant-labs/types";
@@ -72,7 +72,7 @@ function TaskRow({
       type="button"
       onClick={() => onClick?.(task.promptEntryIndex)}
       aria-label={`User turn ${ordinal}`}
-      className={cn("tb-outline-row tb-focus", active && "tb-outline-row-active")}
+      className={cn("tb-outline-row", active && "tb-outline-row-active")}
     >
       <span className="tb-outline-marker" aria-hidden>
         {task.hasErrors ? (

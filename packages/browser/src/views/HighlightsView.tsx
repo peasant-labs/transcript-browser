@@ -2,9 +2,9 @@ import { useMemo, type ReactNode } from "react";
 import { cn } from "../internal/cn.js";
 import { Markdown } from "../primitives/Markdown.js";
 import { RoleGlyph } from "../primitives/RoleGlyph.js";
-import { TokenBadge } from "../primitives/TokenBadge.js";
+import { formatTokens } from "../lib/format-numbers.js";
 import { ErrorPill } from "../primitives/ErrorPill.js";
-import { ProviderIcon } from "../primitives/ProviderIcon.js";
+import { CountBadge, ProviderIcon } from "@peasant-labs/fairtrade/ui";
 import { SessionScorecard } from "./SessionScorecard.js";
 import { preview } from "../canvas/tool-renderers/types.js";
 import { formatRelative } from "../lib/time.js";
@@ -73,7 +73,7 @@ export function HighlightsView({
       out.push({
         kind: "first-prompt",
         turnIndex: firstUser.index,
-        title: "Initial request",
+        title: "initial request",
         body: firstUser.content,
         meta: <span>{formatRelative(firstUser.timestamp)}</span>,
       });
@@ -131,13 +131,11 @@ export function HighlightsView({
       out.push({
         kind: "final",
         turnIndex: lastAssistant.index,
-        title: "Final response",
+        title: "final response",
         body: lastAssistant.content,
         meta: (
-          <TokenBadge
-            tokens={(lastAssistant.tokensIn ?? 0) + (lastAssistant.tokensOut ?? 0) || undefined}
-            tokensIn={lastAssistant.tokensIn}
-            tokensOut={lastAssistant.tokensOut}
+          <CountBadge
+            count={formatTokens((lastAssistant.tokensIn ?? 0) + (lastAssistant.tokensOut ?? 0))}
           />
         ),
       });
@@ -167,14 +165,15 @@ export function HighlightsView({
           <li key={i}>
             <button
               type="button"
+              data-kind={h.kind}
               data-anchor-turn={h.turnIndex}
               onClick={() => h.turnIndex != null && onJumpToTurn?.(h.turnIndex)}
               disabled={h.turnIndex == null}
-              className={cn("tb-hl-card tb-focus", h.turnIndex == null && "tb-hl-card-static")}
+              className={cn("tb-hl-card", h.turnIndex == null && "tb-hl-card-static")}
             >
               <span className="tb-hl-icon">
                 {h.kind === "first-prompt" && <RoleGlyph role="user" size={14} />}
-                {h.kind === "final" && <ProviderIcon provider={provider} size={14} />}
+                {h.kind === "final" && <ProviderIcon harness={provider} size={14} />}
                 {h.kind === "phase" && <RoleGlyph role="system" size={10} />}
                 {h.kind === "error" && <RoleGlyph role="system" size={10} />}
                 {h.kind === "checkpoint" && <span className="tb-mono tb-hl-cmd">⌘</span>}

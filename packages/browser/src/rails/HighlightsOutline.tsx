@@ -1,13 +1,17 @@
 import { useMemo } from "react";
-import { AlertTriangle, GitCommit, Sparkles, Flag, Play } from "lucide-react";
+import { AlertTriangle, GitCommit, Flag, Play } from "@peasant-labs/fairtrade/icons";
+import { ProviderIcon } from "@peasant-labs/fairtrade/ui";
 import { cn } from "../internal/cn.js";
 import { preview } from "../canvas/tool-renderers/types.js";
 import { phaseLabel } from "../lib/phase.js";
-import type { TurnDetail, SessionCommit, Phase } from "@peasant-labs/types";
+import { HIGHLIGHT_LABELS } from "../lib/labels.js";
+import type { TurnDetail, SessionCommit, Phase, Provider } from "@peasant-labs/types";
 
 export interface HighlightsOutlineProps {
   turns: TurnDetail[];
   phases: Phase[];
+  /** Session harness — the final-response row leads with its brand mark. */
+  provider?: Provider;
   errorTurnIndices?: number[];
   commits?: SessionCommit[];
   activeTurnIndex?: number;
@@ -29,6 +33,7 @@ type Row =
 export function HighlightsOutline({
   turns,
   phases,
+  provider,
   errorTurnIndices = [],
   commits = [],
   activeTurnIndex,
@@ -39,7 +44,7 @@ export function HighlightsOutline({
     const out: Row[] = [];
     const firstUser = turns.find((t) => t.role === "user" && t.content?.trim());
     if (firstUser) {
-      out.push({ kind: "first", turnIndex: firstUser.index, label: "Initial request", sub: preview(firstUser.content, 90) });
+      out.push({ kind: "first", turnIndex: firstUser.index, label: HIGHLIGHT_LABELS.initialRequest, sub: preview(firstUser.content, 90) });
     }
     phases.slice(1).forEach((p) => {
       const t = turns[p.startTurn];
@@ -56,7 +61,7 @@ export function HighlightsOutline({
       out.push({
         kind: "error",
         turnIndex: t.index,
-        label: errCall ? `${errCall.name} failed` : "Error",
+        label: errCall ? `${errCall.name} failed` : HIGHLIGHT_LABELS.error,
         sub: preview(errCall?.result || t.content || "", 80),
       });
       errCount++;
@@ -64,11 +69,11 @@ export function HighlightsOutline({
     for (const c of commits) {
       const ct = new Date(c.timestamp).getTime();
       const target = isFinite(ct) ? turns.find((t) => new Date(t.timestamp).getTime() >= ct) : undefined;
-      out.push({ kind: "checkpoint", turnIndex: target?.index, label: `Checkpoint ${c.hash.slice(0, 7)}`, sub: preview(c.message, 80) });
+      out.push({ kind: "checkpoint", turnIndex: target?.index, label: `checkpoint ${c.hash.slice(0, 7)}`, sub: preview(c.message, 80) });
     }
     const lastAssistant = [...turns].reverse().find((t) => t.role === "assistant" && (t.depth ?? 0) === 0 && t.content?.trim());
     if (lastAssistant) {
-      out.push({ kind: "final", turnIndex: lastAssistant.index, label: "Final response", sub: preview(lastAssistant.content, 90) });
+      out.push({ kind: "final", turnIndex: lastAssistant.index, label: HIGHLIGHT_LABELS.finalResponse, sub: preview(lastAssistant.content, 90) });
     }
     return out;
   }, [turns, phases, errorTurnIndices, commits]);
@@ -86,12 +91,13 @@ export function HighlightsOutline({
           <button
             key={i}
             type="button"
+            data-kind={r.kind}
             disabled={disabled}
             onClick={() => r.turnIndex != null && onJumpToTurn?.(r.turnIndex)}
-            className={cn("tb-outline-srow tb-focus", disabled && "tb-outline-srow-disabled", active && "tb-outline-row-active")}
+            className={cn("tb-outline-srow", disabled && "tb-outline-srow-disabled", active && "tb-outline-row-active")}
           >
             <span className="tb-outline-srow-icon">
-              <RowIcon kind={r.kind} />
+              <RowIcon kind={r.kind} provider={provider} />
             </span>
             <span className="tb-outline-srow-body">
               <span className="tb-outline-srow-label tb-truncate">{r.label}</span>
@@ -104,7 +110,7 @@ export function HighlightsOutline({
   );
 }
 
-function RowIcon({ kind }: { kind: Row["kind"] }) {
+function RowIcon({ kind, provider }: { kind: Row["kind"]; provider?: Provider }) {
   switch (kind) {
     case "first":
       return <Play size={12} strokeWidth={1.75} />;
@@ -115,6 +121,9 @@ function RowIcon({ kind }: { kind: Row["kind"] }) {
     case "checkpoint":
       return <GitCommit size={12} strokeWidth={1.75} />;
     case "final":
-      return <Sparkles size={12} strokeWidth={1.75} />;
+      // Final response leads with the provider brand mark (parity with the
+      // Highlights view), not a generic glyph. Renders nothing if the harness
+      // is unknown (ProviderIcon also returns null for an unknown harness).
+      return provider ? <ProviderIcon harness={provider} size={12} /> : null;
   }
 }

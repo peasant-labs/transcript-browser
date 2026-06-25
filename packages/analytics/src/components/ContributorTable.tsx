@@ -19,7 +19,7 @@ export interface ContributorTableProps {
  * A sortable-by-volume contributor table (rows arrive pre-sorted from
  * `perContributorBreakdown`). The host controls how each contributor is
  * displayed via `renderContributor`; the package never assumes a name, avatar
- * or route. Paints from `--tb-*` tokens.
+ * or route. Paints from fairtrade tokens.
  */
 export function ContributorTable({
   rows,

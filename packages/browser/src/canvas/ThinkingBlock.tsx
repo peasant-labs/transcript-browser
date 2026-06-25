@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Brain, ChevronRight } from "lucide-react";
+import { Brain, ChevronRight } from "@peasant-labs/fairtrade/icons";
 import { cn } from "../internal/cn.js";
 import { Markdown } from "../primitives/Markdown.js";
+import { THINKING_LABEL } from "../lib/labels.js";
 
 export interface ThinkingBlockProps {
   content: string;
@@ -29,7 +30,7 @@ export function ThinkingBlock({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="tb-thinking-toggle tb-focus"
+        className="tb-thinking-toggle"
       >
         <ChevronRight
           size={12}
@@ -37,7 +38,7 @@ export function ThinkingBlock({
           className={cn("tb-chevron", open && "tb-chevron-open")}
         />
         <Brain size={12} strokeWidth={1.75} />
-        <span className="tb-thinking-italic">Thinking</span>
+        <span className="tb-thinking-italic">{THINKING_LABEL}</span>
         <span className="tb-thinking-words">{wordCount}w</span>
       </button>
       {open && (

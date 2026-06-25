@@ -1,20 +1,5 @@
-import { useMemo, useRef } from "react";
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { useMemo } from "react";
+import { ChartBar, ChartLine, Sparkline, StatGrid } from "@peasant-labs/fairtrade/ui";
 import type { SessionSummary } from "@peasant-labs/types";
 import {
   computeProjectAnalytics,
@@ -22,7 +7,6 @@ import {
   type ProjectAnalytics,
 } from "../metrics/index.js";
 import { cn } from "../internal/cn.js";
-import { useChartTheme } from "../internal/useChartTheme.js";
 import {
   formatDuration,
   formatNumber,
@@ -30,7 +14,6 @@ import {
   formatTokens,
   shortWeek,
 } from "../internal/format.js";
-import { StatCard } from "./StatCard.js";
 import { ChartCard } from "./ChartCard.js";
 import { ContributorTable } from "./ContributorTable.js";
 
@@ -97,9 +80,9 @@ const NO_SESSIONS: SessionSummary[] = [];
 /**
  * ProjectOverview — a configurable analytics dashboard for a project or
  * collective. Accepts raw `SessionSummary[]` or a pre-computed
- * `ProjectAnalytics` bundle, renders recharts charts + a contributor table, and
- * paints entirely from `--tb-*` tokens. No routes, brand strings, fetching or
- * app coupling — sections are toggled via the `sections` prop and the
+ * `ProjectAnalytics` bundle, renders fairtrade charts + a contributor table,
+ * and paints entirely from fairtrade tokens. No routes, brand strings, fetching
+ * or app coupling — sections are toggled via the `sections` prop and the
  * contributor cell is host-rendered.
  */
 export function ProjectOverview({
@@ -113,8 +96,6 @@ export function ProjectOverview({
   chartHeight = 200,
   className,
 }: ProjectOverviewProps) {
-  const rootRef = useRef<HTMLDivElement>(null);
-  const theme = useChartTheme(rootRef.current);
   const show = { ...ALL_ON, ...sections };
 
   const data = useMemo<ProjectAnalytics>(
@@ -123,32 +104,22 @@ export function ProjectOverview({
     [analyticsProp, sessions],
   );
 
-  const axisTick = { fill: theme.ink3, fontSize: 11, fontFamily: theme.fontSans };
-  const tooltipStyle = {
-    background: theme.surface,
-    border: `1px solid ${theme.rule}`,
-    color: theme.ink,
-    fontSize: 12,
-    fontFamily: theme.fontSans,
-    borderRadius: 0,
-  };
-
-  const outcomePie = useMemo(
+  const outcomeBars = useMemo(
     () =>
       [
-        { name: "Resolved", value: data.outcomeDistribution.resolved, fill: theme.positive },
-        { name: "Partial", value: data.outcomeDistribution.partial, fill: theme.caution },
-        { name: "Failed", value: data.outcomeDistribution.failed, fill: theme.negative },
-        { name: "Unknown", value: data.outcomeDistribution.unknown, fill: theme.ink3 },
+        { name: "resolved", value: data.outcomeDistribution.resolved },
+        { name: "partial", value: data.outcomeDistribution.partial },
+        { name: "failed", value: data.outcomeDistribution.failed },
+        { name: "unknown", value: data.outcomeDistribution.unknown },
       ].filter((d) => d.value > 0),
-    [data.outcomeDistribution, theme],
+    [data.outcomeDistribution],
   );
 
   const rcr = data.returningContributorRate;
   const s2c = data.sessionToCommitRate;
 
   return (
-    <div ref={rootRef} className={cn("tb-a-root", className)}>
+    <div className={cn("tb-a-root", className)}>
       {title != null ? (
         <header className="tb-a-overview__head">
           <h2 className="tb-a-overview__title">{title}</h2>
@@ -159,99 +130,87 @@ export function ProjectOverview({
       ) : null}
 
       {show.summary ? (
-        <div className="tb-a-stats">
-          <StatCard label="Sessions" value={data.totalSessions} />
-          <StatCard label="Contributors" value={data.totalContributors} />
-          <StatCard
-            label="Returning rate"
-            value={formatRate(rcr.rate)}
-            hint={`${rcr.returning} of ${rcr.total}`}
-          />
-          <StatCard
-            label="Session → commit"
-            value={formatRate(s2c.rate)}
-            hint={`${s2c.withCommit} of ${s2c.total}`}
-          />
-          <StatCard
-            label="Longest streak"
-            value={`${data.longestStreak.weeks} wk`}
-            hint={data.longestStreak.startWeek ?? undefined}
-          />
-          <StatCard label="Projects" value={data.totalProjects} />
-        </div>
+        <StatGrid
+          tiles={[
+            { key: "sessions", label: "Sessions", value: data.totalSessions },
+            {
+              key: "contributors",
+              label: "Contributors",
+              value: data.totalContributors,
+            },
+            {
+              key: "returning-rate",
+              label: "Returning rate",
+              value: formatRate(rcr.rate),
+              sub: `${rcr.returning} of ${rcr.total}`,
+            },
+            {
+              key: "session-to-commit",
+              label: "Session → commit",
+              value: formatRate(s2c.rate),
+              sub: `${s2c.withCommit} of ${s2c.total}`,
+            },
+            {
+              key: "longest-streak",
+              label: "Longest streak",
+              value: `${data.longestStreak.weeks} wk`,
+              sub: data.longestStreak.startWeek ?? undefined,
+            },
+            { key: "projects", label: "Projects", value: data.totalProjects },
+          ]}
+        />
       ) : null}
 
       <div className="tb-a-grid">
         {show.sessionsPerWeek ? (
           <ChartCard title="Sessions per week">
-            <ResponsiveContainer width="100%" height={chartHeight}>
-              <BarChart data={data.sessionsPerWeek} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
-                <CartesianGrid stroke={theme.rule} vertical={false} />
-                <XAxis dataKey="week" tickFormatter={shortWeek} tick={axisTick} stroke={theme.rule} />
-                <YAxis allowDecimals={false} tick={axisTick} stroke={theme.rule} />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: theme.rule, opacity: 0.3 }} />
-                <Bar dataKey="count" name="Sessions" fill={theme.accent} />
-              </BarChart>
-            </ResponsiveContainer>
+            <ChartBar
+              data={data.sessionsPerWeek}
+              xKey="week"
+              series={[{ key: "count", name: "sessions", color: "amber" }]}
+              height={chartHeight}
+              xFormatter={shortWeek}
+              valueFormatter={formatNumber}
+            />
           </ChartCard>
         ) : null}
 
         {show.weeklyActiveContributors ? (
           <ChartCard title="Weekly active contributors">
-            <ResponsiveContainer width="100%" height={chartHeight}>
-              <AreaChart data={data.weeklyActiveContributors} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
-                <CartesianGrid stroke={theme.rule} vertical={false} />
-                <XAxis dataKey="week" tickFormatter={shortWeek} tick={axisTick} stroke={theme.rule} />
-                <YAxis allowDecimals={false} tick={axisTick} stroke={theme.rule} />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Area
-                  type="monotone"
-                  dataKey="contributors"
-                  name="Active"
-                  stroke={theme.roleUser}
-                  fill={theme.roleUser}
-                  fillOpacity={0.18}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <ChartLine
+              data={data.weeklyActiveContributors}
+              xKey="week"
+              series={[{ key: "contributors", name: "active", color: "teal", area: true }]}
+              height={chartHeight}
+              xFormatter={shortWeek}
+              valueFormatter={formatNumber}
+            />
           </ChartCard>
         ) : null}
 
         {show.newContributorVelocity ? (
           <ChartCard title="New contributors per week">
-            <ResponsiveContainer width="100%" height={chartHeight}>
-              <BarChart data={data.newContributorVelocity} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
-                <CartesianGrid stroke={theme.rule} vertical={false} />
-                <XAxis dataKey="week" tickFormatter={shortWeek} tick={axisTick} stroke={theme.rule} />
-                <YAxis allowDecimals={false} tick={axisTick} stroke={theme.rule} />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: theme.rule, opacity: 0.3 }} />
-                <Bar dataKey="newContributors" name="New" fill={theme.roleAssistant} />
-              </BarChart>
-            </ResponsiveContainer>
+            <ChartBar
+              data={data.newContributorVelocity}
+              xKey="week"
+              series={[{ key: "newContributors", name: "new", color: "olive" }]}
+              height={chartHeight}
+              xFormatter={shortWeek}
+              valueFormatter={formatNumber}
+            />
           </ChartCard>
         ) : null}
 
         {show.avgDurationPerActiveWeek ? (
           <ChartCard title="Avg duration per active week" subtitle="minutes">
-            <ResponsiveContainer width="100%" height={chartHeight}>
-              <LineChart data={data.avgDurationPerActiveWeek} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
-                <CartesianGrid stroke={theme.rule} vertical={false} />
-                <XAxis dataKey="week" tickFormatter={shortWeek} tick={axisTick} stroke={theme.rule} />
-                <YAxis tick={axisTick} stroke={theme.rule} />
-                <Tooltip
-                  contentStyle={tooltipStyle}
-                  formatter={(v: number) => formatNumber(v)}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="avgDurationMins"
-                  name="Avg mins"
-                  stroke={theme.accent}
-                  dot={false}
-                  strokeWidth={2}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <ChartLine
+              data={data.avgDurationPerActiveWeek}
+              xKey="week"
+              series={[{ key: "avgDurationMins", name: "avg mins", color: "mauve" }]}
+              height={chartHeight}
+              xFormatter={shortWeek}
+              valueFormatter={formatNumber}
+            />
           </ChartCard>
         ) : null}
 
@@ -260,33 +219,35 @@ export function ProjectOverview({
             title="Outcome distribution"
             aside={<span className="tb-a-card__figure">{data.outcomeDistribution.total}</span>}
           >
-            {outcomePie.length === 0 ? (
+            {outcomeBars.length === 0 ? (
               <div className="tb-a-empty">No outcome data.</div>
             ) : (
-              <ResponsiveContainer width="100%" height={chartHeight}>
-                <PieChart>
-                  <Pie
-                    data={outcomePie}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius="50%"
-                    outerRadius="80%"
-                    paddingAngle={2}
-                    stroke={theme.surface}
-                  >
-                    {outcomePie.map((d) => (
-                      <Cell key={d.name} fill={d.fill} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={tooltipStyle} />
-                </PieChart>
-              </ResponsiveContainer>
+              <ChartBar
+                data={outcomeBars}
+                xKey="name"
+                series={[{ key: "value", name: "sessions", color: "clay" }]}
+                height={chartHeight}
+                valueFormatter={formatNumber}
+              />
             )}
           </ChartCard>
         ) : null}
 
         {show.sessionStats ? (
           <ChartCard title="Typical vs. tail" subtitle="median · p90">
+            <Sparkline
+              data={[
+                data.sessionStats.durationMins.median ?? 0,
+                data.sessionStats.totalTokens.median ?? 0,
+                data.sessionStats.turnCount.median ?? 0,
+                data.sessionStats.toolCallCount.median ?? 0,
+              ]}
+              type="bar"
+              color="teal"
+              width={140}
+              height={28}
+              label="median session stats sparkline"
+            />
             <div className="tb-a-statgrid">
               <StatRow label="Duration" stat={data.sessionStats.durationMins} fmt={formatDuration} />
               <StatRow label="Tokens" stat={data.sessionStats.totalTokens} fmt={formatTokens} />

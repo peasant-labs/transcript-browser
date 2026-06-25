@@ -1,9 +1,8 @@
-import { Clock, FileEdit, GitCommit, Hash, User } from "lucide-react";
-import { ProviderIcon } from "../primitives/ProviderIcon.js";
-import { Chip } from "../primitives/Chip.js";
+import { Chip, MetaItem, ProviderIcon } from "@peasant-labs/fairtrade/ui";
+import { Clock, Coins, FileText, GitCommitHorizontal, ListTree, User, Wrench } from "@peasant-labs/fairtrade/icons";
 import { OutcomeChip } from "../primitives/OutcomeChip.js";
 import { formatDurationMins, formatRelative, formatDateLong } from "../lib/time.js";
-import { formatTokens } from "../primitives/TokenBadge.js";
+import { formatTokens } from "../lib/format-numbers.js";
 import { providerLabel } from "../lib/provider.js";
 import type { SessionDetailPayload } from "@peasant-labs/types";
 
@@ -18,9 +17,11 @@ export interface MetadataChipsProps {
 }
 
 /**
- * Inline strip of monochrome chips summarizing a session — provider, model,
- * author, time, duration, turns/tool calls, files, churn, tokens. Ported from
- * peasant's `header/MetadataChips.tsx`.
+ * Session metadata row, matching the canonical in-use demo: the first items are
+ * BORDERED <Chip>s (status / provider / model) and everything after is a
+ * BORDERLESS <MetaItem> (icon + tabular value + label). Chrome reads lowercase
+ * + mono; user content (model id, git author) keeps its case. Provider leads
+ * with its real, accent-tinted brand mark.
  */
 export function MetadataChips({ detail, displayTurnCount, outcome, outcomeReasons }: MetadataChipsProps) {
   const provider = detail.harness;
@@ -34,69 +35,62 @@ export function MetadataChips({ detail, displayTurnCount, outcome, outcomeReason
   const tokensOut = detail.tokensOut;
   const turnCount = displayTurnCount ?? detail.turnCount;
   const toolCalls = detail.toolCallCount;
+  const timeValue =
+    detail.durationMins != null && detail.durationMins > 0
+      ? formatDurationMins(detail.durationMins)
+      : formatRelative(detail.startTime);
 
   return (
     <div className="tb-metachips">
+      {/* Bordered status / identity chips */}
       <OutcomeChip outcome={outcome} reasons={outcomeReasons} />
-
-      <Chip icon={<ProviderIcon provider={provider} size={11} />} tooltip="The AI coding tool this session was recorded from.">
-        {providerLabel(provider)}
+      <Chip>
+        <ProviderIcon harness={provider} accent size={14} /> {providerLabel(provider)}
       </Chip>
+      {detail.model && <Chip className="mono">{detail.model}</Chip>}
 
-      {detail.model && (
-        <Chip icon={<Hash size={11} strokeWidth={1.75} />} tooltip="The model version that produced this session.">
-          {detail.model}
-        </Chip>
-      )}
-
+      {/* Borderless meta (icon + tabular value + label) */}
       {author && (
-        <Chip icon={<User size={11} strokeWidth={1.75} />} tooltip="Git author this session is attributed to.">
+        <MetaItem icon={User} title="git author">
           {author}
-        </Chip>
+        </MetaItem>
       )}
-
-      <Chip icon={<Clock size={11} strokeWidth={1.75} />} title={formatDateLong(detail.startTime)}>
-        {formatRelative(detail.startTime)}
-      </Chip>
-
-      {detail.durationMins != null && detail.durationMins > 0 && (
-        <Chip title="Wall-clock duration">{formatDurationMins(detail.durationMins)}</Chip>
+      <MetaItem icon={Clock} value={timeValue} title={formatDateLong(detail.startTime)} />
+      {turnCount > 0 && (
+        <MetaItem icon={ListTree} value={turnCount.toLocaleString()}>
+          turns
+        </MetaItem>
       )}
-
-      {turnCount > 0 && <Chip title="Turns">{turnCount.toLocaleString()} turns</Chip>}
-
-      {toolCalls > 0 && <Chip title="Tool calls">{toolCalls.toLocaleString()} tools</Chip>}
-
+      {toolCalls > 0 && (
+        <MetaItem icon={Wrench} value={toolCalls.toLocaleString()}>
+          tools
+        </MetaItem>
+      )}
       {tokens > 0 && (
-        <Chip
-          title={
-            tokensIn != null && tokensOut != null
-              ? `${tokensIn.toLocaleString()} in · ${tokensOut.toLocaleString()} out`
-              : undefined
-          }
+        <MetaItem
+          icon={Coins}
+          value={formatTokens(tokens)}
+          title={tokensIn != null && tokensOut != null ? `${tokensIn.toLocaleString()} in · ${tokensOut.toLocaleString()} out` : undefined}
         >
-          {formatTokens(tokens)} tokens
-        </Chip>
+          tokens
+        </MetaItem>
       )}
-
       {commits > 0 && (
-        <Chip icon={<GitCommit size={11} strokeWidth={1.75} />} title="Commits during session">
-          {commits} {commits === 1 ? "commit" : "commits"}
-        </Chip>
+        <MetaItem icon={GitCommitHorizontal} value={commits}>
+          {commits === 1 ? "commit" : "commits"}
+        </MetaItem>
       )}
-
       {filesChanged > 0 && (
-        <Chip icon={<FileEdit size={11} strokeWidth={1.75} />} title="Files touched across commits">
-          {filesChanged} {filesChanged === 1 ? "file" : "files"}
-        </Chip>
+        <MetaItem icon={FileText} value={filesChanged}>
+          {filesChanged === 1 ? "file" : "files"}
+        </MetaItem>
       )}
-
       {(insertions > 0 || deletions > 0) && (
-        <Chip title="Lines added / removed across commits">
+        <MetaItem className="tb-tnum" title="lines added / removed across commits">
           <span className="tb-ink-positive">+{insertions.toLocaleString()}</span>
           <span className="tb-hl-sep">/</span>
           <span className="tb-ink-danger">−{deletions.toLocaleString()}</span>
-        </Chip>
+        </MetaItem>
       )}
     </div>
   );

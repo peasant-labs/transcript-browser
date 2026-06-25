@@ -6,11 +6,15 @@
  * Data flows IN via props only — no fetching, WebSocket, env access or app
  * routing inside any component. Actions flow OUT via optional callbacks gated by
  * capability flags; the viewer renders fully read-only when none are supplied.
- * Theming is driven entirely by the `--tb-*` CSS variables in
- * `@peasant-labs/theme`. See README.md for the full contract.
+ * Theming is driven entirely by the fairtrade CSS variables from
+ * `@peasant-labs/fairtrade`. See README.md for the full contract.
  *
- * Required styles (import once at your app root):
- *   import "@peasant-labs/theme/tokens.css";
+ * Required styles (import ONCE at your app root, fairtrade CSS first then this
+ * package's DOMAIN-only sheet):
+ *   import "@peasant-labs/fairtrade/fonts.css";
+ *   import "@peasant-labs/fairtrade/tokens.css";
+ *   import "@peasant-labs/fairtrade/base.css";
+ *   import "@peasant-labs/fairtrade/components.css";
  *   import "@peasant-labs/transcript-browser/styles.css";
  *
  * The primary entry point is `<SessionDetail detail={…} … />` — the full viewer
@@ -26,12 +30,12 @@ export { SessionTab, type SessionTabDef } from "./session-detail-types.js";
 export * from "./primitives/index.js";
 export * from "./canvas/index.js";
 
-// --- `primitives` surface — shadcn-style UI primitives ---------------------
-// Ported from the village viewer redesign and re-expressed in the package's
-// `--tb-*` token model (no Tailwind, no Radix). Namespaced to avoid colliding
-// with the bespoke transcript primitives above (e.g. both expose a `Tooltip`).
-//   import { primitives } from "@peasant-labs/transcript-browser";
-export * as primitives from "./ui/index.js";
+// Generic UI comes directly from @peasant-labs/fairtrade — import generics from
+// `@peasant-labs/fairtrade/ui`, not from this package. The old `primitives`
+// compat namespace was a second import path that re-exported the whole fairtrade
+// catalog (the duplication this adoption removes), so it was dropped;
+// transcript-browser exports only its DOMAIN surface (./primitives + the
+// views/rails/etc. below).
 export * from "./graph/index.js";
 export * from "./rails/index.js";
 export * from "./views/index.js";
@@ -46,6 +50,7 @@ export { providerLabel } from "./lib/provider.js";
 export { prefilterTurns } from "./lib/turn-filter.js";
 export { nextNavTurn } from "./lib/turnNav.js";
 export { formatRelative, formatDurationMins, formatDateLong } from "./lib/time.js";
+export { formatDuration, formatTokens } from "./lib/format-numbers.js";
 export {
   composeSessionTitle,
   summarizePrompt,

@@ -1,4 +1,5 @@
 import type { TurnDetail, ToolCallDetail, Phase, PhaseType } from "@peasant-labs/types";
+import type { ToolCallVM } from "@peasant-labs/fairtrade/ui";
 import type { TranscriptAnnotation } from "../lib/pattern-detection.js";
 
 /**
@@ -29,6 +30,12 @@ export interface TurnNodeData {
 export interface ToolCallNodeData {
   turnIndex: number;
   toolCalls: ToolCallDetail[];
+  /**
+   * Cooked one-line previews keyed by tool-call id — the adapter's
+   * `ToolCallVM.preview`, threaded in so the node renders the same arg summary as
+   * the list view WITHOUT parsing wire (`ToolCallDetail.arguments`) in the node.
+   */
+  previewById: Record<string, string>;
   totalDurationMs: number;
   hasError: boolean;
   isFilteredOut: boolean;
@@ -54,6 +61,12 @@ export interface NavCommand {
 
 export interface TrajectoryCanvasProps {
   turns: TurnDetail[];
+  /**
+   * Cooked tool calls keyed by turn index (the adapter's `ToolCallVM[]`). The
+   * mapper threads each tool's cooked `preview` into the tool node so the graph
+   * never parses wire. Optional: absent ⇒ tool nodes render without arg previews.
+   */
+  toolVMsByTurn?: Map<number, ToolCallVM[]>;
   filteredTurns: TurnDetail[];
   phases: Phase[];
   annotations: TranscriptAnnotation[];

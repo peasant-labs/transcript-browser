@@ -36,7 +36,7 @@ export interface TrajectoryGraphProps extends TrajectoryCanvasProps {
 /**
  * The trajectory graph view. Reuses the `turnsToFlow` mapper so topology stays
  * consistent with the list view, but every visual element is rebuilt in the
- * monochrome `--tb-*` system. Ported from peasant's `graph/TrajectoryGraph.tsx`.
+ * monochrome fairtrade system. Ported from peasant's `graph/TrajectoryGraph.tsx`.
  *
  * `@xyflow/react` is a PEER DEPENDENCY of this package — the host installs it
  * (and imports `@xyflow/react/dist/style.css` once) only if it mounts the graph.
@@ -51,6 +51,7 @@ export function TrajectoryGraph(props: TrajectoryGraphProps) {
 
 function Inner({
   turns,
+  toolVMsByTurn,
   filteredTurns,
   phases,
   annotations,
@@ -82,6 +83,7 @@ function Inner({
     () =>
       turnsToFlow({
         turns,
+        toolVMsByTurn,
         phases,
         annotations,
         searchMatches,
@@ -89,7 +91,7 @@ function Inner({
         searchQuery,
         selectedTurns,
       }),
-    [turns, phases, annotations, searchMatches, filteredIndices, searchQuery, selectedTurns],
+    [turns, toolVMsByTurn, phases, annotations, searchMatches, filteredIndices, searchQuery, selectedTurns],
   );
 
   const nodesWithProvider = useMemo(
@@ -110,10 +112,9 @@ function Inner({
           ...e,
           style: {
             ...e.style,
-            stroke: isToolEdge ? "#a3a3a3" : EDGE_DEFAULTS.sequentialColor,
-            strokeWidth: isToolEdge ? 1 : EDGE_DEFAULTS.sequentialWidth,
+            ...(isToolEdge ? { stroke: "var(--edge)", strokeWidth: 1 } : {}),
           },
-          animated: false,
+          animated: isToolEdge ? false : e.animated,
         };
       }),
     [flowGraph.edges],
@@ -196,13 +197,14 @@ function Inner({
     if (n.type === "turn") {
       const d = n.data as TurnNodeData;
       const hasErr = d.annotations?.some?.((a) => a.type === "error");
-      if (hasErr) return "var(--tb-negative)";
-      if (d.isFilteredOut) return "var(--tb-rule)";
-      if (d.turn.role === "user") return "var(--tb-ink)";
-      return "var(--tb-ink-2)";
+      if (hasErr) return "var(--danger)";
+      if (d.isFilteredOut) return "var(--rule)";
+      if (d.turn.role === "user") return "var(--teal)";
+      if (d.turn.role === "assistant") return "var(--amber)";
+      return "var(--ink-2)";
     }
-    if (n.type === "toolCall") return "var(--tb-ink-3)";
-    return "var(--tb-rule)";
+    if (n.type === "toolCall") return "var(--ink-3)";
+    return "var(--rule)";
   }, []);
 
   const onNodeClick = useCallback(
@@ -239,14 +241,14 @@ function Inner({
           panOnScroll
           zoomOnScroll
         >
-          <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--tb-rule)" />
+          <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--rule)" />
           <MiniMap
             zoomable
             pannable
             nodeColor={minimapNodeColor}
-            nodeStrokeColor="var(--tb-rule)"
+            nodeStrokeColor="var(--rule)"
             nodeBorderRadius={0}
-            maskColor="color-mix(in srgb, var(--tb-canvas) 70%, transparent)"
+            maskColor="color-mix(in srgb, var(--canvas) 70%, transparent)"
             className="tb-graph-minimap"
           />
         </ReactFlow>

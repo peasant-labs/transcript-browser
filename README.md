@@ -17,9 +17,8 @@ graph / rails / header / overlay views are deferred to later slices.
 | Package | Name | Status |
 |---|---|---|
 | `packages/types` | `@peasant-labs/types` | Shared transcript + analytics types (the reconciled superset). |
-| `packages/theme` | `@peasant-labs/theme` | `--tb-*` CSS variable token contract (light + dark). |
 | `packages/browser` | `@peasant-labs/transcript-browser` | Framework-agnostic React viewer — primitives + transcript canvas. See its [README](./packages/browser/README.md). |
-| `packages/analytics` | `@peasant-labs/analytics` | Framework-agnostic project/collective analytics — pure metric functions over `SessionSummary[]` + a configurable `<ProjectOverview>` (recharts). Separate from `browser` so analytics-only users skip the viewer's heavy deps. See its [README](./packages/analytics/README.md). |
+| `packages/analytics` | `@peasant-labs/analytics` | Framework-agnostic project/collective analytics — pure metric functions over `SessionSummary[]` + a configurable fairtrade-chart `<ProjectOverview>`. Separate from `browser` so analytics-only users skip the viewer's heavy deps. See its [README](./packages/analytics/README.md). |
 | `examples/minimal` | `@peasant-labs/example-minimal` | Vite app rendering `<TranscriptCanvas>` and `<ProjectOverview>` against realistic samples. |
 
 ## Quick start
@@ -37,7 +36,6 @@ pnpm dev:minimal     # run the minimal example (Vite dev server)
 transcript-browser/
 ├── packages/
 │   ├── types/      @peasant-labs/types
-│   ├── theme/      @peasant-labs/theme
 │   ├── browser/    @peasant-labs/transcript-browser
 │   └── analytics/  @peasant-labs/analytics
 ├── examples/
@@ -55,7 +53,7 @@ transcript-browser/
   wrappers, list/dashboard payloads, redaction-review types) were deliberately
   left in their respective apps.
 - The viewer follows a strict **agnosticism contract**: data in via props only,
-  actions out via optional callbacks + capability flags, theming via `--tb-*`
+  actions out via optional callbacks + capability flags, theming via fairtrade
   CSS variables only. See the [browser README](./packages/browser/README.md).
 - See [`DIVERGENCES.md`](./DIVERGENCES.md) for the type reconciliation details.
 - Neither `peasant` nor `village` has been wired to consume these packages yet;

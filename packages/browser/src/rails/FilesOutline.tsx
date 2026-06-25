@@ -1,11 +1,11 @@
 import { useMemo } from "react";
-import { Folder } from "lucide-react";
+import { FileText } from "@peasant-labs/fairtrade/icons";
 import { cn } from "../internal/cn.js";
-import { rollupFiles, type FileRollup } from "../lib/file-rollup.js";
-import type { TurnDetail } from "@peasant-labs/types";
+import type { FileRollup } from "../lib/file-rollup.js";
 
 export interface FilesOutlineProps {
-  turns: TurnDetail[];
+  /** Per-file rollups — computed once by the composer from the cooked VM. */
+  files: FileRollup[];
   /** Preferred jump for files with edits — goes to the Diffs view anchor. */
   onJumpToFile?: (path: string, firstTurnIndex: number) => void;
   /** Fallback jump for read-only files (and when no file jump is wired). */
@@ -17,16 +17,16 @@ export interface FilesOutlineProps {
  * Outline for the Files tab — every file touched, sorted alphabetically. Ported
  * from peasant's `rails/FilesOutline.tsx`.
  */
-export function FilesOutline({ turns, onJumpToFile, onJumpToTurn, className }: FilesOutlineProps) {
-  const files = useMemo<FileRollup[]>(() => rollupFiles(turns).sort((a, b) => a.path.localeCompare(b.path)), [turns]);
+export function FilesOutline({ files, onJumpToFile, onJumpToTurn, className }: FilesOutlineProps) {
+  const sorted = useMemo(() => [...files].sort((a, b) => a.path.localeCompare(b.path)), [files]);
 
-  if (files.length === 0) {
+  if (sorted.length === 0) {
     return <div className={cn("tb-outline-empty", className)}>No file activity recorded yet.</div>;
   }
 
   return (
     <nav className={cn("tb-outline", className)} aria-label="Files outline">
-      {files.map((f) => {
+      {sorted.map((f) => {
         const hasEdits = f.edits + f.writes > 0;
         return (
           <button
@@ -36,10 +36,10 @@ export function FilesOutline({ turns, onJumpToFile, onJumpToTurn, className }: F
               if (hasEdits && onJumpToFile) onJumpToFile(f.path, f.firstEditTurnIndex ?? f.firstTurnIndex);
               else onJumpToTurn?.(f.lastTurnIndex);
             }}
-            className="tb-outline-srow tb-focus"
+            className="tb-outline-srow"
           >
             <span className="tb-outline-srow-icon">
-              <Folder size={12} strokeWidth={1.75} />
+              <FileText size={12} strokeWidth={1.75} />
             </span>
             <span className="tb-outline-srow-body">
               <span className="tb-mono tb-outline-srow-label tb-truncate" title={f.path}>
