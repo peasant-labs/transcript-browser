@@ -1,6 +1,6 @@
 {
   "name": "@peasant-labs/transcript-browser",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Framework-agnostic React viewer for AI agent session transcripts.",
   "license": "UNLICENSED",
   "type": "module",
@@ -46,10 +46,10 @@
   "devDependencies": {
     "@peasant-labs/types": "workspace:*",
     "@types/diff": "^7.0.0",
+    "@types/node": "^22.10.0",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.1",
     "@xyflow/react": "^12.0.0",
-    "@types/node": "^22.10.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tsup": "^8.3.5",
