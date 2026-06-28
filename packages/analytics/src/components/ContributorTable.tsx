@@ -61,7 +61,12 @@ export function ContributorTable({
                   {renderContributor ? (
                     renderContributor(row)
                   ) : (
-                    <span className="tb-a-mono">{row.contributorId}</span>
+                    <span className="tb-a-contrib tb-a-mono">
+                      <span className="tb-a-contrib__badge" aria-hidden="true">
+                        {row.contributorId.slice(0, 1).toUpperCase()}
+                      </span>
+                      {row.contributorId}
+                    </span>
                   )}
                 </td>
                 <td className="tb-a-table__td tb-a-table__num tb-a-tnum">

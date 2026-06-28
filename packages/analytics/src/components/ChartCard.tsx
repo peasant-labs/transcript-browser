@@ -1,8 +1,15 @@
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { cn } from "../internal/cn.js";
+
+type IconComponent = ComponentType<{
+  className?: string;
+  size?: number;
+  "aria-hidden"?: boolean | "true" | "false";
+}>;
 
 export interface ChartCardProps {
   title: string;
+  icon?: IconComponent;
   /** Optional one-line description shown under the title. */
   subtitle?: ReactNode;
   /** Optional right-aligned slot in the header (e.g. a summary figure). */
@@ -18,6 +25,7 @@ export interface ChartCardProps {
  */
 export function ChartCard({
   title,
+  icon: Icon,
   subtitle,
   aside,
   children,
@@ -27,7 +35,12 @@ export function ChartCard({
     <section className={cn("tb-a-card", className)}>
       <header className="tb-a-card__head">
         <div>
-          <h3 className="tb-a-card__title">{title}</h3>
+          <h3 className="tb-a-card__title">
+            {Icon != null ? (
+              <Icon className="lucide tb-a-card__icon" aria-hidden="true" />
+            ) : null}
+            {title}
+          </h3>
           {subtitle != null ? (
             <p className="tb-a-card__subtitle">{subtitle}</p>
           ) : null}
