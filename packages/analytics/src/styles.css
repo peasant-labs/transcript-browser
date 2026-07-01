@@ -44,10 +44,12 @@
 
 .tb-a-overview__head {
   display: flex;
+  /* Titles first, then the visible-section chips on their own row below —
+     left-aligned, not crammed onto the title line (matches the fairtrade
+     demo layout). */
+  flex-direction: column;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--sp-4, 1rem);
-  flex-wrap: wrap;
+  gap: var(--sp-3, 0.75rem);
   padding: var(--sp-4, 1rem) var(--tb-a-pad-x);
   border-bottom: var(--bd, 1px solid #e6e2da);
 }
@@ -117,7 +119,13 @@
   gap: var(--sp-1, 0.25rem);
 }
 
-.tb-a-seg {
+/* .tb-a-seg = visible-section chips (SectionToggle); .tb-a-mseg = the
+   weekly-metric active|new toggle (WeeklyMetricToggle). Same visual
+   language, kept as distinct class names (not variants of one class) so
+   each toggle's DOM is unambiguous for tests and so a future change to one
+   doesn't silently reshape the other. */
+.tb-a-seg,
+.tb-a-mseg {
   box-sizing: border-box;
   height: var(--control-h-sm, 28px);
   padding: 0 var(--sp-2, 0.5rem);
@@ -132,31 +140,41 @@
   cursor: pointer;
 }
 
-.tb-a-seg:hover {
+.tb-a-seg:hover,
+.tb-a-mseg:hover {
   color: var(--ink, #0f0e0d);
   border-color: var(--amber-dim, #caa75b);
 }
 
-.tb-a-seg:focus-visible {
+.tb-a-seg:focus-visible,
+.tb-a-mseg:focus-visible {
   outline: 3px solid var(--focus-ring, #7dd3fc);
   outline-offset: 2px;
 }
 
-.tb-a-seg:disabled {
+.tb-a-seg:disabled,
+.tb-a-mseg:disabled {
   cursor: not-allowed;
   opacity: 0.45;
 }
 
-.tb-a-seg.is-on {
+.tb-a-seg.is-on,
+.tb-a-mseg.is-on {
   color: var(--ink, #0f0e0d);
   border-color: var(--rule-strong, #cfc8bd);
   background: var(--surface-2, #f3f1ec);
 }
 
-.tb-a-seg.is-on::before {
+.tb-a-seg.is-on::before,
+.tb-a-mseg.is-on::before {
   content: ">";
   color: var(--amber-dim, #caa75b);
   margin-right: 4px;
+}
+
+.tb-a-mtoggle {
+  display: flex;
+  gap: var(--sp-1, 0.25rem);
 }
 
 .tb-a-kpis {
@@ -280,66 +298,11 @@
   min-width: 0;
 }
 
-.tb-a-plot {
-  position: relative;
-  width: 100%;
-}
-
-.tb-a-svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  overflow: visible;
-}
-
-.tb-a-gridline {
-  stroke: var(--rule, #e6e2da);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-}
-
-.tb-a-axis-line {
-  stroke: var(--ink-3, #767064);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-}
-
-.tb-a-axis-label {
-  fill: var(--ink-4, #aaa49a);
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
-}
-
-.tb-a-bar {
-  cursor: pointer;
-}
-
-.tb-a-bar:hover,
-.tb-a-bar:focus-visible,
-.tb-a-point:hover,
-.tb-a-point:focus-visible,
-.tb-a-slice:hover,
-.tb-a-slice:focus-visible {
-  opacity: 0.78;
-  outline: 3px solid var(--focus-ring, #7dd3fc);
-  outline-offset: 2px;
-}
-
-.tb-a-line {
-  stroke-width: 2;
-  vector-effect: non-scaling-stroke;
-}
-
-.tb-a-area {
-  opacity: 0.16;
-}
-
-.tb-a-point {
-  stroke: var(--canvas, #faf9f6);
-  stroke-width: 1.5;
-  cursor: pointer;
-}
+/* Bar/line week-series charts render via the fairtrade ChartBar/ChartLine
+   primitives (their chrome + SVG styling ships in
+   @peasant-labs/fairtrade/components.css) — no package-local plot/axis/bar
+   CSS needed here. .tb-a-slice below stays: the outcome donut is a genuine
+   gap (no fairtrade donut primitive yet; tracked as a DS follow-up). */
 
 .tb-a-donut {
   display: grid;
@@ -357,6 +320,13 @@
 
 .tb-a-slice {
   cursor: pointer;
+}
+
+.tb-a-slice:hover,
+.tb-a-slice:focus-visible {
+  opacity: 0.78;
+  outline: 3px solid var(--focus-ring, #7dd3fc);
+  outline-offset: 2px;
 }
 
 .tb-a-donut__num {
@@ -538,17 +508,6 @@
   border-top: var(--bd, 1px solid #e6e2da);
   color: var(--ink-3, #767064);
   font-size: var(--fs-label, 13px);
-  text-transform: lowercase;
-}
-
-.tb-a-foot {
-  max-width: 64ch;
-  margin: 0;
-  padding-left: var(--sp-3, 0.75rem);
-  border-left: 2px solid var(--rule-strong, #cfc8bd);
-  color: var(--ink-3, #767064);
-  font-size: var(--fs-label, 13px);
-  line-height: 1.6;
   text-transform: lowercase;
 }
 

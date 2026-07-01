@@ -17,6 +17,7 @@ import {
   UserPlus,
   Users,
 } from "@peasant-labs/fairtrade/icons";
+import { ChartBar, ChartLine } from "@peasant-labs/fairtrade/ui";
 import type { SessionSummary } from "@peasant-labs/types";
 import {
   computeProjectAnalytics,
@@ -142,6 +143,9 @@ export interface ProjectOverviewProps {
 
 const NO_SESSIONS: SessionSummary[] = [];
 
+/** Which weekly-contributor metric the merged "weekly active contributors" card plots. */
+export type WeeklyContributorView = "active" | "new";
+
 /**
  * ProjectOverview — a configurable analytics dashboard for a project or
  * collective. Accepts raw `SessionSummary[]` or a pre-computed
@@ -165,6 +169,11 @@ export function ProjectOverview({
   const inputSessions = sessions ?? NO_SESSIONS;
   const [userSections, setUserSections] =
     useState<Required<ProjectOverviewSections>>(() => ALL_ON);
+  // Which series the "weekly active contributors" card plots. The card folds
+  // in the "new contributors per week" metric behind a two-state toggle
+  // (matches the fairtrade demo) rather than a second always-on card, so the
+  // same weekly-cadence data gets one home instead of two.
+  const [weeklyView, setWeeklyView] = useState<WeeklyContributorView>("active");
 
   const baseSections = useMemo<Required<ProjectOverviewSections>>(
     () => ({ ...ALL_ON, ...sections }),
@@ -213,6 +222,12 @@ export function ProjectOverview({
     (sum, row) => sum + row.sessionsWithCommit,
     0,
   );
+  // A host that hides the new-contributor section also removes the "new"
+  // option from the toggle — a host-hidden section stays un-selectable, same
+  // rule as the visible-section chips below.
+  const effectiveWeeklyView: WeeklyContributorView = show.newContributorVelocity
+    ? weeklyView
+    : "active";
 
   const setSection = (key: ProjectOverviewSectionKey) => {
     setUserSections((current) => ({
@@ -233,6 +248,8 @@ export function ProjectOverview({
               <p className="tb-a-overview__subtitle">{visibleSubtitle}</p>
             ) : null}
           </div>
+          {/* Own row below the subtitle, left-aligned — NOT crammed onto the
+              title line (matches the fairtrade demo). */}
           {showSectionToggle ? (
             <SectionToggle
               baseSections={baseSections}
@@ -302,59 +319,75 @@ export function ProjectOverview({
               subtitle="agent sessions bucketed by iso week"
               aside={`${formatNumber(data.totalSessions)} total`}
             >
-              <BarPlot
-                points={weekPoints(data.sessionsPerWeek, "count")}
-                valueLabel="sessions"
-                color="var(--amber)"
+              <ChartBar
+                data={chartRows(weekPoints(data.sessionsPerWeek, "count"))}
+                xKey="label"
+                series={[{ key: "value", name: "sessions", color: "amber" }]}
                 height={chartHeight}
+                valueFormatter={formatNumber}
               />
             </ChartCard>
           ) : null}
 
           {show.weeklyActiveContributors ? (
             <ChartCard
-              icon={Users}
-              title="weekly active contributors"
-              subtitle="distinct contributors active each week"
-              aside={`${formatNumber(
-                sumValues(
-                  weekPoints(data.weeklyActiveContributors, "contributors"),
-                ),
-              )} active`}
+              icon={effectiveWeeklyView === "new" ? UserPlus : Users}
+              title={
+                effectiveWeeklyView === "new"
+                  ? "new contributors per week"
+                  : "weekly active contributors"
+              }
+              subtitle={
+                effectiveWeeklyView === "new"
+                  ? `acquisition signal · first appearance · ${formatNumber(
+                      sumValues(
+                        weekPoints(data.newContributorVelocity, "newContributors"),
+                      ),
+                    )} new`
+                  : `distinct contributors active each week · ${formatNumber(
+                      sumValues(
+                        weekPoints(data.weeklyActiveContributors, "contributors"),
+                      ),
+                    )} active`
+              }
+              aside={
+                <WeeklyMetricToggle
+                  view={effectiveWeeklyView}
+                  canShowNew={show.newContributorVelocity}
+                  onChange={setWeeklyView}
+                />
+              }
             >
-              <LinePlot
-                points={weekPoints(
-                  data.weeklyActiveContributors,
-                  "contributors",
-                )}
-                valueLabel="active contributors"
-                color="var(--teal)"
-                area
-                height={chartHeight}
-              />
-            </ChartCard>
-          ) : null}
-
-          {show.newContributorVelocity ? (
-            <ChartCard
-              icon={UserPlus}
-              title="new contributors per week"
-              subtitle="acquisition signal · first appearance"
-              aside={`${formatNumber(
-                sumValues(
-                  weekPoints(data.newContributorVelocity, "newContributors"),
-                ),
-              )} new`}
-            >
-              <BarPlot
-                points={weekPoints(
-                  data.newContributorVelocity,
-                  "newContributors",
-                )}
-                valueLabel="new contributors"
-                color="var(--olive)"
-                height={chartHeight}
-              />
+              {effectiveWeeklyView === "new" ? (
+                <ChartBar
+                  data={chartRows(
+                    weekPoints(data.newContributorVelocity, "newContributors"),
+                  )}
+                  xKey="label"
+                  series={[
+                    { key: "value", name: "new contributors", color: "olive" },
+                  ]}
+                  height={chartHeight}
+                  valueFormatter={formatNumber}
+                />
+              ) : (
+                <ChartLine
+                  data={chartRows(
+                    weekPoints(data.weeklyActiveContributors, "contributors"),
+                  )}
+                  xKey="label"
+                  series={[
+                    {
+                      key: "value",
+                      name: "active contributors",
+                      color: "teal",
+                      area: true,
+                    },
+                  ]}
+                  height={chartHeight}
+                  valueFormatter={formatNumber}
+                />
+              )}
             </ChartCard>
           ) : null}
 
@@ -369,14 +402,14 @@ export function ProjectOverview({
                 ),
               )} avg`}
             >
-              <LinePlot
-                points={weekPoints(
-                  data.avgDurationPerActiveWeek,
-                  "avgDurationMins",
+              <ChartLine
+                data={chartRows(
+                  weekPoints(data.avgDurationPerActiveWeek, "avgDurationMins"),
                 )}
-                valueLabel="minutes"
-                color="var(--amber)"
+                xKey="label"
+                series={[{ key: "value", name: "minutes", color: "amber" }]}
                 height={chartHeight}
+                valueFormatter={formatNumber}
               />
             </ChartCard>
           ) : null}
@@ -424,12 +457,6 @@ export function ProjectOverview({
             </div>
           </ChartCard>
         ) : null}
-
-        <p className="tb-a-foot">
-          every tile and every chart paints from design tokens, so the whole
-          dashboard re-themes light/dark live. hover any bar, slice, point or
-          area to read its value.
-        </p>
       </div>
     </div>
   );
@@ -480,6 +507,47 @@ function SectionToggle({
   );
 }
 
+/**
+ * Two-state segmented control switching the "weekly active contributors"
+ * card between the active-contributor series and the new-contributor
+ * series. Distinct markup/class from the visible-section chips
+ * (`.tb-a-mseg`, not `.tb-a-seg`) — this toggle selects WHICH DATA a single
+ * card plots; the section chips select WHICH CARDS render at all. A
+ * host-hidden "new contributors" section (canShowNew=false) disables the
+ * "new" option the same way a host-hidden section chip stays un-selectable.
+ */
+function WeeklyMetricToggle({
+  view,
+  canShowNew,
+  onChange,
+}: {
+  view: WeeklyContributorView;
+  canShowNew: boolean;
+  onChange: (view: WeeklyContributorView) => void;
+}) {
+  return (
+    <div className="tb-a-mtoggle" role="group" aria-label="weekly contributor metric">
+      <button
+        type="button"
+        className={cn("tb-a-mseg", view === "active" && "is-on")}
+        aria-pressed={view === "active"}
+        onClick={() => onChange("active")}
+      >
+        active
+      </button>
+      <button
+        type="button"
+        className={cn("tb-a-mseg", view === "new" && "is-on")}
+        aria-pressed={view === "new"}
+        disabled={!canShowNew}
+        onClick={() => onChange("new")}
+      >
+        new
+      </button>
+    </div>
+  );
+}
+
 function StatTile({
   icon: Icon,
   label,
@@ -508,277 +576,16 @@ type PlotPoint = {
   value: number;
 };
 
-function BarPlot({
-  points,
-  valueLabel,
-  color,
-  height,
-}: {
-  points: PlotPoint[];
-  valueLabel: string;
-  color: string;
-  height: number;
-}) {
-  return (
-    <PlotShell points={points} valueLabel={valueLabel} height={height}>
-      {({ width, plotHeight, plotWidth, padding, ceiling, ticks }) => {
-        const slot = points.length === 0 ? plotWidth : plotWidth / points.length;
-        const barWidth = Math.min(64, Math.max(8, slot - 28));
-        const labels = visibleTickIndexes(points.length);
-
-        return (
-          <>
-            {ticks.map((tick) => {
-              const y = yForValue(tick, ceiling, plotHeight, padding.top);
-              return (
-                <g key={tick}>
-                  <line
-                    x1={padding.left}
-                    x2={width - padding.right}
-                    y1={y}
-                    y2={y}
-                    className="tb-a-gridline"
-                  />
-                  <text
-                    x={padding.left - 10}
-                    y={y + 3}
-                    className="tb-a-axis-label"
-                    textAnchor="end"
-                  >
-                    {formatNumber(tick)}
-                  </text>
-                </g>
-              );
-            })}
-            <line
-              x1={padding.left}
-              x2={width - padding.right}
-              y1={padding.top + plotHeight}
-              y2={padding.top + plotHeight}
-              className="tb-a-axis-line"
-            />
-            {points.map((point, index) => {
-              const barHeight = (point.value / ceiling) * plotHeight;
-              const x = padding.left + index * slot + (slot - barWidth) / 2;
-              const y = padding.top + plotHeight - barHeight;
-              const ariaLabel = `${point.label}: ${formatNumber(point.value)} ${valueLabel}`;
-              return (
-                <rect
-                  key={point.key}
-                  x={x}
-                  y={y}
-                  width={barWidth}
-                  height={barHeight}
-                  fill={color}
-                  className="tb-a-bar"
-                  tabIndex={0}
-                  role="img"
-                  aria-label={ariaLabel}
-                >
-                  <title>{ariaLabel}</title>
-                </rect>
-              );
-            })}
-            {labels.map((index) => {
-              const point = points[index];
-              if (point == null) return null;
-              const x = padding.left + index * slot + slot / 2;
-              return (
-                <text
-                  key={point.key}
-                  x={x}
-                  y={padding.top + plotHeight + 25}
-                  className="tb-a-axis-label"
-                  textAnchor="middle"
-                >
-                  {point.label}
-                </text>
-              );
-            })}
-          </>
-        );
-      }}
-    </PlotShell>
-  );
-}
-
-function LinePlot({
-  points,
-  valueLabel,
-  color,
-  area = false,
-  height,
-}: {
-  points: PlotPoint[];
-  valueLabel: string;
-  color: string;
-  area?: boolean;
-  height: number;
-}) {
-  return (
-    <PlotShell points={points} valueLabel={valueLabel} height={height}>
-      {({ width, plotHeight, plotWidth, padding, ceiling, ticks }) => {
-        const slot =
-          points.length <= 1 ? plotWidth : plotWidth / (points.length - 1);
-        const coords = points.map((point, index) => ({
-          point,
-          x: padding.left + (points.length <= 1 ? plotWidth / 2 : index * slot),
-          y: yForValue(point.value, ceiling, plotHeight, padding.top),
-        }));
-        const linePath = coords
-          .map((coord, index) => `${index === 0 ? "M" : "L"} ${coord.x} ${coord.y}`)
-          .join(" ");
-        const baseY = padding.top + plotHeight;
-        const areaPath =
-          coords.length === 0
-            ? ""
-            : `${linePath} L ${coords[coords.length - 1]!.x} ${baseY} L ${coords[0]!.x} ${baseY} Z`;
-        const labels = visibleTickIndexes(points.length);
-
-        return (
-          <>
-            {ticks.map((tick) => {
-              const y = yForValue(tick, ceiling, plotHeight, padding.top);
-              return (
-                <g key={tick}>
-                  <line
-                    x1={padding.left}
-                    x2={width - padding.right}
-                    y1={y}
-                    y2={y}
-                    className="tb-a-gridline"
-                  />
-                  <text
-                    x={padding.left - 10}
-                    y={y + 3}
-                    className="tb-a-axis-label"
-                    textAnchor="end"
-                  >
-                    {formatNumber(tick)}
-                  </text>
-                </g>
-              );
-            })}
-            <line
-              x1={padding.left}
-              x2={width - padding.right}
-              y1={baseY}
-              y2={baseY}
-              className="tb-a-axis-line"
-            />
-            {area && areaPath.length > 0 ? (
-              <path d={areaPath} fill={color} className="tb-a-area" />
-            ) : null}
-            {linePath.length > 0 ? (
-              <path
-                d={linePath}
-                fill="none"
-                stroke={color}
-                className="tb-a-line"
-              />
-            ) : null}
-            {coords.map(({ point, x, y }) => {
-              const ariaLabel = `${point.label}: ${formatNumber(point.value)} ${valueLabel}`;
-              return (
-                <circle
-                  key={point.key}
-                  cx={x}
-                  cy={y}
-                  r="3.5"
-                  fill={color}
-                  className="tb-a-point"
-                  tabIndex={0}
-                  role="img"
-                  aria-label={ariaLabel}
-                >
-                  <title>{ariaLabel}</title>
-                </circle>
-              );
-            })}
-            {labels.map((index) => {
-              const point = points[index];
-              if (point == null) return null;
-              const x =
-                padding.left +
-                (points.length <= 1 ? plotWidth / 2 : index * slot);
-              return (
-                <text
-                  key={point.key}
-                  x={x}
-                  y={padding.top + plotHeight + 25}
-                  className="tb-a-axis-label"
-                  textAnchor="middle"
-                >
-                  {point.label}
-                </text>
-              );
-            })}
-          </>
-        );
-      }}
-    </PlotShell>
-  );
-}
-
-function PlotShell({
-  points,
-  valueLabel,
-  height,
-  children,
-}: {
-  points: PlotPoint[];
-  valueLabel: string;
-  height: number;
-  children: (state: {
-    width: number;
-    height: number;
-    plotHeight: number;
-    plotWidth: number;
-    padding: PlotPadding;
-    ceiling: number;
-    ticks: number[];
-  }) => ReactNode;
-}) {
-  const width = 520;
-  const padding = { left: 38, right: 12, top: 14, bottom: 34 };
-  const plotHeight = Math.max(80, height - padding.top - padding.bottom);
-  const plotWidth = width - padding.left - padding.right;
-  const max = Math.max(0, ...points.map((point) => point.value));
-  const ceiling = niceCeiling(max);
-  const ticks = tickValues(ceiling);
-
-  if (points.length === 0) {
-    return <div className="tb-a-empty">No {valueLabel} data.</div>;
-  }
-
-  return (
-    <div className="tb-a-plot">
-      <svg
-        className="tb-a-svg"
-        viewBox={`0 0 ${width} ${height}`}
-        role="img"
-        aria-label={valueLabel}
-      >
-        {children({
-          width,
-          height,
-          plotHeight,
-          plotWidth,
-          padding,
-          ceiling,
-          ticks,
-        })}
-      </svg>
-    </div>
-  );
-}
-
-type PlotPadding = {
-  left: number;
-  right: number;
-  top: number;
-  bottom: number;
+/** A chart data row for the fairtrade ChartBar/ChartLine primitives. */
+type ChartRow = {
+  label: string;
+  value: number;
 };
+
+/** Adapt weekly `PlotPoint[]` metrics into the row shape ChartBar/ChartLine expect. */
+function chartRows(points: PlotPoint[]): ChartRow[] {
+  return points.map((point) => ({ label: point.label, value: point.value }));
+}
 
 function OutcomeDonut({ data }: { data: ProjectAnalytics["outcomeDistribution"] }) {
   const total = data.total;
@@ -979,34 +786,4 @@ function avgValue(points: PlotPoint[]): number | null {
 
 function totalTokens(rows: ContributorBreakdown[]): number {
   return rows.reduce((sum, row) => sum + row.totalTokens, 0);
-}
-
-function niceCeiling(max: number): number {
-  if (max <= 0) return 1;
-  if (max <= 4) return 4;
-  const magnitude = 10 ** Math.floor(Math.log10(max));
-  const normalized = max / magnitude;
-  const step = normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
-  return step * magnitude;
-}
-
-function tickValues(ceiling: number): number[] {
-  const steps = 4;
-  return Array.from({ length: steps + 1 }, (_, index) =>
-    (ceiling / steps) * index,
-  );
-}
-
-function yForValue(
-  value: number,
-  ceiling: number,
-  plotHeight: number,
-  top: number,
-): number {
-  return top + plotHeight - (value / ceiling) * plotHeight;
-}
-
-function visibleTickIndexes(length: number): number[] {
-  if (length <= 6) return Array.from({ length }, (_, index) => index);
-  return [...new Set([0, Math.floor((length - 1) / 2), length - 1])];
 }
