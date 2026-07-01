@@ -3,9 +3,11 @@
  * DOM/RTL interaction coverage for ProjectOverview's two toggles:
  *
  *   - the visible-section chips (SectionToggle): show/hide whole cards.
- *   - the weekly-metric toggle (WeeklyMetricToggle, added for the fairtrade
- *     demo's "active | new" control): switches which series the "weekly
- *     active contributors" card plots.
+ *   - the weekly-metric toggle (WeeklyMetricToggle, on the "weekly active
+ *     contributors" card): switches which series that ONE card plots
+ *     between "active" and "new" — it does NOT replace, hide, or duplicate
+ *     the always-visible "new contributors per week" card; the fairtrade
+ *     demo shows both at once.
  *
  * ProjectOverview.test.ts (server-static render) proves the initial markup;
  * this file proves the toggles actually work as DOM interactions — a real
@@ -37,7 +39,11 @@ describe("ProjectOverview — visible-section toggle", () => {
 
     expect(screen.getByText("typical vs. tail")).toBeInTheDocument();
 
-    const typicalChip = screen.getByRole("button", { name: "typical" });
+    // Section chips carry a "<label> section" accessible name (distinct
+    // from the visible chip text) so they never collide, for a screen
+    // reader, with same-labeled controls elsewhere on the page (e.g. the
+    // weekly-metric toggle's "active"/"new" buttons below).
+    const typicalChip = screen.getByRole("button", { name: "typical section" });
     fireEvent.click(typicalChip);
     expect(screen.queryByText("typical vs. tail")).not.toBeInTheDocument();
 
@@ -57,17 +63,15 @@ describe("ProjectOverview — visible-section toggle", () => {
     // The contributor table never renders: no <table> in the tree.
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
 
-    const tableChip = screen.getByRole("button", { name: "table" });
+    const tableChip = screen.getByRole("button", { name: "table section" });
     expect(tableChip).toBeDisabled();
     expect(tableChip).toHaveAttribute("aria-pressed", "false");
 
     fireEvent.click(tableChip);
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
-});
 
-describe("ProjectOverview — weekly contributor metric toggle", () => {
-  it("switches the weekly-active-contributors card to the new-contributors view and back", () => {
+  it("the 'new' section chip shows/hides the standalone new-contributors-per-week card", () => {
     render(
       createElement(ProjectOverview, {
         sessions: SAMPLE_SESSIONS,
@@ -75,24 +79,57 @@ describe("ProjectOverview — weekly contributor metric toggle", () => {
       }),
     );
 
+    // Both cards are on screen at once — the toggle on the weekly-active
+    // card does not replace this standalone card.
     expect(screen.getByText("weekly active contributors")).toBeInTheDocument();
+    expect(screen.getByText("new contributors per week")).toBeInTheDocument();
+
+    const newChip = screen.getByRole("button", { name: "new section" });
+    fireEvent.click(newChip);
     expect(screen.queryByText("new contributors per week")).not.toBeInTheDocument();
+    // The other card is unaffected by this chip.
+    expect(screen.getByText("weekly active contributors")).toBeInTheDocument();
+
+    fireEvent.click(newChip);
+    expect(screen.getByText("new contributors per week")).toBeInTheDocument();
+  });
+});
+
+describe("ProjectOverview — weekly contributor metric toggle", () => {
+  it("switches the weekly-active-contributors card's plotted series and back, without touching the standalone new-contributors card", () => {
+    render(
+      createElement(ProjectOverview, {
+        sessions: SAMPLE_SESSIONS,
+        title: "project overview",
+      }),
+    );
+
+    const weeklyCard = screen.getByText("weekly active contributors").closest(
+      "section",
+    ) as HTMLElement;
+    expect(
+      within(weeklyCard).getByText(/distinct contributors active each week/),
+    ).toBeInTheDocument();
 
     // Scoped to the metric toggle's own group — the visible-section chips
-    // row ALSO has buttons named "active"/"new" (they show/hide the whole
-    // card), so an unscoped query would be ambiguous.
+    // row ALSO has "new section"/"active section" buttons, so an unscoped
+    // query for the bare "active"/"new" accessible names should only ever
+    // find the toggle (chip names carry the "section" suffix).
     const metricToggle = screen.getByRole("group", {
       name: "weekly contributor metric",
     });
     fireEvent.click(within(metricToggle).getByRole("button", { name: "new" }));
 
-    expect(screen.getByText("new contributors per week")).toBeInTheDocument();
-    expect(screen.queryByText("weekly active contributors")).not.toBeInTheDocument();
+    expect(
+      within(weeklyCard).getByText(/new contributors per week/),
+    ).toBeInTheDocument();
+    // The card's own title never changes — only its subtitle/plotted series.
+    expect(screen.getByText("weekly active contributors")).toBeInTheDocument();
 
     fireEvent.click(within(metricToggle).getByRole("button", { name: "active" }));
-
-    expect(screen.getByText("weekly active contributors")).toBeInTheDocument();
-    expect(screen.queryByText("new contributors per week")).not.toBeInTheDocument();
+    expect(
+      within(weeklyCard).getByText(/distinct contributors active each week/),
+    ).toBeInTheDocument();
   });
 
   it("disables the 'new' option when the host hides newContributorVelocity, and the view stays on active", () => {
@@ -104,6 +141,8 @@ describe("ProjectOverview — weekly contributor metric toggle", () => {
       }),
     );
 
+    // Host-hidden also removes the always-visible standalone card.
+    expect(screen.queryByText("new contributors per week")).not.toBeInTheDocument();
     expect(screen.getByText("weekly active contributors")).toBeInTheDocument();
 
     const metricToggle = screen.getByRole("group", {
@@ -113,7 +152,8 @@ describe("ProjectOverview — weekly contributor metric toggle", () => {
     expect(newButton).toBeDisabled();
 
     fireEvent.click(newButton);
-    expect(screen.getByText("weekly active contributors")).toBeInTheDocument();
-    expect(screen.queryByText("new contributors per week")).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/distinct contributors active each week/),
+    ).toBeInTheDocument();
   });
 });

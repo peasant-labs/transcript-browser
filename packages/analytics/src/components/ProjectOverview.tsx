@@ -169,10 +169,12 @@ export function ProjectOverview({
   const inputSessions = sessions ?? NO_SESSIONS;
   const [userSections, setUserSections] =
     useState<Required<ProjectOverviewSections>>(() => ALL_ON);
-  // Which series the "weekly active contributors" card plots. The card folds
-  // in the "new contributors per week" metric behind a two-state toggle
-  // (matches the fairtrade demo) rather than a second always-on card, so the
-  // same weekly-cadence data gets one home instead of two.
+  // Which series the "weekly active contributors" card plots (matches the
+  // fairtrade demo's active|new toggle on that card). This is IN ADDITION to
+  // the always-visible "new contributors per week" card below — the demo
+  // shows both: the toggle lets this card's own view switch to the new-
+  // contributor series without leaving it, while the standalone card stays
+  // on screen as a permanent, non-toggled view of the same metric.
   const [weeklyView, setWeeklyView] = useState<WeeklyContributorView>("active");
 
   const baseSections = useMemo<Required<ProjectOverviewSections>>(
@@ -331,15 +333,11 @@ export function ProjectOverview({
 
           {show.weeklyActiveContributors ? (
             <ChartCard
-              icon={effectiveWeeklyView === "new" ? UserPlus : Users}
-              title={
-                effectiveWeeklyView === "new"
-                  ? "new contributors per week"
-                  : "weekly active contributors"
-              }
+              icon={Users}
+              title="weekly active contributors"
               subtitle={
                 effectiveWeeklyView === "new"
-                  ? `acquisition signal · first appearance · ${formatNumber(
+                  ? `new contributors per week · ${formatNumber(
                       sumValues(
                         weekPoints(data.newContributorVelocity, "newContributors"),
                       ),
@@ -359,13 +357,18 @@ export function ProjectOverview({
               }
             >
               {effectiveWeeklyView === "new" ? (
-                <ChartBar
+                <ChartLine
                   data={chartRows(
                     weekPoints(data.newContributorVelocity, "newContributors"),
                   )}
                   xKey="label"
                   series={[
-                    { key: "value", name: "new contributors", color: "olive" },
+                    {
+                      key: "value",
+                      name: "new contributors",
+                      color: "olive",
+                      area: true,
+                    },
                   ]}
                   height={chartHeight}
                   valueFormatter={formatNumber}
@@ -388,6 +391,31 @@ export function ProjectOverview({
                   valueFormatter={formatNumber}
                 />
               )}
+            </ChartCard>
+          ) : null}
+
+          {show.newContributorVelocity ? (
+            <ChartCard
+              icon={UserPlus}
+              title="new contributors per week"
+              subtitle="acquisition signal · first appearance"
+              aside={`${formatNumber(
+                sumValues(
+                  weekPoints(data.newContributorVelocity, "newContributors"),
+                ),
+              )} new`}
+            >
+              <ChartBar
+                data={chartRows(
+                  weekPoints(data.newContributorVelocity, "newContributors"),
+                )}
+                xKey="label"
+                series={[
+                  { key: "value", name: "new contributors", color: "olive" },
+                ]}
+                height={chartHeight}
+                valueFormatter={formatNumber}
+              />
             </ChartCard>
           ) : null}
 
@@ -494,6 +522,15 @@ function SectionToggle({
               key={section.key}
               type="button"
               className={cn("tb-a-seg", pressed && "is-on")}
+              // "active"/"new" here collide, by visible text, with the
+              // weekly-active-contributors card's own active|new view
+              // toggle (WeeklyMetricToggle) — a DIFFERENT control (switches
+              // that one card's plotted series; this chip shows/hides a
+              // whole section). Disambiguate the ACCESSIBLE name with a
+              // "section" suffix (applied to every chip, not just the
+              // colliding two, so the rule is uniform) while the visible
+              // label stays exactly the section name.
+              aria-label={`${section.label} section`}
               aria-pressed={pressed}
               disabled={!hostEnabled}
               onClick={() => onToggle(section.key)}
