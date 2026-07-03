@@ -1,9 +1,11 @@
 /**
  * Generic per-session analytics shape.
  *
- * `SessionSummary` is the minimal, app-agnostic projection of a session that the
- * `@peasant-labs/analytics` package needs to compute project / collective
- * metrics. It is deliberately *not* the full `SessionDetailPayload` (no turns,
+ * `SessionSummary` is the minimal, app-agnostic projection of a session for
+ * computing project / collective metrics. (The dashboard that consumed it now
+ * lives in the design system as `@peasant-labs/fairtrade/analytics`, with its
+ * own `AnalyticsSessionRecord` contract mirroring this shape; this type remains
+ * for wire/schema consumers.) It is deliberately *not* the full `SessionDetailPayload` (no turns,
  * no transcript): analytics operates over many sessions at once, so each one is
  * reduced to a flat summary row.
  *

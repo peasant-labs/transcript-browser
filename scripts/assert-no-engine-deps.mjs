@@ -18,7 +18,6 @@ const ROOT = new URL("..", import.meta.url).pathname;
 const MANIFESTS = [
   "package.json",
   "packages/browser/package.json",
-  "packages/analytics/package.json",
   "packages/types/package.json",
   "examples/minimal/package.json",
 ];

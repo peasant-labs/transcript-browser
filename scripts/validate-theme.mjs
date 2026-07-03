@@ -2,8 +2,8 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
 const ROOT = new URL("..", import.meta.url).pathname;
-const SOURCE_DIRS = ["packages/browser/src", "packages/analytics/src", "examples/minimal/src"];
-const CSS_FILES = ["packages/browser/src/styles.css", "packages/analytics/src/styles.css"];
+const SOURCE_DIRS = ["packages/browser/src", "examples/minimal/src"];
+const CSS_FILES = ["packages/browser/src/styles.css"];
 
 function rel(path) {
   return relative(ROOT, path);

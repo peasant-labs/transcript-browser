@@ -1,4 +1,4 @@
-import type { SessionSummary } from "@peasant-labs/analytics";
+import type { AnalyticsSessionRecord as SessionSummary } from "@peasant-labs/fairtrade/analytics";
 
 /**
  * A generated `SessionSummary[]` fixture for the analytics example.
@@ -59,8 +59,6 @@ function generateSessions(): SessionSummary[] {
         toolCallCount: 2 + Math.floor(rng() * 24),
         outcome,
         commitCount,
-        signalDensity: Math.round(rng() * 100),
-        specQualityScore: Math.round(rng() * 100),
       });
     }
   }

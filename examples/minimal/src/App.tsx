@@ -8,7 +8,7 @@ import {
   type ToolCallVM,
   type TranscriptViewModel,
 } from "@peasant-labs/fairtrade/ui";
-import { ProjectOverview } from "@peasant-labs/analytics";
+import { ProjectOverview } from "@peasant-labs/fairtrade/analytics";
 import { ScrollText, BarChart3, Moon, Sun } from "@peasant-labs/fairtrade/icons";
 // Atkinson fonts are loaded via <link> + preconnect in index.html (Option B).
 // Do NOT re-import fonts.css here — a CSS @import adds an extra round-trip and
@@ -22,7 +22,7 @@ import { ScrollText, BarChart3, Moon, Sun } from "@peasant-labs/fairtrade/icons"
 // component override, turning the breadcrumb (and every chrome link) amber.
 import "@peasant-labs/fairtrade/components.css";
 import "@peasant-labs/transcript-browser/styles.css";
-import "@peasant-labs/analytics/styles.css";
+import "@peasant-labs/fairtrade/analytics.css";
 import "@xyflow/react/dist/style.css";
 import { sampleSession, samplePhases, openToolsSeed } from "./sample-session.js";
 import { sampleSessions } from "./sample-analytics.js";
@@ -41,7 +41,8 @@ type View = "transcript" | "analytics";
  * The host plugs transcript-browser's @xyflow `TrajectoryGraph` engine into the
  * composite's `graphSlot` (the R7 graph-visuals/engine split: aesthetics in
  * fairtrade, topology/pan/zoom in TB), so this also smokes the graph seam. The
- * analytics view exercises the kept `@peasant-labs/analytics` project layer.
+ * analytics view exercises the design system's `/analytics` surface (the
+ * dashboard that used to live in the retired `@peasant-labs/analytics`).
  *
  * HEIGHT: the whole app is a fixed-height (100vh) flex column and the viewer is
  * mounted into a `flex:1; min-height:0` host. The composite's `.txn-app` is
@@ -137,7 +138,7 @@ export function App() {
       {view === "analytics" ? (
         <div style={{ flex: 1, minHeight: 0, overflow: "auto", padding: "1.5rem" }}>
           <ProjectOverview
-            sessions={sampleSessions}
+            payload={{ sessions: sampleSessions }}
             title="collective pulse"
             subtitle={`${sampleSessions.length} sessions · generated fixture`}
             contributorLimit={10}

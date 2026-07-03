@@ -124,27 +124,35 @@ try {
         }
       }
       if (expectedMarker === "analytics-overview") {
-        // Assert the migrated charts render STRUCTURALLY, not just that the
-        // overview has text. ProjectOverview paints fairtrade charts —
-        // ChartBar/ChartLine each render a `<figure class="chart">` root and
-        // Sparkline a `.spark` root. With ALL sections on the default overview
-        // shows 4 always-on time-series charts + 1 stats sparkline (the outcome
-        // chart is conditional), so each theme pane carries >= 5 chart roots.
-        // Counting roots (not svgs) mirrors the trajectory-graph check and
-        // avoids recharts' width-measurement flakiness in headless.
+        // Assert the design-system dashboard renders STRUCTURALLY, not just
+        // that the overview has text. `@peasant-labs/fairtrade/analytics`'s
+        // ProjectOverview paints 4 always-on time-series charts through the
+        // shared ChartBar/ChartLine (each a `<figure class="chart">` root),
+        // plus its own hand-rolled outcome donut (`.gan-donut-svg`) and the
+        // typical-vs-tail grid (`.gan-typical`) — the retired package's stats
+        // Sparkline is gone. Counting roots (not svgs) mirrors the
+        // trajectory-graph check and avoids recharts' width-measurement
+        // flakiness in headless.
         const perPane = await page
           .locator(`[data-sbsmoke="analytics-overview"]`)
-          .evaluateAll((panes) => panes.map((pane) => pane.querySelectorAll(".chart, .spark").length));
+          .evaluateAll((panes) => panes.map((pane) => ({
+            charts: pane.querySelectorAll(".chart").length,
+            donuts: pane.querySelectorAll(".gan-donut-svg").length,
+            typicals: pane.querySelectorAll(".gan-typical").length,
+          })));
         if (perPane.length !== 2) {
           errors.push(`expected analytics-overview in both themes, found ${perPane.length} panes`);
         }
-        perPane.forEach((count, i) => {
-          if (count < 5) {
-            errors.push(`analytics-overview pane ${i} rendered ${count} chart roots (.chart/.spark), expected >= 5`);
+        perPane.forEach((counts, i) => {
+          if (counts.charts < 4) {
+            errors.push(`analytics-overview pane ${i} rendered ${counts.charts} .chart roots, expected >= 4`);
+          }
+          if (counts.donuts !== 1 || counts.typicals !== 1) {
+            errors.push(`analytics-overview pane ${i}: donut=${counts.donuts} typical=${counts.typicals}, expected 1 of each`);
           }
         });
-        if (perPane.length === 2 && perPane[0] !== perPane[1]) {
-          errors.push(`analytics-overview chart-root count differs between themes: ${perPane[0]} vs ${perPane[1]}`);
+        if (perPane.length === 2 && perPane[0].charts !== perPane[1].charts) {
+          errors.push(`analytics-overview chart-root count differs between themes: ${perPane[0].charts} vs ${perPane[1].charts}`);
         }
       }
     }

@@ -7,7 +7,7 @@ import "@peasant-labs/fairtrade/tokens.css";
 import "@peasant-labs/fairtrade/base.css";
 import "@peasant-labs/fairtrade/components.css";
 import "@peasant-labs/transcript-browser/styles.css";
-import "@peasant-labs/analytics/styles.css";
+import "@peasant-labs/fairtrade/analytics.css";
 import "@xyflow/react/dist/style.css";
 
 const preview: Preview = {

@@ -13,7 +13,7 @@ import {
   type TurnDetail,
 } from "@peasant-labs/transcript-browser";
 import { BrandMark } from "@peasant-labs/fairtrade/ui";
-import { ProjectOverview } from "@peasant-labs/analytics";
+import { ProjectOverview } from "@peasant-labs/fairtrade/analytics";
 import { samplePhases, sampleScorecard, sampleSession } from "../examples/minimal/src/sample-session.js";
 import { sampleSessions } from "../examples/minimal/src/sample-analytics.js";
 
@@ -56,7 +56,7 @@ export const TranscriptViewer: Story = {
 export const AnalyticsOverview: Story = {
   render: () => (
     <div data-sbsmoke="analytics-overview">
-      <ProjectOverview sessions={sampleSessions} />
+      <ProjectOverview payload={{ sessions: sampleSessions }} />
     </div>
   ),
 };

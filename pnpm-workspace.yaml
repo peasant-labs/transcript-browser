@@ -1,5 +1,4 @@
 packages:
   - "packages/browser"
-  - "packages/analytics"
   - "packages/types"
   - "examples/*"

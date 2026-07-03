@@ -10,7 +10,7 @@
     "check": "pnpm build && pnpm typecheck && pnpm test && pnpm gates && pnpm storybook:build && pnpm sbsmoke && pnpm fidelity",
     "contrast": "node scripts/contrast.mjs",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm --filter @peasant-labs/analytics test",
+    "test": "pnpm -r test",
     "gates": "pnpm contrast && node scripts/validate-theme.mjs && node scripts/assert-no-engine-deps.mjs",
     "storybook:build": "storybook build",
     "sbsmoke": "node scripts/sbsmoke.mjs",
@@ -22,8 +22,7 @@
     "sxs": "node scripts/visual/stitch-sxs.mjs"
   },
   "devDependencies": {
-    "@peasant-labs/analytics": "workspace:*",
-    "@peasant-labs/fairtrade": "^0.0.3",
+    "@peasant-labs/fairtrade": "^0.0.4",
     "@peasant-labs/transcript-browser": "workspace:*",
     "@storybook/react-vite": "^10.4.6",
     "@types/react": "^19.0.1",
