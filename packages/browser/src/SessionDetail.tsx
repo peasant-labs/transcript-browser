@@ -1,3 +1,15 @@
+/* PRIOR-VERSION SURFACE — deprecation candidate, do not extend.
+ *
+ * SessionDetail is transcript-browser's own composition of the transcript
+ * viewer. The canonical implementation is fairtrade's <TranscriptViewer>
+ * composite (@peasant-labs/fairtrade/ui) — the design-system demo, the
+ * example app, and both first-party consumers (peasant, village) all render
+ * the composite directly now; nothing first-party mounts this composer
+ * anymore. It stays published for third-party consumers of this package and
+ * is soft-retired per repo convention (kept, marked, tracked) rather than
+ * deleted. New viewer work belongs in the fairtrade composite; this file
+ * should only receive critical fixes. */
+
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { cn } from "./internal/cn.js";
 import { SessionHero } from "./header/SessionHero.js";
