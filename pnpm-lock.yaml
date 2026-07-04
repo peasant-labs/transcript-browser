@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@peasant-labs/fairtrade':
-        specifier: ^0.0.4
-        version: 0.0.4(@types/react@19.2.15)(react-is@19.2.7)(redux@5.0.1)
+        specifier: ^0.0.5
+        version: 0.0.5(@types/react@19.2.15)(react-is@19.2.7)(redux@5.0.1)
       '@peasant-labs/transcript-browser':
         specifier: workspace:*
         version: link:packages/browser
@@ -51,8 +51,8 @@ importers:
   examples/minimal:
     dependencies:
       '@peasant-labs/fairtrade':
-        specifier: ^0.0.4
-        version: 0.0.4(@types/react@19.2.15)(react-is@19.2.7)(redux@5.0.1)
+        specifier: ^0.0.5
+        version: 0.0.5(@types/react@19.2.15)(react-is@19.2.7)(redux@5.0.1)
       '@peasant-labs/transcript-browser':
         specifier: workspace:*
         version: link:../../packages/browser
@@ -87,9 +87,6 @@ importers:
 
   packages/browser:
     dependencies:
-      '@peasant-labs/fairtrade':
-        specifier: ^0.0.3
-        version: 0.0.3(@types/react@19.2.15)(react-is@19.2.7)(redux@5.0.1)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -106,6 +103,9 @@ importers:
         specifier: ^1.24.4
         version: 1.29.2
     devDependencies:
+      '@peasant-labs/fairtrade':
+        specifier: ^0.0.5
+        version: 0.0.5(@types/react@19.2.15)(react-is@19.2.7)(redux@5.0.1)
       '@peasant-labs/types':
         specifier: workspace:*
         version: link:../types
@@ -1004,11 +1004,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@peasant-labs/fairtrade@0.0.3':
-    resolution: {integrity: sha512-YCcMuiAqVNg4poZ1g2heLgpEo/OpQtcvfOuFMZtIZerNgy1Mqi0tWhMeZwiVZ4C+WSWeBuq0YPG2IfjIePYq1w==}
-
-  '@peasant-labs/fairtrade@0.0.4':
-    resolution: {integrity: sha512-z9dnYw4f5eParnwDl8I+x7Ptrs/RhDxuNV4RzKBS1uFVNWuXTx8Ary4K0kcsu+ZYEzUQOTJNwaWke8HAX/W86w==}
+  '@peasant-labs/fairtrade@0.0.5':
+    resolution: {integrity: sha512-E9V2TG3fJK4PwHYlnKC7YjQA17sPSdwDgWx1rMsAASrDt1ZWmGmUzpU+BJbk6IYj5nB77RFzSQ7rM/U8M+PJTQ==}
 
   '@puppeteer/browsers@3.0.5':
     resolution: {integrity: sha512-xYXNuEQmHNIPWWcbL/skf2KF7seyp7c1xmKFRk3wmdFx7VwBsKVrtOLKs8ecaezsKPsWeF1YsgwIiElAscaryA==}
@@ -3566,20 +3563,7 @@ snapshots:
   '@oxc-resolver/binding-win32-x64-msvc@11.21.3':
     optional: true
 
-  '@peasant-labs/fairtrade@0.0.3(@types/react@19.2.15)(react-is@19.2.7)(redux@5.0.1)':
-    dependencies:
-      '@tanstack/react-table': 8.21.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      lucide: 1.21.0
-      lucide-react: 1.18.0(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
-      recharts: 3.8.1(@types/react@19.2.15)(react-dom@19.2.7(react@19.2.7))(react-is@19.2.7)(react@19.2.7)(redux@5.0.1)
-    transitivePeerDependencies:
-      - '@types/react'
-      - react-is
-      - redux
-
-  '@peasant-labs/fairtrade@0.0.4(@types/react@19.2.15)(react-is@19.2.7)(redux@5.0.1)':
+  '@peasant-labs/fairtrade@0.0.5(@types/react@19.2.15)(react-is@19.2.7)(redux@5.0.1)':
     dependencies:
       '@tanstack/react-table': 8.21.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       lucide: 1.21.0

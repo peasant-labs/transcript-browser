@@ -13,10 +13,14 @@ import { defineConfig } from "tsup";
  *  - `@xyflow/react` stays EXTERNAL and is an OPTIONAL peer (only the graph view
  *    needs it).
  *
- * The other runtime deps (`@peasant-labs/fairtrade`, clsx, diff, react-markdown,
- * remark-gfm, shiki) are EXTERNALIZED by default — tsup keeps every package.json
+ * The other runtime deps (clsx, diff, react-markdown, remark-gfm, shiki) are
+ * EXTERNALIZED by default — tsup keeps every package.json
  * `dependency`/`peerDependency` external, so they stay real npm `dependencies`
  * the consumer installs (they are NOT inlined into the bundle).
+ * `@peasant-labs/fairtrade` is a PEER dependency (also external): the host app
+ * supplies its single fairtrade copy, so the viewer can never render stale DS
+ * bytes from a nested pin (0.0.2 nested a fairtrade 0.0.3 under consumers that
+ * were already on 0.0.5 — the drift shipped visibly stale chrome).
  */
 export default defineConfig({
   entry: ["src/index.ts"],

@@ -12,7 +12,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@peasant-labs/fairtrade": "^0.0.4",
+    "@peasant-labs/fairtrade": "^0.0.5",
     "@peasant-labs/types": "workspace:*",
     "@peasant-labs/transcript-browser": "workspace:*",
     "@xyflow/react": "^12.0.0",
