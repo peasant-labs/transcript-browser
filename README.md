@@ -56,3 +56,20 @@ transcript-browser/
 - See [`DIVERGENCES.md`](./DIVERGENCES.md) for the type reconciliation details.
 - Neither `peasant` nor `village` has been wired to consume these packages yet;
   that is a later task.
+
+## npm publication
+
+The release ceremony: squash the epoch branch to one `release(vX.Y.Z): <summary>` commit
+(bumping `packages/browser/package.json` to the same version), `merge --no-ff` into `main`,
+tag the merge `transcript-browser-vX.Y.Z` (lightweight), push `main` + the tag. **Pushing
+the tag publishes**: `.github/workflows/npm-publish.yml` runs the full `pnpm check` gate
+chain, re-packs via `prepack` (tsup + the `workspace:*` devDependency strip), and publishes
+`@peasant-labs/transcript-browser` via **npm Trusted Publishing (OIDC)** — no `NPM_TOKEN`
+secret exists, provenance attestation is automatic. A prerelease version (`-rcN` etc.)
+lands under dist-tag `next`; a final under `latest`. The workflow refuses a tag whose
+version does not match the package manifest.
+
+One-time maintainer registrations (state lives on GitHub/npmjs.com, not in-repo): (1) a
+`npm-publish` GitHub Actions **environment** on this repo; (2) on npmjs.com, this repo +
+`npm-publish.yml` + that environment registered as the package's **Trusted Publisher**.
+Never add a token secret as a fallback; if OIDC exchange fails, fix the registration.

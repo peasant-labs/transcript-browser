@@ -1,0 +1,97 @@
+# Publish @peasant-labs/transcript-browser to npm when a release tag is pushed.
+#
+# Trigger: a `transcript-browser-vX.Y.Z` tag (same ceremony as fairtrade's
+# `fairtrade-vX.Y.Z`: squash the epoch branch to one release commit, merge
+# --no-ff into main, tag, push). Pushing the tag replaces the interactive
+# `pnpm publish` + OTP step; nothing else about the ceremony changes.
+#
+# Gates: the full repo `pnpm check` (build, typecheck, tests, theme/engine-dep
+# gates, storybook build + smoke, fidelity) runs before the publish — the same
+# bar as ci.yml — and `npm publish` re-runs the package's `prepack`
+# (tsup + workspace-devdeps strip, so `workspace:*` specifiers never reach the
+# published manifest; postpack restores them). The version guard below refuses
+# a tag whose version does not byte-match packages/browser/package.json.
+#
+# Authentication: npm Trusted Publishing (OIDC) — NOT a long-lived NPM_TOKEN
+# secret. GitHub mints a short-lived OIDC token scoped to the `npm-publish`
+# GitHub Actions environment that the npm Trusted Publisher registration is
+# bound to; the npm CLI (>= 11.5, bundled with Node 24) exchanges it with the
+# registry when no auth token is configured, so there is no secret to
+# provision, rotate, or leak, and provenance attestation is automatic.
+# Install/build stay on the repo's pinned pnpm (10.x, which lacks native OIDC
+# publish support — the npm CLI is used for the one publish step only).
+# One-time, maintainer-side registrations (the `npm-publish` GitHub
+# environment; this repo + workflow + environment as the package's Trusted
+# Publisher on npmjs.com) are documented in README.md, "npm publication".
+name: npm-publish
+
+on:
+  push:
+    tags: ['transcript-browser-v*']
+
+permissions:
+  contents: read
+
+jobs:
+  npm-publish:
+    name: publish npm package
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: npm-publish
+    permissions:
+      contents: read # checkout only; no tag/commit is pushed from this job
+      id-token: write # mint the OIDC token npm Trusted Publishing exchanges
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Guard tag <-> package version consistency
+        run: |
+          set -euo pipefail
+          tag_version="${TAG#transcript-browser-v}"
+          pkg_version="$(node -p "require('./packages/browser/package.json').version")"
+          if [ "${tag_version}" != "${pkg_version}" ]; then
+            echo "::error::tag ${TAG} names version ${tag_version} but packages/browser/package.json is ${pkg_version}; retag the release commit or fix the version bump"
+            exit 1
+          fi
+
+      - name: Install Playwright Chromium (for the check gates)
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run the full repo gate chain (pnpm check)
+        run: pnpm check
+
+      - name: Determine the npm dist-tag from the version kind
+        id: disttag
+        run: |
+          set -euo pipefail
+          # A prerelease version (any -suffix, e.g. 0.1.0-rc1) publishes under
+          # `next`; a final X.Y.Z takes `latest`.
+          version="${TAG#transcript-browser-v}"
+          case "${version}" in
+            *-*) echo "tag=next"    >> "$GITHUB_OUTPUT" ;;
+            *)   echo "tag=latest"  >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      # npm (not pnpm) for the publish step only — see the header comment.
+      # prepack re-runs tsup + the workspace-devdeps strip against the exact
+      # tarball being published; postpack restores the workspace specifiers.
+      - name: Publish @peasant-labs/transcript-browser to npm (OIDC trusted publishing)
+        working-directory: packages/browser
+        run: |
+          set -euo pipefail
+          npm publish --access public --tag "${{ steps.disttag.outputs.tag }}"
+          echo "::notice::published @peasant-labs/transcript-browser@${TAG#transcript-browser-v} under dist-tag ${{ steps.disttag.outputs.tag }} via OIDC trusted publishing"
