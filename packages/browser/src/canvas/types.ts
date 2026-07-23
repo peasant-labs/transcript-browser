@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { TurnDetail } from "@peasant-labs/types";
+import type { TurnDetail } from "@peasant-labs/schema";
 
 /**
  * The agnosticism contract for the transcript browser.

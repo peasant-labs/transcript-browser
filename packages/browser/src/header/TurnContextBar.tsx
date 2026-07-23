@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { TurnContextBar as FairtradeTurnContextBar } from "@peasant-labs/fairtrade/ui";
 import { computeTasks, type TaskGroup } from "../lib/tasks.js";
-import type { TurnDetail } from "@peasant-labs/types";
+import type { TurnDetail } from "@peasant-labs/schema";
 
 export interface TurnContextBarProps {
   turns: TurnDetail[];

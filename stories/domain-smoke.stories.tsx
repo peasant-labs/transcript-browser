@@ -9,7 +9,7 @@ import {
   ErrorPill,
   DiffView,
   annotateTranscript,
-  type Provider,
+  type Harness,
   type TurnDetail,
 } from "@peasant-labs/transcript-browser";
 import { BrandMark } from "@peasant-labs/fairtrade/ui";
@@ -30,7 +30,7 @@ export default meta;
 type Story = StoryObj;
 
 function TranscriptViewerFixture() {
-  const annotations = useMemo(() => annotateTranscript(sampleSession.turns), []);
+  const annotations = useMemo(() => annotateTranscript(sampleSession.turns ?? []), []);
   return (
     <div data-sbsmoke="transcript-viewer">
       <SessionDetail
@@ -61,12 +61,12 @@ export const AnalyticsOverview: Story = {
   ),
 };
 
-// Per-consume story: the assistant accent is per-provider (PROVIDER_ACCENT),
+// Per-consume story: the assistant accent follows the canonical provider policy,
 // driven from a data-harness hook + the --turn-accent CSS var. One assistant
 // turn per harness lets the fidelity gate assert each computed accent
 // (claude-code amber / gemini-cli teal / codex olive / opencode mauve /
 // cursor clay) without color being the sole signal (mark + name carry it too).
-const ACCENT_HARNESSES: Provider[] = [
+const ACCENT_HARNESSES: Harness[] = [
   "claude-code",
   "gemini-cli",
   "codex",
@@ -79,12 +79,14 @@ const accentTurn: TurnDetail = {
   role: "assistant",
   content: "an assistant response, accented by its provider.",
   timestamp: "2026-05-28T10:00:00Z",
+  depth: 0,
 };
 const userTurn: TurnDetail = {
   index: 0,
   role: "user",
   content: "a user prompt — accented teal.",
   timestamp: "2026-05-28T10:00:00Z",
+  depth: 0,
 };
 const subagentTurn: TurnDetail = {
   index: 0,
@@ -96,7 +98,7 @@ const subagentTurn: TurnDetail = {
 };
 
 // All three role accents in one story so the gate asserts user=teal,
-// assistant=PROVIDER_ACCENT[harness] (all five), subagent=mauve.
+// assistant=canonical accent for every schema harness, subagent=mauve.
 export const ProviderAccent: Story = {
   render: () => (
     <div data-sbsmoke="provider-accent" className="tb-root">
@@ -113,7 +115,7 @@ export const ProviderAccent: Story = {
   ),
 };
 
-function SessionDetailAccentRow({ harness }: { harness: Provider }) {
+function SessionDetailAccentRow({ harness }: { harness: Harness }) {
   return (
     <div data-accent-harness={harness} style={{ marginBottom: "0.5rem" }}>
       <TurnRow turn={accentTurn} turnNumber={1} provider={harness} />
@@ -126,7 +128,7 @@ function SessionDetailAccentRow({ harness }: { harness: Provider }) {
 // the screen) over the seeded sample so the fidelity gate can assert each
 // screen's chrome in isolation, in both themes.
 function ScreenFixture({ tab, marker }: { tab: SessionTab; marker: string }) {
-  const annotations = useMemo(() => annotateTranscript(sampleSession.turns), []);
+  const annotations = useMemo(() => annotateTranscript(sampleSession.turns ?? []), []);
   return (
     <div data-sbsmoke={marker}>
       <SessionDetail

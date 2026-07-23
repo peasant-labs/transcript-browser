@@ -223,7 +223,7 @@ const ASSERT = ({ EXPECTED_GLYPHS, ACCENTS }) => {
     }
 
     // 7) Role accents — ALL THREE roles, not just assistant: user = teal,
-    // subagent = mauve, assistant = PROVIDER_ACCENT[harness] for each harness.
+    // subagent = mauve, assistant = canonical provider accent for each harness.
     if (marker === "provider-accent") {
       const checkAccent = (sel, token, who) => {
         const row = pane.querySelector(sel);

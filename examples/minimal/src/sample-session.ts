@@ -1,10 +1,13 @@
+import type { Phase } from "@peasant-labs/transcript-browser";
+// The wire shapes come from the canonical schema-derived contract, so this
+// fixture typechecks against exactly what adaptTranscript accepts (the
+// package's own re-exported wire types are the looser deprecated port).
 import type {
-  Phase,
   SessionDetailPayload,
   SessionScorecard,
   ToolCallDetail,
   TurnDetail,
-} from "@peasant-labs/types";
+} from "@peasant-labs/fairtrade/ui";
 
 /**
  * The SAME recorded session the canonical fairtrade demo renders
@@ -73,7 +76,10 @@ interface TurnFixture {
   checkpoint?: { hash: string; msg: string; files: number; adds: number; dels: number };
 }
 
-const HARNESS = "claude-code";
+// Exported for hosts whose props take the closed provider union: the schema's
+// Harness is forward-open (string & {}), so sampleSession.harness widens past
+// closed-union props; this literal keeps the fixture's provenance narrow.
+export const HARNESS = "claude-code" as const;
 
 const TURNS: TurnFixture[] = [
   {
@@ -356,12 +362,9 @@ export const sampleScorecard: SessionScorecard = {
   outcome: "resolved",
 };
 
-const checkpoint = TURNS.find((t) => t.checkpoint)?.checkpoint;
-
 /**
- * The canonical wire payload (folded turns + nested gitContext for the
- * checkpoint), built exactly like the demo's `buildWire()` so the example renders
- * the SAME session through `adaptTranscript()`.
+ * The canonical wire payload, built like the demo's `buildWire()` and using
+ * the authoritative flat git fields from the generated schema contract.
  */
 export const sampleSession: SessionDetailPayload = {
   id: "sess_demo_0001",
@@ -377,29 +380,11 @@ export const sampleSession: SessionDetailPayload = {
   project: "transcript-browser",
   model: "claude-opus-4-7",
   workingDirectory: "/Users/dev/transcript-browser",
+  gitBranch: "lift/transcript-canvas",
+  gitRemote: "origin",
   outcome: "resolved",
   turns: TURNS.map(turnToWire),
   scorecard: sampleScorecard,
-  gitContext: {
-    branch: "lift/transcript-canvas",
-    user: "Dev",
-    email: "dev@example.com",
-    workingDirectory: "/Users/dev/transcript-browser",
-    startCommit: "a1b2c3d",
-    commits: checkpoint
-      ? [
-          {
-            hash: checkpoint.hash,
-            message: checkpoint.msg,
-            // ~30s after the checkpoint turn (id 6) so the adapter anchors it there.
-            timestamp: new Date(TS_BASE + 6 * 60_000 + 30_000).toISOString(),
-            filesChanged: checkpoint.files,
-            insertions: checkpoint.adds,
-            deletions: checkpoint.dels,
-          },
-        ]
-      : [],
-  },
 };
 
 /** Optional phase overlay — drives the trajectory graph's phase bands. */

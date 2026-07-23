@@ -1,0 +1,54 @@
+expectedValidCount: 6
+expectedInvalidCount: 3
+expectedMountedCount: 10
+turn:
+  index: 1
+  role: assistant
+  content: provider contract
+  depth: 0
+  timestamp: 2026-07-16T12:00:00Z
+absent:
+  name: mounted TurnRow uses amber when provider is absent
+  expectedAccent: amber
+  expectedLabel: assistant
+valid:
+  - name: claude code chrome label
+    harness: claude-code
+    expected: claude code
+    expectedAccent: amber
+  - name: gemini cli chrome label
+    harness: gemini-cli
+    expected: gemini cli
+    expectedAccent: teal
+  - name: opencode chrome label
+    harness: opencode
+    expected: opencode
+    expectedAccent: mauve
+  - name: codex chrome label
+    harness: codex
+    expected: codex
+    expectedAccent: olive
+  - name: cursor chrome label
+    harness: cursor
+    expected: cursor
+    expectedAccent: clay
+  - name: antigravity chrome label
+    harness: antigravity
+    expected: google antigravity
+    expectedAccent: teal
+invalid:
+  - name: empty harness rejected
+    value: ""
+    expectedError: at src/ui/provider-policy.js during provider display-name resolution
+    mountedName: mounted TurnRow rejects empty harness
+    expectedMountedError: at src/ui/provider-policy.js during provider accent resolution
+  - name: unknown harness rejected
+    value: unknown-provider
+    expectedError: at src/ui/provider-policy.js during provider display-name resolution
+    mountedName: mounted TurnRow rejects unknown harness
+    expectedMountedError: at src/ui/provider-policy.js during provider accent resolution
+  - name: null harness rejected
+    value: null
+    expectedError: at src/ui/provider-policy.js during provider display-name resolution
+    mountedName: mounted TurnRow rejects null harness
+    expectedMountedError: at src/ui/provider-policy.js during provider accent resolution

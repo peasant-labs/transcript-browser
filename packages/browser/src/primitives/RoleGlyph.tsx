@@ -1,5 +1,5 @@
 import { cn } from "../internal/cn.js";
-import type { Role } from "@peasant-labs/types";
+import type { Role } from "@peasant-labs/schema";
 
 /**
  * Monochrome role indicator used on the transcript rail.

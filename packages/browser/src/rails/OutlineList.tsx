@@ -4,7 +4,7 @@ import { cn } from "../internal/cn.js";
 import { formatDuration } from "../lib/format-numbers.js";
 import { preview } from "../canvas/tool-renderers/types.js";
 import { computeTasks, type TaskGroup } from "../lib/tasks.js";
-import type { TurnDetail } from "@peasant-labs/types";
+import type { TurnDetail } from "@peasant-labs/schema";
 
 export interface OutlineListProps {
   turns: TurnDetail[];

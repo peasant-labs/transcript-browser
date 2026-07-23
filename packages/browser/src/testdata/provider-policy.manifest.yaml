@@ -1,0 +1,24 @@
+expectedHarnessCount: 6
+expectedMountedCount: 10
+requiredHarnesses:
+  - claude-code
+  - gemini-cli
+  - opencode
+  - codex
+  - cursor
+  - antigravity
+absentTestName: mounted TurnRow uses amber when provider is absent
+expectedMutationCount: 2
+mutations:
+  - name: empty present provider treated as absent
+    target: src/canvas/TurnRow.tsx
+    find: 'const accentName = provider === undefined ? "amber" : providerAccent(provider);'
+    replace: 'const accentName = provider === undefined || provider === "" ? "amber" : providerAccent(provider);'
+    expectedTestName: mounted TurnRow rejects empty harness
+    expectedFailurePattern: 'expected \[Function\] to throw error including'
+  - name: absent provider sent through canonical validator
+    target: src/canvas/TurnRow.tsx
+    find: 'const accentName = provider === undefined ? "amber" : providerAccent(provider);'
+    replace: 'const accentName = provider === undefined ? providerAccent(provider as Harness) : providerAccent(provider);'
+    expectedTestName: mounted TurnRow uses amber when provider is absent
+    expectedFailurePattern: Provider harness validation failed

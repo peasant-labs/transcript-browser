@@ -1,4 +1,4 @@
-import type { PhaseType } from "@peasant-labs/types";
+import type { PhaseType } from "../view-types.js";
 import { PHASE_LABELS } from "./labels.js";
 
 /**

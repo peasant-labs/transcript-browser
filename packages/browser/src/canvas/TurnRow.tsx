@@ -1,15 +1,14 @@
 import { useCallback, useState } from "react";
 import { Check, Link as LinkIcon, CornerDownRight, User, Wrench, AlertTriangle, Coins } from "@peasant-labs/fairtrade/icons";
-import { ProviderIcon, PROVIDER_ACCENT } from "@peasant-labs/fairtrade/ui";
+import { ProviderIcon, TranscriptToolCall, providerAccent, type ToolCallVM } from "@peasant-labs/fairtrade/ui";
 import { cn } from "../internal/cn.js";
 import { formatTokens } from "../lib/format-numbers.js";
 import { formatRelative } from "../lib/time.js";
 import { providerLabel } from "../lib/provider.js";
 import { ROLE_LABELS, SUBAGENT_LABEL } from "../lib/labels.js";
 import { TurnContent } from "./TurnContent.js";
-import { TranscriptToolCall, type ToolCallVM } from "@peasant-labs/fairtrade/ui";
 import type { RenderTurnActions, RenderTurnPanel, TurnLabel, TurnLinkBuilder } from "./types.js";
-import type { TurnDetail, Provider } from "@peasant-labs/types";
+import type { TurnDetail, Harness } from "@peasant-labs/schema";
 
 export interface TurnRowProps {
   turn: TurnDetail;
@@ -18,8 +17,8 @@ export interface TurnRowProps {
    * inline label always matches an outline rail (e.g. `3`, `3a`, `3b`).
    */
   turnNumber: string | number;
-  /** Provider — used to pick the assistant rail icon. */
-  provider?: Provider;
+  /** Harness — used to pick the assistant rail icon. */
+  provider?: Harness;
   /**
    * The cooked tool calls for this turn — the adapter's `ToolCallVM[]` (parsed
    * `args`/`output`, one-line `preview`, classified `kind`/`group`, computed
@@ -84,14 +83,14 @@ export function TurnRow({
   // asst=amber, sub=mauve. Tool/system turns stay monochrome (no role class).
   const roleClass = isUser ? "user" : subagent ? "sub" : isAssistant ? "asst" : null;
   // The assistant IS the agent → tint its role label + mark with the provider
-  // accent (PROVIDER_ACCENT[harness]), falling back to amber. A token var so it
-  // re-themes under [data-theme].
-  const asstAccent = isAssistant
-    ? `var(--${(provider && PROVIDER_ACCENT[provider]) || "amber"})`
-    : undefined;
+  // accent. Only a genuinely absent provider uses the documented neutral
+  // fallback; every present value crosses Fairtrade's canonical validation
+  // boundary before it can select a trusted identity or colour.
+  const accentName = provider === undefined ? "amber" : providerAccent(provider);
+  const asstAccent = isAssistant ? `var(--${accentName})` : undefined;
   const roleLabel = subagent
     ? `${SUBAGENT_LABEL}${turn.agentName ? ` · ${turn.agentName}` : ""}`
-    : isAssistant && provider
+    : isAssistant && provider !== undefined
       ? providerLabel(provider)
       : (ROLE_LABELS[turn.role] ?? turn.role);
 
@@ -135,8 +134,8 @@ export function TurnRow({
   const head = (
     <div className="txn-turnhead">
       <span className="txn-rolelabel" style={asstAccent ? { color: asstAccent } : undefined}>
-        {isAssistant ? (
-          <ProviderIcon harness={provider!} accent />
+        {isAssistant && provider !== undefined ? (
+          <ProviderIcon harness={provider} accent />
         ) : subagent ? (
           <CornerDownRight size={14} aria-hidden />
         ) : isUser ? (

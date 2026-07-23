@@ -1,0 +1,54 @@
+expectedCaseCount: 10
+requiredFamilies: [top, sparse-turn, session-change, target-change, hash, legacy-snapshot, non-trace, graph, target-change-graph, explicit-removal]
+requiredNames:
+  - explicit top is one shot
+  - sparse explicit turn uses wire identity
+  - session change rearms the same target
+  - target change rearms the same session
+  - hash target uses the shared one-shot path
+  - legacy index remains a mount snapshot
+  - non-trace view becomes ready before positioning
+  - graph view becomes ready before positioning
+  - target changes after graph readiness
+  - removing explicit target never revives legacy
+expectedVisibilityCount: 2
+requiredVisibilityNames:
+  - full-present rendered-absent retries until rendered
+  - full-absent target discards authoritatively
+expectedMutationCount: 4
+mutations:
+  - name: package history write
+    find: "window.scrollTo({ top: 0"
+    replace: "window.history.replaceState({}, '', '/'); window.scrollTo({ top: 0"
+    expectedFailedTestNames:
+      - explicit top is one shot
+    expectedFailurePattern: positioning history invariant failed
+  - name: graph readiness consumed before list mount
+    find: "viewReady: activeTab === SessionTab.Trace && trajectoryMode === \"list\",\n      scrollerReady: typeof window !== \"undefined\",\n      targetReady: el instanceof HTMLElement"
+    replace: "viewReady: true,\n      scrollerReady: typeof window !== \"undefined\",\n      targetReady: true"
+    expectedFailedTestNames:
+      - non-trace view becomes ready before positioning
+      - graph view becomes ready before positioning
+      - target changes after graph readiness
+    expectedFailurePattern: initial-position invariant failed
+  - name: array offset lookup
+    find: "authoritativeTurnIndices: (detail.turns ?? []).map((turn) => turn.index)"
+    replace: "authoritativeTurnIndices: (detail.turns ?? []).map((_, index) => index)"
+    expectedFailedTestNames:
+      - sparse explicit turn uses wire identity
+      - session change rearms the same target
+      - target change rearms the same session
+      - hash target uses the shared one-shot path
+      - legacy index remains a mount snapshot
+      - non-trace view becomes ready before positioning
+      - graph view becomes ready before positioning
+      - target changes after graph readiness
+      - removing explicit target never revives legacy
+      - full-present rendered-absent retries until rendered
+    expectedFailurePattern: positioning scroll invariant failed
+  - name: rendered list treated as authoritative
+    find: "authoritativeTurnIndices: (detail.turns ?? []).map((turn) => turn.index)"
+    replace: "authoritativeTurnIndices: turns.map((turn) => turn.index)"
+    expectedFailedTestNames:
+      - full-present rendered-absent retries until rendered
+    expectedFailurePattern: positioning scroll invariant failed

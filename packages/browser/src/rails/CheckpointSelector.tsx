@@ -2,15 +2,15 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, GitCommit } from "@peasant-labs/fairtrade/icons";
 import { cn } from "../internal/cn.js";
 import { formatRelative } from "../lib/time.js";
-import type { SessionCommit } from "@peasant-labs/types";
+import type { CommitVM } from "@peasant-labs/fairtrade/ui";
 
 export interface CheckpointSelectorProps {
-  commits: SessionCommit[];
+  commits: CommitVM[];
   /** "all" or a commit hash. */
   value: "all" | string;
   onChange: (value: "all" | string) => void;
   /** Jump-to handler — fires when the user clicks a commit row. */
-  onJump?: (commit: SessionCommit) => void;
+  onJump?: (commit: CommitVM) => void;
 }
 
 /**
@@ -21,7 +21,7 @@ export function CheckpointSelector({ commits, value, onChange, onJump }: Checkpo
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  const sorted = [...commits].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  const sorted = [...commits].sort((a, b) => (a.commitTime ?? 0) - (b.commitTime ?? 0));
   const selected = value === "all" ? null : sorted.find((c) => c.hash === value);
   const label = selected
     ? `${selected.hash.slice(0, 7)} · ${selected.message.slice(0, 40)}`
@@ -70,11 +70,11 @@ export function CheckpointSelector({ commits, value, onChange, onJump }: Checkpo
                 <span className="tb-mono tb-tnum">
                   <span className="tb-ink-muted">{c.hash.slice(0, 7)}</span>
                   {" · "}
-                  <span className="tb-ink-muted">{formatRelative(c.timestamp)}</span>
-                  {c.filesChanged ? (
+                  <span className="tb-ink-muted">{c.commitTime == null ? "time unavailable" : formatRelative(new Date(c.commitTime).toISOString())}</span>
+                  {c.files ? (
                     <>
                       {" · "}
-                      <span className="tb-ink-muted">{c.filesChanged} files</span>
+                      <span className="tb-ink-muted">{c.files} files</span>
                     </>
                   ) : null}
                 </span>

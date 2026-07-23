@@ -10,7 +10,7 @@
  * intentionally NO composite score.
  */
 
-import type { SessionScorecard, QualitySession } from "@peasant-labs/types";
+import type { SessionScorecard, QualitySession } from "@peasant-labs/schema";
 import { computePersonalMedians as ftComputePersonalMedians } from "@peasant-labs/fairtrade/ui";
 
 /** Band severity, worst-to-best ordering matters for `worst()`. */
@@ -99,19 +99,17 @@ export interface PersonalMedians {
  * `{}` when no usable sample exists. The host supplies the sessions (e.g. from
  * its quality channel); the viewer never fetches them.
  *
- * R9 single-impl: delegates to the one shared fairtrade analytics util
+ * Delegates to the one shared Fairtrade analytics utility
  * (`@peasant-labs/fairtrade/ui`) — the same home as computeTasks /
  * annotateTranscript — via a thin typed wrapper that keeps peasant's
- * `@peasant-labs/types` `QualitySession` input + the `PersonalMedians` shape. The
- * boundary cast bridges the known wire-type drift; runtime-safe — fairtrade reads
- * only totalTokens / retryTokensWasted / specQualityScore / withinSessionReverts.
+ * `@peasant-labs/schema` `QualitySession` input + the `PersonalMedians` shape.
+ * The structural Fairtrade input reads only totalTokens / retryTokensWasted /
+ * specQualityScore / withinSessionReverts.
  */
 export function computePersonalMedians(
   sessions: QualitySession[] | undefined,
 ): PersonalMedians {
-  return ftComputePersonalMedians(
-    sessions as Parameters<typeof ftComputePersonalMedians>[0],
-  );
+  return ftComputePersonalMedians(sessions);
 }
 
 /** Format a comparison line for a percentage-style headline. */

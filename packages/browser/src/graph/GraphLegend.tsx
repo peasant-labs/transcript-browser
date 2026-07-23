@@ -1,11 +1,11 @@
 import { cn } from "../internal/cn.js";
 import { GraphLegend as FairtradeGraphLegend } from "@peasant-labs/fairtrade/ui";
 import { providerLabel } from "../lib/provider.js";
-import type { Provider } from "@peasant-labs/types";
+import type { Harness } from "@peasant-labs/schema";
 
 export interface GraphLegendProps {
-  /** Provider — sets the assistant swatch accent + label to match the turn cards. */
-  provider?: Provider;
+  /** Harness — sets the assistant swatch accent + label to match the turn cards. */
+  provider?: Harness;
   className?: string;
 }
 

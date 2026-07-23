@@ -5,7 +5,7 @@ import { NODE_DIMENSIONS } from "../constants.js";
 import type { ToolCallNodeData } from "../types.js";
 
 /**
- * Compact tool-call cluster used as a React Flow node. After the R7 graph split
+ * Compact tool-call cluster used as a React Flow node. After the graph split
  * this is a thin ENGINE wrapper: it keeps the @xyflow <Handle> and maps its
  * cooked `ToolCallNodeData` onto fairtrade's presentation-only `GraphToolNode`,
  * which renders the cluster (rows, duration, "+ N more", failed styling).
@@ -24,7 +24,7 @@ function ToolPillNodeImpl({ data }: NodeProps) {
     kind: c.toolKind,
     filePath: c.filePath,
     isError: c.isError,
-    exitCode: c.exitCode,
+    exitCode: c.exitCode ?? undefined,
     preview: previewById[c.id] ?? "",
   }));
 

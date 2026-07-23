@@ -16,7 +16,7 @@ import {
   type LucideIcon,
 } from "@peasant-labs/fairtrade/icons";
 import { cn } from "../internal/cn.js";
-import { ToolCallKind } from "@peasant-labs/types";
+import { ToolCallKind } from "@peasant-labs/schema";
 
 /**
  * Map a tool name OR toolKind to a Lucide icon. All icons are stroke-1.5,

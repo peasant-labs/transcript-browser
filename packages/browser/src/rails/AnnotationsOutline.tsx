@@ -4,7 +4,7 @@ import { AlertTriangle, RefreshCw, RotateCcw, CornerDownRight } from "@peasant-l
 import { cn } from "../internal/cn.js";
 import { preview } from "../canvas/tool-renderers/types.js";
 import { ANNOTATION_TYPE_LABELS } from "../lib/labels.js";
-import type { TurnDetail } from "@peasant-labs/types";
+import type { TurnDetail } from "@peasant-labs/schema";
 import type { TranscriptAnnotation } from "../lib/pattern-detection.js";
 
 export interface AnnotationsOutlineProps {

@@ -10,18 +10,20 @@ import { preview } from "../canvas/tool-renderers/types.js";
 import { formatRelative } from "../lib/time.js";
 import { phaseLabel } from "../lib/phase.js";
 import type { PersonalMedians } from "../lib/scorecard.js";
+import type { CommitVM } from "@peasant-labs/fairtrade/ui";
 import type {
   TurnDetail,
   SessionDetailPayload,
-  Provider,
-  Phase,
+  Harness,
   SessionScorecard as SessionScorecardData,
-} from "@peasant-labs/types";
+} from "@peasant-labs/schema";
+import type { Phase } from "../view-types.js";
 
 export interface HighlightsViewProps {
   detail: SessionDetailPayload;
   turns: TurnDetail[];
   phases: Phase[];
+  commits?: CommitVM[];
   errorTurnIndices?: number[];
   onJumpToTurn?: (turnIndex: number) => void;
   /**
@@ -57,12 +59,13 @@ export function HighlightsView({
   detail,
   turns,
   phases,
+  commits = [],
   errorTurnIndices = [],
   onJumpToTurn,
   scorecard,
   medians,
 }: HighlightsViewProps) {
-  const provider = detail.harness as Provider;
+  const provider: Harness = detail.harness;
   const errorSet = useMemo(() => new Set(errorTurnIndices), [errorTurnIndices]);
 
   const highlights: Highlight[] = useMemo(() => {
@@ -108,17 +111,17 @@ export function HighlightsView({
       errCount++;
     }
 
-    (detail.gitContext?.commits ?? []).forEach((c) => {
+    commits.forEach((c) => {
       out.push({
         kind: "checkpoint",
         title: `Checkpoint: ${c.hash.slice(0, 7)}`,
         body: c.message,
         meta: (
           <span className="tb-mono tb-tnum">
-            <span className="tb-ink-positive">+{c.insertions ?? 0}</span>
+            <span className="tb-ink-positive">+{c.adds ?? 0}</span>
             <span className="tb-hl-sep">/</span>
-            <span className="tb-ink-danger">−{c.deletions ?? 0}</span>
-            {c.filesChanged ? <span className="tb-ink-muted"> · {c.filesChanged} files</span> : null}
+            <span className="tb-ink-danger">−{c.dels ?? 0}</span>
+            {c.files ? <span className="tb-ink-muted"> · {c.files} files</span> : null}
           </span>
         ),
       });
@@ -142,9 +145,9 @@ export function HighlightsView({
     }
 
     return out;
-  }, [turns, phases, errorSet, detail.gitContext?.commits]);
+  }, [turns, phases, errorSet, commits]);
 
-  const effectiveScorecard = scorecard === null ? undefined : (scorecard ?? detail.scorecard);
+  const effectiveScorecard = scorecard === null ? undefined : (scorecard ?? detail.scorecard ?? undefined);
   const card =
     scorecard === null ? null : <SessionScorecard scorecard={effectiveScorecard} medians={medians} />;
 

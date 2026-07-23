@@ -5,15 +5,17 @@ import { cn } from "../internal/cn.js";
 import { preview } from "../canvas/tool-renderers/types.js";
 import { phaseLabel } from "../lib/phase.js";
 import { HIGHLIGHT_LABELS } from "../lib/labels.js";
-import type { TurnDetail, SessionCommit, Phase, Provider } from "@peasant-labs/types";
+import type { TurnDetail, Harness } from "@peasant-labs/schema";
+import type { CommitVM } from "@peasant-labs/fairtrade/ui";
+import type { Phase } from "../view-types.js";
 
 export interface HighlightsOutlineProps {
   turns: TurnDetail[];
   phases: Phase[];
   /** Session harness — the final-response row leads with its brand mark. */
-  provider?: Provider;
+  provider?: Harness;
   errorTurnIndices?: number[];
-  commits?: SessionCommit[];
+  commits?: CommitVM[];
   activeTurnIndex?: number;
   onJumpToTurn?: (turnIndex: number) => void;
   className?: string;
@@ -67,8 +69,8 @@ export function HighlightsOutline({
       errCount++;
     }
     for (const c of commits) {
-      const ct = new Date(c.timestamp).getTime();
-      const target = isFinite(ct) ? turns.find((t) => new Date(t.timestamp).getTime() >= ct) : undefined;
+      const ct = c.commitTime;
+      const target = ct != null ? turns.find((t) => new Date(t.timestamp).getTime() >= ct) : undefined;
       out.push({ kind: "checkpoint", turnIndex: target?.index, label: `checkpoint ${c.hash.slice(0, 7)}`, sub: preview(c.message, 80) });
     }
     const lastAssistant = [...turns].reverse().find((t) => t.role === "assistant" && (t.depth ?? 0) === 0 && t.content?.trim());
@@ -110,7 +112,7 @@ export function HighlightsOutline({
   );
 }
 
-function RowIcon({ kind, provider }: { kind: Row["kind"]; provider?: Provider }) {
+function RowIcon({ kind, provider }: { kind: Row["kind"]; provider?: Harness }) {
   switch (kind) {
     case "first":
       return <Play size={12} strokeWidth={1.75} />;

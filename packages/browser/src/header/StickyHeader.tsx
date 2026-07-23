@@ -4,7 +4,7 @@ import { ProviderIcon } from "@peasant-labs/fairtrade/ui";
 import { ActionMenu } from "./ActionMenu.js";
 import { HorizontalScrubber } from "../rails/HorizontalScrubber.js";
 import { composeSessionTitle } from "../lib/title.js";
-import type { SessionDetailPayload, TurnDetail } from "@peasant-labs/types";
+import type { SessionDetailPayload, TurnDetail } from "@peasant-labs/schema";
 import type { ViewerCallbacks, ViewerCapabilities } from "../canvas/types.js";
 
 export interface StickyHeaderProps {

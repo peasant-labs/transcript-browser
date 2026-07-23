@@ -24,7 +24,7 @@ import "@peasant-labs/fairtrade/components.css";
 import "@peasant-labs/transcript-browser/styles.css";
 import "@peasant-labs/fairtrade/analytics.css";
 import "@xyflow/react/dist/style.css";
-import { sampleSession, samplePhases, openToolsSeed } from "./sample-session.js";
+import { sampleSession, samplePhases, openToolsSeed, HARNESS } from "./sample-session.js";
 import { sampleSessions } from "./sample-analytics.js";
 
 type View = "transcript" | "analytics";
@@ -39,8 +39,8 @@ type View = "transcript" | "analytics";
  * so the UAT capture is a true height-matched, same-data side-by-side. The ONE
  * fairtrade adapter cooks the wire payload once; the lifted composite renders it.
  * The host plugs transcript-browser's @xyflow `TrajectoryGraph` engine into the
- * composite's `graphSlot` (the R7 graph-visuals/engine split: aesthetics in
- * fairtrade, topology/pan/zoom in TB), so this also smokes the graph seam. The
+ * composite's `graphSlot` (the graph-visuals/engine split: aesthetics in
+ * fairtrade, topology/pan/zoom in transcript-browser), so this also smokes the graph seam. The
  * analytics view exercises the design system's `/analytics` surface (the
  * dashboard that used to live in the retired `@peasant-labs/analytics`).
  *
@@ -52,6 +52,7 @@ type View = "transcript" | "analytics";
  * and neither would appear.
  */
 export function App() {
+  const turns = sampleSession.turns ?? [];
   const [dark, setDark] = useState(true);
   const [canLabel, setCanLabel] = useState(true);
   const [canEdit, setCanEdit] = useState(true);
@@ -63,7 +64,7 @@ export function App() {
   // The ONE adapter — wire → cooked TranscriptViewModel — built once. The scorecard
   // rides along on the payload, so the adapter derives the highlights-tab bands.
   const vm = useMemo<TranscriptViewModel>(
-    () => adaptTranscript(sampleSession as Parameters<typeof adaptTranscript>[0]),
+    () => adaptTranscript(sampleSession),
     [],
   );
   // Cooked tool calls by turn index, fed into the graph engine's tool nodes.
@@ -73,7 +74,7 @@ export function App() {
   );
   // The graph engine takes the host-derived pattern annotations (the package
   // never derives them implicitly).
-  const graphAnnotations = useMemo(() => annotateTranscript(sampleSession.turns), []);
+  const graphAnnotations = useMemo(() => annotateTranscript(turns), [turns]);
 
   return (
     <div
@@ -170,13 +171,13 @@ export function App() {
             }}
             graphSlot={() => (
               <TrajectoryGraph
-                turns={sampleSession.turns}
+                turns={turns}
                 toolVMsByTurn={toolVMsByTurn}
-                filteredTurns={sampleSession.turns}
+                filteredTurns={turns}
                 phases={samplePhases}
                 annotations={graphAnnotations}
                 searchMatches={[]}
-                provider={sampleSession.harness}
+                provider={HARNESS}
               />
             )}
           />

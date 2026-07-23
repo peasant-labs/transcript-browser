@@ -87,7 +87,7 @@
 
 /* Error markers now compose the design system's <Chip tone="err">; the bespoke
    .tb-errorpill rules were removed (the canonical clay error tone + mono chrome
-   come from the design system, not a TB duplicate). */
+   come from the design system, not a transcript-browser duplicate). */
 
 /* ── Kbd ────────────────────────────────────────────────────────────────── */
 .tb-kbd {
@@ -696,7 +696,7 @@
 }
 /* Role accent bars are all driven by the per-turn --turn-accent var (set in
    TurnRow from the design-system tokens), with a role fallback: user = teal,
-   subagent = mauve, assistant = PROVIDER_ACCENT[harness] (amber default). The
+   subagent = mauve, assistant = canonical provider accent (amber when absent). The
    fairtrade tokens flip per [data-theme] so the accents re-theme for free. */
 .tb-turn-accent-user {
   background: var(--turn-accent, var(--teal, #3a675e));
@@ -1249,7 +1249,7 @@
 .tb-graph-controls-btn:last-child { border-bottom: 0; }
 .tb-graph-controls-btn:hover { background: var(--surface-hover, #f4f1ec); color: var(--ink, #0f0e0d); }
 /* Overlay positioning only — the legend's swatch layout + typography come from
-   fairtrade's .ft-graph-legend; TB passes this class through for placement. */
+   fairtrade's .ft-graph-legend; transcript-browser passes this class through for placement. */
 .tb-graph-legend { position: absolute; z-index: 10; top: 0.75rem; right: 0.75rem; padding: 0.375rem 0.625rem; background: var(--surface, #fff); border: 1px solid var(--rule, #e3ded6); box-shadow: 0 2px 8px rgb(0 0 0 / 8%); }
 
 /* ── Graph node handles (engine only) ─────────────────────────────────────────

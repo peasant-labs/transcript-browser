@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Coins, FileText, RefreshCw, TrendingUp, TrendingDown } from "@peasant-labs/fairtrade/icons";
 import { cn } from "../internal/cn.js";
-import type { SessionScorecard as SessionScorecardData } from "@peasant-labs/types";
+import type { SessionScorecard as SessionScorecardData } from "@peasant-labs/schema";
 import {
   assessSession,
   type AxisVerdict,

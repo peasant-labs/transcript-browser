@@ -14,7 +14,7 @@ import {
   type TurnLabel,
   type TaskGroup,
 } from "./index.js";
-import type { TurnDetail } from "@peasant-labs/types";
+import type { TurnDetail } from "@peasant-labs/schema";
 
 /**
  * The peasant back-compat surface. peasant's web app imports these 13 symbols
@@ -23,7 +23,7 @@ import type { TurnDetail } from "@peasant-labs/types";
  *
  * The adopt-fairtrade migration consolidated several of them into the one
  * fairtrade analytics util + adapter (re-exported here via thin typed wrappers
- * that keep the `@peasant-labs/types` input signatures). This test pins that the
+ * that keep the `@peasant-labs/schema` input signatures). This test pins that the
  * names still resolve AND keep their back-compat shapes, so peasant compiles +
  * runs unchanged against the published package — the slice's "peasant's import
  * sites still resolve" acceptance, asserted at runtime against the production
@@ -51,12 +51,13 @@ describe("peasant back-compat export surface (13 symbols)", () => {
 
   it("the consolidated transform wrappers delegate to fairtrade and keep their shapes", () => {
     const turns: TurnDetail[] = [
-      { index: 0, role: "user", content: "add a feature", timestamp: "2026-01-01T00:00:00Z" },
+      { index: 0, role: "user", content: "add a feature", timestamp: "2026-01-01T00:00:00Z", depth: 0 },
       {
         index: 1,
         role: "assistant",
         content: "on it",
         timestamp: "2026-01-01T00:02:00Z",
+        depth: 0,
         toolCalls: [
           {
             id: "tc1",
@@ -91,7 +92,7 @@ describe("peasant back-compat export surface (13 symbols)", () => {
     // computePersonalMedians -> PersonalMedians, degrading to {} with no sample.
     expect(computePersonalMedians(undefined)).toEqual({});
 
-    // pure label/link helpers peasant uses (kept TB-local).
+    // pure label/link helpers peasant uses (kept browser-local).
     expect(typeof summarizePrompt("hello world goodbye", 8)).toBe("string");
     expect(typeof formatRelative(new Date().toISOString())).toBe("string");
   });

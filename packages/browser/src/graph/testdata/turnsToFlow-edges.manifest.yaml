@@ -1,0 +1,6 @@
+expectedCaseCount: 4
+requiredNames:
+  - sequential_turns_produce_n_minus_1_edges
+  - turn_with_tool_calls_adds_tool_edge
+  - single_turn_has_no_edges
+  - subagent_depth_change_produces_spawn_and_return_edges

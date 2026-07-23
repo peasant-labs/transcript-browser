@@ -14,22 +14,19 @@ available as the bare list view.
 
 ## Install
 
-The published package is **self-contained**: the sibling `@peasant-labs/types`
-package is bundled into `dist/` (both the JS and the `.d.ts`) and the stylesheet
-includes the published fairtrade CSS exports. A consumer installs **only** this
-package plus the React peers. It works with `npm` (including via a `file:`
-tarball/path) — no workspace protocol and no `@peasant-labs/*` siblings
-required.
+Canonical wire contracts and runtime values come from `@peasant-labs/schema`.
+The browser package owns only viewer-specific envelopes such as `Phase`; it
+does not carry a second copy of the transport model.
 
 ```bash
-# npm (e.g. from a published tarball or a file: path)
-npm install @peasant-labs/transcript-browser react react-dom
+# pnpm (published package or local file: dependency)
+pnpm add @peasant-labs/transcript-browser @peasant-labs/schema react react-dom
 # Only if you mount the graph view — it's an OPTIONAL peer dependency:
-npm install @xyflow/react
+pnpm add @xyflow/react
 ```
 
-Only `react` and `react-dom` are required peers; `@xyflow/react` is an optional
-peer needed solely for the graph view.
+Fairtrade, React, and React DOM are required peers; `@xyflow/react` is an
+optional peer needed solely for the graph view.
 
 Import the **single** bundled stylesheet once at your app root — it already
 contains the fairtrade theme tokens and the `tb-`-prefixed component styles, so
@@ -60,7 +57,8 @@ import {
 function Viewer({ detail }: { detail: SessionDetailPayload }) {
   // The host derives annotations + phases and passes them in — the package
   // never derives them implicitly.
-  const annotations = annotateTranscript(detail.turns);
+  const turns = detail.turns ?? [];
+  const annotations = annotateTranscript(turns);
 
   return (
     <SessionDetail
@@ -88,7 +86,7 @@ For the bare list view alone:
 ```tsx
 import { TranscriptCanvas } from "@peasant-labs/transcript-browser";
 
-<TranscriptCanvas turns={detail.turns} provider={detail.provider} commits={detail.gitContext?.commits} />;
+<TranscriptCanvas turns={detail.turns ?? []} provider={detail.harness} />;
 ```
 
 Set `data-theme="light"` or `data-theme="dark"` on any ancestor to flip the
@@ -123,8 +121,8 @@ A derivation the viewer performs (and exports, so hosts can reuse it):
 
 The producing agent comes from `SessionDetailPayload.harness` — the backend
 `bestiary.Harness` wire values (`claude-code`, `gemini-cli`, `codex`,
-`opencode`, `cursor`), which the viewer keys its icons/labels/tokens on
-directly.
+`opencode`, `cursor`, `antigravity`), which the viewer keys its
+icons/labels/tokens on directly.
 
 ### 2. Actions OUT via callbacks + capability flags
 
@@ -240,15 +238,15 @@ re-theme the whole viewer; the token contract is shipped inside the bundled
 - **Types:** the contract types (`TurnLabel`, `TurnLinkBuilder`,
   `ViewerCallbacks`, `ViewerCapabilities`, `RenderTurnActions`,
   `DownloadFormat`, `TranscriptAnnotation`) plus the shared transcript shapes
-  (`SessionDetailPayload`, `TurnDetail`, `ToolCallDetail`, `Provider`, `Role`,
-  `Phase`, …) — all re-exported inline so consumers import them straight from
-  `@peasant-labs/transcript-browser` (no `@peasant-labs/types` install needed).
+  (`SessionDetailPayload`, `TurnDetail`, `ToolCallDetail`, `Harness`, `Role`)
+  plus browser-owned view envelopes (`Phase`, …). Consumers may import these
+  from `@peasant-labs/transcript-browser`; the canonical definitions remain in
+  `@peasant-labs/schema`.
 
 ## Dependencies
 
 Runtime deps are kept lean and framework-neutral: `@peasant-labs/fairtrade`
-(tokens, base CSS, generic UI, chart transitive deps), `lucide-react` (domain
-icons), `shiki` (syntax
+(tokens, base CSS, generic UI, icons, chart transitive deps), `shiki` (syntax
 highlighting), `react-markdown` + `remark-gfm` (markdown), `diff` (inline
 diffs), and `clsx` (class joining). `@xyflow/react` is an **optional peer
 dependency** — needed only for the graph view. No router and no data layer.
