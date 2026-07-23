@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "description": "Shared, framework-agnostic transcript browser for AI agent session transcripts.",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "packageManager": "pnpm@10.33.2",
   "scripts": {
     "build": "pnpm -r build",

@@ -2,7 +2,7 @@
   "name": "@peasant-labs/types",
   "version": "0.0.0",
   "description": "Shared, framework-agnostic transcript types for AI agent session transcripts.",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

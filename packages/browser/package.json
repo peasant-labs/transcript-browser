@@ -2,7 +2,7 @@
   "name": "@peasant-labs/transcript-browser",
   "version": "0.0.3",
   "description": "Framework-agnostic React viewer for AI agent session transcripts.",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
