@@ -42,8 +42,17 @@ import type { TranscriptAnnotation } from "./lib/pattern-detection.js";
 import type { PersonalMedians } from "./lib/scorecard.js";
 import { prefilterTurns } from "./lib/turn-filter.js";
 import { rollupFiles } from "./lib/file-rollup.js";
-import { adaptTranscript } from "@peasant-labs/fairtrade/ui";
-import type { ToolCallVM, TranscriptViewModel } from "@peasant-labs/fairtrade/ui";
+import {
+  adaptTranscript,
+  transcriptInitialPositionReadiness,
+  useTranscriptInitialPosition,
+} from "@peasant-labs/fairtrade/ui";
+import type {
+  ToolCallVM,
+  CommitVM,
+  TranscriptInitialPosition,
+  TranscriptViewModel,
+} from "@peasant-labs/fairtrade/ui";
 import type {
   RenderTurnActions,
   RenderTurnPanel,
@@ -55,10 +64,9 @@ import type {
 import type {
   SessionDetailPayload,
   TurnDetail,
-  SessionCommit,
-  Phase,
   SessionScorecard as SessionScorecardData,
-} from "@peasant-labs/types";
+} from "@peasant-labs/schema";
+import type { Phase } from "./view-types.js";
 
 export interface SessionDetailProps {
   /** The full transcript payload. Brought in by the host (REST, WS, static). */
@@ -95,6 +103,8 @@ export interface SessionDetailProps {
 
   /** Initial tab. Defaults to the full trace. */
   initialTab?: SessionTab;
+  /** One-time transcript position, rearmed only by a new session or target. */
+  initialPosition?: TranscriptInitialPosition | null;
   /**
    * Deep-link target: a turn `index` to scroll to once on mount. Hosts whose
    * permalink shape isn't the default `#turn-<index>` hash (e.g. a `?turn=N`
@@ -102,6 +112,7 @@ export interface SessionDetailProps {
    * on that message" works regardless of link shape. The built-in `#turn-<index>`
    * hash is handled automatically and needs no prop.
    */
+  /** @deprecated Use `initialPosition={{ kind: "turn", turnIndex }}`. */
   initialTurnIndex?: number;
   /** Initial trajectory mode (list vs graph). Defaults to `"list"`. */
   initialTrajectoryMode?: TrajectoryMode;
@@ -167,6 +178,14 @@ export interface SessionDetailProps {
   className?: string;
 }
 
+function positionFromHash(): TranscriptInitialPosition | undefined {
+  if (typeof window === "undefined") return undefined;
+  const match = /^#turn-(\d+)$/.exec(window.location.hash);
+  if (!match) return undefined;
+  const turnIndex = Number(match[1]);
+  return Number.isSafeInteger(turnIndex) ? { kind: "turn", turnIndex } : undefined;
+}
+
 const STICKY_PAD = 24;
 
 /**
@@ -190,6 +209,7 @@ export function SessionDetail({
   scorecard,
   scorecardMedians,
   initialTab = SessionTab.Trace,
+  initialPosition,
   initialTurnIndex,
   initialTrajectoryMode = "list",
   renderGraph,
@@ -225,10 +245,10 @@ export function SessionDetail({
   // SAME `turns` this composer displays, so the cooked `vm.turns` are parallel
   // to the wire turns by index — the lifted tool rows (via `toolVMsByTurn`), the
   // Diffs/Files tabs (via `vm.diffs`/`vm.files`), and the file count all read
-  // cooked fields and NEVER JSON.parse. (Cast bridges the known #125/#126
-  // `@peasant-labs/types` ↔ fairtrade wire drift; runtime-safe.)
+  // cooked fields and NEVER JSON.parse. Fairtrade is the sole legacy wire
+  // compatibility boundary; this browser consumes only its cooked projection.
   const vm = useMemo<TranscriptViewModel>(
-    () => adaptTranscript({ ...detail, turns } as Parameters<typeof adaptTranscript>[0]),
+    () => adaptTranscript({ ...detail, turns }),
     [detail, turns],
   );
   const toolVMsByTurn = useMemo(
@@ -284,7 +304,7 @@ export function SessionDetail({
     });
   }, [phases, filteredTurns, turns]);
 
-  const allCommits: SessionCommit[] = detail.gitContext?.commits ?? [];
+  const allCommits: CommitVM[] = vm.session.git?.commits ?? [];
   const commits = useMemo(() => {
     if (selectedCheckpoint === "all") return allCommits;
     return allCommits.filter((c) => c.hash === selectedCheckpoint);
@@ -321,6 +341,10 @@ export function SessionDetail({
   // Scroll target + viewport tracking
   // -------------------------------------------------------------------------
   const containerRef = useRef<HTMLDivElement>(null);
+  const legacyInitialPositionRef = useRef<TranscriptInitialPosition | null>(
+    initialTurnIndex == null ? null : { kind: "turn", turnIndex: initialTurnIndex },
+  );
+  const [hashInitialPosition, setHashInitialPosition] = useState<TranscriptInitialPosition | undefined>(positionFromHash);
   const [viewportRange, setViewportRange] = useState<{ start: number; end: number } | undefined>();
   const [activePhaseIndex, setActivePhaseIndex] = useState<number | undefined>();
 
@@ -370,35 +394,56 @@ export function SessionDetail({
     scrollToTurn(activeMatchTurn);
   }, [activeMatchTurn, scrollToTurn]);
 
-  // Deep-link anchoring: when the page loads (or the hash changes) with a
-  // `#turn-<index>` fragment — the link the per-turn copy button writes — switch
-  // to the trace list and scroll straight to that message. `scrollToTurn` polls
-  // for the row, so it works even before the canvas has finished mounting.
+  // The initial hash was captured by the SSR-safe lazy initializer before the
+  // first layout. This listener handles later navigation only.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const anchorFromHash = () => {
-      const m = /^#turn-(\d+)$/.exec(window.location.hash);
-      if (!m) return;
-      const idx = Number(m[1]);
-      if (!Number.isFinite(idx)) return;
-      setActiveTab(SessionTab.Trace);
-      setTrajectoryMode("list");
-      requestAnimationFrame(() => scrollToTurn(idx, "auto"));
-    };
-    anchorFromHash();
+    const anchorFromHash = () => setHashInitialPosition(positionFromHash());
     window.addEventListener("hashchange", anchorFromHash);
     return () => window.removeEventListener("hashchange", anchorFromHash);
-  }, [scrollToTurn]);
+  }, []);
 
-  // Host-supplied deep-link target (for permalink shapes other than the default
-  // hash — e.g. a `?turn=N` query param). Behaves like the hash anchor: switch to
-  // the trace list and scroll straight to that message on mount.
-  useEffect(() => {
-    if (initialTurnIndex == null || !Number.isFinite(initialTurnIndex)) return;
-    setActiveTab(SessionTab.Trace);
-    setTrajectoryMode("list");
-    requestAnimationFrame(() => scrollToTurn(initialTurnIndex, "auto"));
-  }, [initialTurnIndex, scrollToTurn]);
+  const applyInitialPosition = useCallback((position: TranscriptInitialPosition): "pending" | "applied" | "discarded" => {
+    const el = position.kind === "turn"
+      ? containerRef.current?.querySelector(`[data-turn-index="${position.turnIndex}"]`)
+      : null;
+    const readiness = transcriptInitialPositionReadiness(position, {
+      authoritativeTurnIndices: (detail.turns ?? []).map((turn) => turn.index),
+      renderedTurnIndices: turns.map((turn) => turn.index),
+      viewReady: activeTab === SessionTab.Trace && trajectoryMode === "list",
+      scrollerReady: typeof window !== "undefined",
+      targetReady: el instanceof HTMLElement,
+    });
+    if (readiness === "discarded") return "discarded";
+    if (readiness === "pending") {
+      if (activeTab !== SessionTab.Trace || trajectoryMode !== "list") {
+        setActiveTab(SessionTab.Trace);
+        setTrajectoryMode("list");
+      }
+      return "pending";
+    }
+    if (position.kind === "top") {
+      window.scrollTo({ top: 0, behavior: "auto" });
+      return "applied";
+    }
+
+    if (!(el instanceof HTMLElement)) {
+      throw new Error("initial-position invariant failed: Fairtrade reported a turn target ready before the mounted list exposed its element; retry with the full wire turns and rendered turns passed separately");
+    }
+    const rect = el.getBoundingClientRect();
+    const targetY = window.scrollY + rect.top - STICKY_OFFSET - window.innerHeight * 0.15;
+    window.scrollTo({ top: Math.max(0, targetY), behavior: "auto" });
+    return "applied";
+  }, [activeTab, detail.turns, STICKY_OFFSET, trajectoryMode, turns]);
+
+  useTranscriptInitialPosition({
+    sessionId: detail.id,
+    initialPosition,
+    fallbackInitialPosition: hashInitialPosition,
+    legacyInitialPosition: legacyInitialPositionRef.current,
+    readiness: [activeTab, trajectoryMode, detail.turns, turns],
+    apply: applyInitialPosition,
+  });
 
   // Vim-style j/k (and ArrowDown/Up) turn navigation (roadmap 4.1). The anchor
   // follows the top visible turn while you scroll manually; j/k then step from
@@ -556,9 +601,10 @@ export function SessionDetail({
     commits: allCommits,
     selectedCommit: selectedCheckpoint,
     onCommitChange: setSelectedCheckpoint,
-    onCommitJump: (c: SessionCommit) => {
-      const ct = new Date(c.timestamp).getTime();
-      const target = turns.find((t) => new Date(t.timestamp).getTime() >= ct);
+    onCommitJump: (c: CommitVM) => {
+      if (c.commitTime == null) return;
+      const commitTime = c.commitTime;
+      const target = turns.find((t) => new Date(t.timestamp).getTime() >= commitTime);
       if (!target) return;
       jumpToTraceTurn(target.index);
     },
@@ -604,6 +650,7 @@ export function SessionDetail({
         <section ref={heroRef}>
           <SessionHero
             detail={detail}
+            git={vm.session.git}
             breadcrumb={breadcrumb}
             displayTurnCount={turns.length}
             firstUserPrompt={firstUserPrompt}
@@ -641,7 +688,12 @@ export function SessionDetail({
             </div>
           )}
 
-          <main ref={containerRef} className="tb-detail-main">
+          <section
+            ref={containerRef}
+            className="tb-detail-main"
+            role="tabpanel"
+            aria-label={TAB_LABELS[activeTab]}
+          >
             <TurnContextBar
               turns={turns}
               activeEntryIndex={viewportRange?.start}
@@ -706,6 +758,7 @@ export function SessionDetail({
             {activeTab === SessionTab.Highlights && (
               <HighlightsView
                 detail={detail}
+                commits={allCommits}
                 turns={turns}
                 phases={filteredPhases}
                 errorTurnIndices={errorTurns}
@@ -724,7 +777,7 @@ export function SessionDetail({
             {activeTab === SessionTab.Annotations && (
               <AnnotationsView annotations={annotations} turns={turns} onJumpToTurn={jumpToTraceTurn} />
             )}
-          </main>
+          </section>
 
           <div className={cn("tb-detail-railwrap", split && "tb-detail-railwrap-right")}>
             <div className="tb-detail-railsticky" style={{ top: stickyTop + 44 }}>

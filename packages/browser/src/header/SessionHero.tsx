@@ -5,7 +5,8 @@ import { ActionMenu } from "./ActionMenu.js";
 import { collectOutcomeReasons } from "../primitives/OutcomeChip.js";
 import { cn } from "../internal/cn.js";
 import { composeSessionTitle } from "../lib/title.js";
-import type { SessionDetailPayload, TurnDetail } from "@peasant-labs/types";
+import type { SessionDetailPayload, TurnDetail } from "@peasant-labs/schema";
+import type { SessionGitVM } from "@peasant-labs/fairtrade/ui";
 import type { ViewerCallbacks, ViewerCapabilities } from "../canvas/types.js";
 
 export interface SessionHeroProps {
@@ -13,6 +14,8 @@ export interface SessionHeroProps {
   breadcrumb: BreadcrumbItem[];
   /** Displayable turns (after dedup/fold). */
   displayTurnCount: number;
+  /** Cooked git metadata from the canonical Fairtrade adapter. */
+  git?: SessionGitVM;
   /** First user prompt — used to compose the title. */
   firstUserPrompt?: TurnDetail;
   /** Optional ribbon of chips (provenance, share status, redaction). */
@@ -36,6 +39,7 @@ export function SessionHero({
   detail,
   breadcrumb,
   displayTurnCount,
+  git,
   firstUserPrompt,
   extraChips,
   outcomeReasons,
@@ -79,7 +83,7 @@ export function SessionHero({
 
       {extraChips && <div className="tb-hero-extra">{extraChips}</div>}
 
-      <MetadataChips detail={detail} displayTurnCount={displayTurnCount} outcome={detail.outcome} outcomeReasons={reasons} />
+      <MetadataChips detail={detail} git={git} displayTurnCount={displayTurnCount} outcome={detail.outcome} outcomeReasons={reasons} />
     </header>
   );
 }

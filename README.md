@@ -1,24 +1,22 @@
 # transcript-browser
 
 Shared, framework-agnostic **transcript browser** for AI agent session
-transcripts. The eventual goal is a single React viewer for agent transcripts,
-consumed by two existing apps:
+transcripts, consumed by two existing apps:
 
 - `peasant/web`
 - `village/frontend`
 
-This is a pnpm workspace monorepo. The first viewer slice — **primitives + the
-canvas (list) view** — has been ported out of the peasant app into
-`@peasant-labs/transcript-browser` as agnostic, props-driven components. The
-graph / rails / header / overlay views are deferred to later slices.
+This is a pnpm workspace monorepo. The viewer, graph, rails, header, overlays,
+and domain primitives are exposed as agnostic, props-driven components from
+`@peasant-labs/transcript-browser`.
 
 ## Packages
 
 | Package | Name | Status |
 |---|---|---|
-| `packages/types` | `@peasant-labs/types` | Shared transcript + analytics types (the reconciled superset). |
-| `packages/browser` | `@peasant-labs/transcript-browser` | Framework-agnostic React viewer — primitives + transcript canvas. See its [README](./packages/browser/README.md). |
-| `examples/minimal` | `@peasant-labs/example-minimal` | Vite app rendering `<TranscriptCanvas>` and `<ProjectOverview>` against realistic samples. |
+| `packages/types` | deprecated compatibility package | Pure re-export of the generated `@peasant-labs/schema` contract. |
+| `packages/browser` | `@peasant-labs/transcript-browser` | Framework-agnostic React transcript viewer. See its [README](./packages/browser/README.md). |
+| `examples/minimal` | `@peasant-labs/example-minimal` | Vite app rendering `<SessionDetail>` against a realistic sample. |
 
 ## Quick start
 
@@ -34,7 +32,7 @@ pnpm dev:minimal     # run the minimal example (Vite dev server)
 ```
 transcript-browser/
 ├── packages/
-│   ├── types/      @peasant-labs/types
+│   ├── types/      deprecated schema re-export
 │   ├── browser/    @peasant-labs/transcript-browser
 ├── examples/
 │   └── minimal/    minimal Vite wiring proof
@@ -45,17 +43,15 @@ transcript-browser/
 
 ## Notes
 
-- The shared types in `@peasant-labs/types` were lifted from `peasant/web`
-  (the superset) and reconciled against `village/frontend`. App- and
-  transport-specific types (WebSocket subscription machinery, REST list
-  wrappers, list/dashboard payloads, redaction-review types) were deliberately
-  left in their respective apps.
+- Canonical wire types and runtime values come from the generated
+  `@peasant-labs/schema` package. The browser owns only viewer-specific
+  presentation envelopes.
 - The viewer follows a strict **agnosticism contract**: data in via props only,
   actions out via optional callbacks + capability flags, theming via fairtrade
   CSS variables only. See the [browser README](./packages/browser/README.md).
-- See [`DIVERGENCES.md`](./DIVERGENCES.md) for the type reconciliation details.
-- Neither `peasant` nor `village` has been wired to consume these packages yet;
-  that is a later task.
+- See [`DIVERGENCES.md`](./DIVERGENCES.md) for the migration boundary.
+- Host applications remain responsible for transport, routing, authentication,
+  and mutations; the package only renders data supplied through props.
 
 ## npm publication
 
@@ -63,7 +59,7 @@ The release ceremony: squash the epoch branch to one `release(vX.Y.Z): <summary>
 (bumping `packages/browser/package.json` to the same version), `merge --no-ff` into `main`,
 tag the merge `transcript-browser-vX.Y.Z` (lightweight), push `main` + the tag. **Pushing
 the tag publishes**: `.github/workflows/npm-publish.yml` runs the full `pnpm check` gate
-chain, re-packs via `prepack` (tsup + the `workspace:*` devDependency strip), and publishes
+chain, re-packs via `prepack` (tsup), and publishes
 `@peasant-labs/transcript-browser` via **npm Trusted Publishing (OIDC)** — no `NPM_TOKEN`
 secret exists, provenance attestation is automatic. A prerelease version (`-rcN` etc.)
 lands under dist-tag `next`; a final under `latest`. The workflow refuses a tag whose

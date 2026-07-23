@@ -1,5 +1,6 @@
 import type { Node, Edge } from "@xyflow/react";
-import type { TurnDetail, Phase, PhaseType } from "@peasant-labs/types";
+import type { TurnDetail } from "@peasant-labs/schema";
+import type { Phase, PhaseType } from "../view-types.js";
 import type { TranscriptAnnotation } from "../lib/pattern-detection.js";
 import type { TurnNodeData, ToolCallNodeData } from "./types.js";
 import type { ToolCallVM } from "@peasant-labs/fairtrade/ui";

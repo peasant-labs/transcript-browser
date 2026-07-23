@@ -1,0 +1,89 @@
+expectedCaseCount: 3
+cases:
+  - name: mounted_transcript_and_checkbox
+    session:
+      id: session-accessibility
+      harness: codex
+      startTime: 2026-07-15T08:00:00Z
+      endTime: 2026-07-15T08:01:00Z
+      durationMins: 1
+      totalTokens: 12
+      tokensIn: 5
+      tokensOut: 7
+      turnCount: 1
+      toolCallCount: 0
+      workingDirectory: /work/session-accessibility
+      gitBranch: feature/accessibility
+      gitRemote: https://example.test/accessibility.git
+      scorecard: null
+      turns:
+        - index: 0
+          role: user
+          content: show the mounted transcript
+          timestamp: 2026-07-15T08:00:00Z
+          depth: 0
+          stopReason: max_turn_requests
+    checkbox:
+      label: tool calls
+      count: 7
+      initialChecked: false
+      expectedAfterClick: true
+    expected:
+      mainLandmarks: 0
+      tabPanelLabel: full trace
+  - name: alternate_session_and_checked_checkbox
+    session:
+      id: session-accessibility-alternate
+      harness: antigravity
+      startTime: 2026-07-15T09:00:00Z
+      endTime: 2026-07-15T09:02:00Z
+      durationMins: 2
+      totalTokens: 20
+      tokensIn: 8
+      tokensOut: 12
+      turnCount: 1
+      toolCallCount: 0
+      workingDirectory: /work/session-accessibility-alternate
+      gitBranch: feature/antigravity
+      gitRemote: ssh://example.test/antigravity.git
+      scorecard: null
+      turns:
+        - index: 0
+          role: assistant
+          content: show a second mounted transcript
+          timestamp: 2026-07-15T09:00:00Z
+          depth: 0
+          stopReason: refusal
+    checkbox:
+      label: responses
+      count: 3
+      initialChecked: true
+      expectedAfterClick: false
+    expected:
+      mainLandmarks: 0
+      tabPanelLabel: full trace
+  - name: nullable_turns_empty_session
+    session:
+      id: session-accessibility-empty
+      harness: cursor
+      startTime: 2026-07-15T10:00:00Z
+      endTime: 2026-07-15T10:00:00Z
+      durationMins: 0
+      totalTokens: 0
+      tokensIn: 0
+      tokensOut: 0
+      turnCount: 0
+      toolCallCount: 0
+      workingDirectory: /work/session-accessibility-empty
+      gitBranch: feature/empty
+      gitRemote: https://example.test/empty.git
+      scorecard: null
+      turns: null
+    checkbox:
+      label: empty session
+      count: 0
+      initialChecked: false
+      expectedAfterClick: true
+    expected:
+      mainLandmarks: 0
+      tabPanelLabel: full trace

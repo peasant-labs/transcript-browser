@@ -1,7 +1,7 @@
 import { type ReactNode, useMemo, useState } from "react";
 import { cn } from "../internal/cn.js";
 import { Markdown } from "../primitives/Markdown.js";
-import type { TurnDetail } from "@peasant-labs/types";
+import type { TurnDetail } from "@peasant-labs/schema";
 
 export interface TurnContentProps {
   turn: TurnDetail;

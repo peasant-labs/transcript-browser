@@ -13,13 +13,12 @@ import type {
   TurnLabel,
   TurnLinkBuilder,
 } from "./types.js";
-import type { ToolCallVM } from "@peasant-labs/fairtrade/ui";
+import type { CommitVM, ToolCallVM } from "@peasant-labs/fairtrade/ui";
 import type {
   TurnDetail,
-  SessionCommit,
-  Provider,
-  Phase,
-} from "@peasant-labs/types";
+  Harness,
+} from "@peasant-labs/schema";
+import type { Phase } from "../view-types.js";
 
 export interface TranscriptCanvasProps {
   /** Turns to render (already filtered + deduped by the host, if desired). */
@@ -30,15 +29,15 @@ export interface TranscriptCanvasProps {
    * `TranscriptToolCall` renders from cooked fields and nothing here parses wire.
    */
   toolVMsByTurn?: Map<number, ToolCallVM[]>;
-  /** Provider — used to pick the assistant rail icon. */
-  provider?: Provider;
+  /** Harness — used to pick the assistant rail icon. */
+  provider?: Harness;
   /** Optional phases — rendered as sticky inline dividers between turns. */
   phases?: Phase[];
   /** Active phase index (highlighted in the divider). */
   activePhaseIndex?: number;
   onPhaseClick?: (phase: Phase, index: number) => void;
   /** Commits in chronological order — rendered as inline checkpoint markers. */
-  commits?: SessionCommit[];
+  commits?: CommitVM[];
   /** Search highlighting. */
   searchQuery?: string;
   searchMatchIndices?: number[];
@@ -139,14 +138,15 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
     // Commits → display position by timestamp: place the marker before the
     // first turn whose timestamp is >= commit time (or at the end).
     const commitsByPosition = useMemo(() => {
-      const map = new Map<number, SessionCommit[]>();
+      const map = new Map<number, CommitVM[]>();
       if (commits.length === 0 || turns.length === 0) return map;
       const sortedCommits = [...commits].sort(
-        (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+        (a, b) => (a.commitTime ?? 0) - (b.commitTime ?? 0),
       );
       const turnTimes = turns.map((t) => new Date(t.timestamp).getTime());
       for (const c of sortedCommits) {
-        const ct = new Date(c.timestamp).getTime();
+        const ct = c.commitTime;
+        if (ct == null) continue;
         let pos = turnTimes.findIndex((t) => t >= ct);
         if (pos === -1) pos = turns.length;
         const existing = map.get(pos) ?? [];
@@ -215,10 +215,10 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
                     key={`${c.hash}-${i}`}
                     hash={c.hash}
                     message={c.message}
-                    time={formatRelative(c.timestamp)}
-                    files={c.filesChanged ?? 0}
-                    ins={c.insertions ?? 0}
-                    del={c.deletions ?? 0}
+                    time={c.commitTime == null ? "" : formatRelative(new Date(c.commitTime).toISOString())}
+                    files={c.files ?? 0}
+                    ins={c.adds ?? 0}
+                    del={c.dels ?? 0}
                   />
                 ))}
                 <TurnRow
@@ -264,10 +264,10 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
             key={`tail-${c.hash}-${i}`}
             hash={c.hash}
             message={c.message}
-            time={formatRelative(c.timestamp)}
-            files={c.filesChanged ?? 0}
-            ins={c.insertions ?? 0}
-            del={c.deletions ?? 0}
+            time={c.commitTime == null ? "" : formatRelative(new Date(c.commitTime).toISOString())}
+            files={c.files ?? 0}
+            ins={c.adds ?? 0}
+            del={c.dels ?? 0}
           />
         ))}
       </div>

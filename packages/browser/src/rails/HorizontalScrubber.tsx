@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "../internal/cn.js";
 import { computeTasks } from "../lib/tasks.js";
-import type { TurnDetail } from "@peasant-labs/types";
+import type { TurnDetail } from "@peasant-labs/schema";
 
 export interface HorizontalScrubberProps {
   /** Turns in display order (already filtered + deduped upstream). */

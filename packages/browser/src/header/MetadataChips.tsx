@@ -4,10 +4,13 @@ import { OutcomeChip } from "../primitives/OutcomeChip.js";
 import { formatDurationMins, formatRelative, formatDateLong } from "../lib/time.js";
 import { formatTokens } from "../lib/format-numbers.js";
 import { providerLabel } from "../lib/provider.js";
-import type { SessionDetailPayload } from "@peasant-labs/types";
+import type { SessionDetailPayload } from "@peasant-labs/schema";
+import type { SessionGitVM } from "@peasant-labs/fairtrade/ui";
 
 export interface MetadataChipsProps {
   detail: SessionDetailPayload;
+  /** Cooked git metadata from the canonical Fairtrade adapter. */
+  git?: SessionGitVM;
   /** Number of displayable turns (after dedup/fold). */
   displayTurnCount?: number;
   /** Session outcome — `resolved`/`partial`/`failed`. When omitted, no chip. */
@@ -20,16 +23,16 @@ export interface MetadataChipsProps {
  * Session metadata row, matching the canonical in-use demo: the first items are
  * BORDERED <Chip>s (status / provider / model) and everything after is a
  * BORDERLESS <MetaItem> (icon + tabular value + label). Chrome reads lowercase
- * + mono; user content (model id, git author) keeps its case. Provider leads
+ * + mono; user content (model id, git author) keeps its case. Harness leads
  * with its real, accent-tinted brand mark.
  */
-export function MetadataChips({ detail, displayTurnCount, outcome, outcomeReasons }: MetadataChipsProps) {
+export function MetadataChips({ detail, git, displayTurnCount, outcome, outcomeReasons }: MetadataChipsProps) {
   const provider = detail.harness;
-  const author = detail.gitContext?.user;
-  const commits = detail.gitContext?.commits?.length ?? 0;
-  const filesChanged = detail.gitContext?.commits?.reduce((n, c) => n + (c.filesChanged ?? 0), 0) ?? 0;
-  const insertions = detail.gitContext?.commits?.reduce((n, c) => n + (c.insertions ?? 0), 0) ?? 0;
-  const deletions = detail.gitContext?.commits?.reduce((n, c) => n + (c.deletions ?? 0), 0) ?? 0;
+  const author = git?.author;
+  const commits = git?.commits?.length ?? 0;
+  const filesChanged = git?.filesChanged ?? 0;
+  const insertions = git?.insertions ?? 0;
+  const deletions = git?.deletions ?? 0;
   const tokens = detail.totalTokens;
   const tokensIn = detail.tokensIn;
   const tokensOut = detail.tokensOut;

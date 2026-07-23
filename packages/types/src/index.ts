@@ -1,18 +1,7 @@
 /**
- * @peasant-labs/types
+ * @deprecated Import canonical contracts from `@peasant-labs/schema`.
  *
- * Shared, framework-agnostic transcript types for AI agent session
- * transcripts. Consumed by peasant/web and village/frontend.
- *
- * This package contains ONLY data shapes that are common to both apps. App- and
- * transport-specific types (WebSocket channel/subscription machinery, REST list
- * wrappers, dashboard/sessions list payloads, redaction-review types) live in
- * their respective apps. See DIVERGENCES.md for what was reconciled and why.
+ * This compatibility package deliberately adds no names or behavior. Viewer
+ * presentation envelopes live in `@peasant-labs/transcript-browser`.
  */
-
-export * from "./enums.js";
-export * from "./transcript.js";
-export * from "./annotations.js";
-export * from "./quality.js";
-export * from "./insights.js";
-export * from "./analytics.js";
+export * from "@peasant-labs/schema";

@@ -1,4 +1,5 @@
-import type { TurnDetail, ToolCallDetail, Phase, PhaseType } from "@peasant-labs/types";
+import type { TurnDetail, ToolCallDetail } from "@peasant-labs/schema";
+import type { Phase, PhaseType } from "../view-types.js";
 import type { ToolCallVM } from "@peasant-labs/fairtrade/ui";
 import type { TranscriptAnnotation } from "../lib/pattern-detection.js";
 

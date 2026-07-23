@@ -6,18 +6,16 @@
  * CONSOLIDATED into the one shared fairtrade transcript analytics util
  * (`@peasant-labs/fairtrade/ui`) — the single home shared by transcript-browser,
  * peasant, and village. These thin wrappers keep the existing
- * `@peasant-labs/transcript-browser` import path + the `@peasant-labs/types`
+ * `@peasant-labs/transcript-browser` import path + the `@peasant-labs/schema`
  * `TurnDetail` input signature stable for peasant, while delegating the body to
  * fairtrade. The fairtrade `computeTasks` is byte-for-byte the same logic with
  * the wire `JSON.parse` moved into the adapter's parse primitives — so this
  * package contains no `JSON.parse`; all wire parsing happens once, in the adapter.
  *
- * The boundary cast bridges the known `@peasant-labs/types` ↔ fairtrade wire
- * drift (#125/#126: fairtrade's hand-authored `TurnDetail` marks `depth` /
- * `stopReason` required/nullable, the TS port marks them optional). It is
- * runtime-safe: fairtrade reads those fields defensively (`depth ?? 0`).
+ * Both packages consume the generated `@peasant-labs/schema` contract, so the
+ * wrappers preserve the canonical input without maintaining a parallel shape.
  */
-import type { TurnDetail } from "@peasant-labs/types";
+import type { TurnDetail } from "@peasant-labs/schema";
 import {
   computeTasks as ftComputeTasks,
   computeTurnLabels as ftComputeTurnLabels,
@@ -26,14 +24,12 @@ import {
 
 export type { TaskGroup };
 
-type FtTurns = Parameters<typeof ftComputeTasks>[0];
-
 /** Split a turn list into task groups (one per top-level user prompt). */
 export function computeTasks(turns: TurnDetail[]): TaskGroup[] {
-  return ftComputeTasks(turns as FtTurns);
+  return ftComputeTasks(turns);
 }
 
 /** Per-turn display labels: `"1"`/`"2"` for prompts, `"2a"`/`"2b"` for follow-ups. */
 export function computeTurnLabels(turns: TurnDetail[]): string[] {
-  return ftComputeTurnLabels(turns as FtTurns);
+  return ftComputeTurnLabels(turns);
 }

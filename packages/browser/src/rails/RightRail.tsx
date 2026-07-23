@@ -43,7 +43,9 @@ import {
   type V2ViewOptions,
 } from "./filter-types.js";
 import { SessionTab } from "../session-detail-types.js";
-import type { SessionCommit, TurnDetail, Phase, Provider } from "@peasant-labs/types";
+import type { TurnDetail, Harness } from "@peasant-labs/schema";
+import type { CommitVM } from "@peasant-labs/fairtrade/ui";
+import type { Phase } from "../view-types.js";
 import type { TranscriptAnnotation } from "../lib/pattern-detection.js";
 import type { FileRollup } from "../lib/file-rollup.js";
 import {
@@ -67,7 +69,7 @@ export interface RightRailProps {
    */
   fileRollups: FileRollup[];
   /** Session harness — the final-response highlight renders its brand mark. */
-  provider?: Provider;
+  provider?: Harness;
   /** Active turn index (display-position) — drives outline highlighting. */
   activeTurnIndex?: number;
   /** Clicked-on-outline-row -> scroll target. */
@@ -83,10 +85,10 @@ export interface RightRailProps {
   onFiltersChange: (next: V2FilterState) => void;
   viewOptions: V2ViewOptions;
   onViewOptionsChange: (next: V2ViewOptions) => void;
-  commits?: SessionCommit[];
+  commits?: CommitVM[];
   selectedCommit?: "all" | string;
   onCommitChange?: (value: "all" | string) => void;
-  onCommitJump?: (commit: SessionCommit) => void;
+  onCommitJump?: (commit: CommitVM) => void;
   onJumpToStart?: () => void;
   onJumpToLatest?: () => void;
   collapsed?: boolean;
@@ -350,12 +352,12 @@ interface OutlineTabBodyProps {
   activeTab: SessionTab;
   turns: TurnDetail[];
   fileRollups: FileRollup[];
-  provider?: Provider;
+  provider?: Harness;
   activeTurnIndex?: number;
   phases?: Phase[];
   errorTurnIndices?: number[];
   annotations?: TranscriptAnnotation[];
-  commits?: SessionCommit[];
+  commits?: CommitVM[];
   onTurnClick?: (turnIndex: number) => void;
   onJumpToFile?: (path: string, firstTurnIndex: number) => void;
 }
@@ -377,7 +379,7 @@ function OutlineTabBody({
     case SessionTab.Trace: {
       // The trace user-turns rail is the canonical per-user-turn duration trail
       // (consumed StepsWaterfall), one item per user turn: #N + duration + the
-      // prompt + an outcome chip — fed from TB's computed tasks.
+      // prompt + an outcome chip — fed from transcript-browser's computed tasks.
       const steps = computeTasks(turns).map((t, i) => ({
         id: String(t.startIndex),
         index: i + 1,
@@ -474,10 +476,10 @@ interface FiltersTabBodyProps {
   onFiltersChange: (next: V2FilterState) => void;
   viewOptions: V2ViewOptions;
   onViewOptionsChange: (next: V2ViewOptions) => void;
-  commits?: SessionCommit[];
+  commits?: CommitVM[];
   selectedCommit?: "all" | string;
   onCommitChange?: (value: "all" | string) => void;
-  onCommitJump?: (commit: SessionCommit) => void;
+  onCommitJump?: (commit: CommitVM) => void;
   onJumpToStart?: () => void;
   onJumpToLatest?: () => void;
   toolsExpanded: boolean;

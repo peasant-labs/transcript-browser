@@ -24,6 +24,7 @@
 
 // --- Top-level composer ----------------------------------------------------
 export { SessionDetail, type SessionDetailProps } from "./SessionDetail.js";
+export type { TranscriptInitialPosition } from "@peasant-labs/fairtrade/ui";
 export { SessionTab, type SessionTabDef } from "./session-detail-types.js";
 
 // --- Slices ----------------------------------------------------------------
@@ -73,17 +74,17 @@ export {
   type PersonalMedians,
 } from "./lib/scorecard.js";
 
-// --- Shared transcript types (single import path for consumers) ------------
+// --- Canonical schema wire types -------------------------------------------
 export type {
   SessionDetailPayload,
   TurnDetail,
   ToolCallDetail,
-  SessionCommit,
-  SessionGitContext,
   SessionScorecard,
   QualitySession,
-  Provider,
+  Harness,
   Role,
-  Phase,
-  PhaseType,
-} from "@peasant-labs/types";
+} from "@peasant-labs/schema";
+
+// --- Browser-owned view envelopes -----------------------------------------
+export type { Phase, PhaseBadge, PhaseType } from "./view-types.js";
+export type { CommitVM, SessionGitVM } from "@peasant-labs/fairtrade/ui";

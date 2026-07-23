@@ -1,0 +1,97 @@
+cases:
+  - name: nullable turns stay empty
+    harness: claude-code
+    gitBranch: feature/nullable
+    gitRemote: https://example.test/nullable.git
+    turns: null
+    useExplicitTurns: false
+    explicitTurns: []
+    expectedIndices: []
+    expectedDepths: []
+    expectedStopReasons: []
+  - name: gemini flat git survives adaptation
+    harness: gemini-cli
+    gitBranch: feature/gemini
+    gitRemote: ssh://example.test/gemini.git
+    turns:
+      - index: 1
+        role: assistant
+        content: end normally
+        timestamp: 2026-07-15T08:01:00Z
+        depth: 0
+        stopReason: end_turn
+    useExplicitTurns: false
+    explicitTurns: []
+    expectedIndices: [1]
+    expectedDepths: [0]
+    expectedStopReasons: [end_turn]
+  - name: opencode cancellation preserves nesting
+    harness: opencode
+    gitBranch: feature/opencode
+    gitRemote: https://example.test/opencode.git
+    turns:
+      - index: 2
+        role: assistant
+        content: cancelled nested work
+        timestamp: 2026-07-15T08:02:00Z
+        depth: 1
+        stopReason: cancelled
+    useExplicitTurns: false
+    explicitTurns: []
+    expectedIndices: [2]
+    expectedDepths: [1]
+    expectedStopReasons: [cancelled]
+  - name: codex token limit preserves nesting
+    harness: codex
+    gitBranch: feature/codex
+    gitRemote: https://example.test/codex.git
+    turns:
+      - index: 3
+        role: assistant
+        content: token limit nested work
+        timestamp: 2026-07-15T08:03:00Z
+        depth: 2
+        stopReason: max_tokens
+    useExplicitTurns: false
+    explicitTurns: []
+    expectedIndices: [3]
+    expectedDepths: [2]
+    expectedStopReasons: [max_tokens]
+  - name: cursor turn limit preserves nesting
+    harness: cursor
+    gitBranch: feature/cursor
+    gitRemote: ssh://example.test/cursor.git
+    turns:
+      - index: 4
+        role: assistant
+        content: turn request limit nested work
+        timestamp: 2026-07-15T08:04:00Z
+        depth: 3
+        stopReason: max_turn_requests
+    useExplicitTurns: false
+    explicitTurns: []
+    expectedIndices: [4]
+    expectedDepths: [3]
+    expectedStopReasons: [max_turn_requests]
+  - name: explicit antigravity turns override canonical turns
+    harness: antigravity
+    gitBranch: feature/antigravity
+    gitRemote: https://example.test/antigravity.git
+    turns:
+      - index: 5
+        role: assistant
+        content: canonical refusal
+        timestamp: 2026-07-15T08:05:00Z
+        depth: 4
+        stopReason: refusal
+    useExplicitTurns: true
+    explicitTurns:
+      - index: 99
+        role: assistant
+        content: explicit refusal
+        timestamp: 2026-07-15T08:06:00Z
+        depth: 7
+        stopReason: refusal
+    expectedIndices: [99]
+    expectedDepths: [7]
+    expectedStopReasons: [refusal]

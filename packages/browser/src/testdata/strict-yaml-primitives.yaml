@@ -1,0 +1,94 @@
+expectedCaseCount: 12
+cases:
+  - name: multiple documents are rejected
+    operation: parse
+    source: |
+      value: first
+      ---
+      value: second
+    stimulus: unused
+    value: unused
+    fields: []
+    expectedError: exactly one YAML document
+  - name: duplicate keys are rejected
+    operation: parse
+    source: |
+      value: first
+      value: second
+    stimulus: unused
+    value: unused
+    fields: []
+    expectedError: Map keys must be unique
+  - name: non-object roots are rejected
+    operation: parse
+    source: |
+      - item
+    stimulus: unused
+    value: unused
+    fields: []
+    expectedError: root must be an object
+  - name: unknown fields are rejected
+    operation: exact-fields
+    source: unused
+    stimulus: unused
+    value:
+      expected: true
+      extra: true
+    fields: [expected]
+    expectedError: unknown=extra
+  - name: missing fields are rejected
+    operation: exact-fields
+    source: unused
+    stimulus: unused
+    value: {}
+    fields: [expected]
+    expectedError: missing=expected
+  - name: blank strings are rejected
+    operation: nonempty-string
+    source: unused
+    stimulus: unused
+    value: "  "
+    fields: []
+    expectedError: non-empty string
+  - name: negative integers are rejected
+    operation: safe-nonnegative-integer
+    source: unused
+    stimulus: unused
+    value: -1
+    fields: []
+    expectedError: non-negative safe integer
+  - name: fractional integers are rejected
+    operation: safe-nonnegative-integer
+    source: unused
+    stimulus: unused
+    value: 1.5
+    fields: []
+    expectedError: non-negative safe integer
+  - name: infinite numbers are rejected
+    operation: finite-nonnegative-number
+    source: unused
+    stimulus: unused
+    value: .inf
+    fields: []
+    expectedError: finite non-negative number
+  - name: duplicate set values are rejected
+    operation: unique-string-set
+    source: unused
+    stimulus: unused
+    value: [alpha, alpha]
+    fields: []
+    expectedError: unique strings
+  - name: missing stimuli are rejected
+    operation: single-occurrence
+    source: alpha
+    stimulus: beta
+    value: unused
+    fields: []
+    expectedError: exactly once, received 0
+  - name: repeated stimuli are rejected
+    operation: single-occurrence
+    source: alpha-alpha
+    stimulus: alpha
+    value: unused
+    fields: []
+    expectedError: exactly once, received 2

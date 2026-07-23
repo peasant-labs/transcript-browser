@@ -1,4 +1,4 @@
-import type { PhaseType, Provider } from "@peasant-labs/types";
+import type { PhaseType } from "../view-types.js";
 
 /**
  * Single source of truth for transcript-browser CHROME strings.
@@ -50,15 +50,6 @@ export const PHASE_LABELS: Record<PhaseType, string> = {
   "user-correction": "user correction",
   recovery: "recovery",
   abandonment: "abandonment",
-};
-
-/** Provider display names (chrome — the harness name shown on assistant turns). */
-export const PROVIDER_LABELS: Record<Provider, string> = {
-  "claude-code": "claude code",
-  "gemini-cli": "gemini cli",
-  opencode: "opencode",
-  codex: "codex",
-  cursor: "cursor",
 };
 
 /** Right-rail tab captions. */

@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { useReactFlow } from "@xyflow/react";
-import type { TurnDetail, Phase } from "@peasant-labs/types";
+import type { TurnDetail } from "@peasant-labs/schema";
+import type { Phase } from "../view-types.js";
 import type { TurnNodeData } from "./types.js";
 import { NODE_DIMENSIONS } from "./constants.js";
 

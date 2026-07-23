@@ -10,7 +10,7 @@ import {
   ReactFlowProvider,
   type NodeTypes,
 } from "@xyflow/react";
-import type { Provider } from "@peasant-labs/types";
+import type { Harness } from "@peasant-labs/schema";
 import { cn } from "../internal/cn.js";
 import { turnsToFlow, computeLaneHeaders } from "./turnsToFlow.js";
 import { useCanvasSync } from "./useCanvasSync.js";
@@ -29,7 +29,7 @@ const nodeTypes: NodeTypes = {
 };
 
 export interface TrajectoryGraphProps extends TrajectoryCanvasProps {
-  provider?: Provider;
+  provider?: Harness;
   className?: string;
 }
 

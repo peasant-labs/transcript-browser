@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Chip, Tooltip } from "@peasant-labs/fairtrade/ui";
 import { preview } from "../canvas/tool-renderers/types.js";
 import { ANNOTATION_TYPE_LABELS } from "../lib/labels.js";
-import type { TurnDetail } from "@peasant-labs/types";
+import type { TurnDetail } from "@peasant-labs/schema";
 import type { TranscriptAnnotation } from "../lib/pattern-detection.js";
 
 export interface AnnotationsViewProps {
@@ -23,7 +23,7 @@ type ChipTone = "ok" | "warn" | "err";
 const TYPE_LABEL = ANNOTATION_TYPE_LABELS;
 
 /**
- * Semantic annotation types compose a fairtrade `<Chip tone>` (no TB tone
+ * Semantic annotation types compose a fairtrade `<Chip tone>` (no browser tone
  * duplicate). `subagent` carries no semantic tone — it renders a neutral
  * fairtrade `<Chip>` (no tone).
  */

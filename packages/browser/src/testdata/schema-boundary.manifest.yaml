@@ -1,0 +1,132 @@
+expectedBehaviorCaseCount: 6
+requiredBehaviorNames:
+  - nullable turns stay empty
+  - gemini flat git survives adaptation
+  - opencode cancellation preserves nesting
+  - codex token limit preserves nesting
+  - cursor turn limit preserves nesting
+  - explicit antigravity turns override canonical turns
+requiredHarnesses:
+  - claude-code
+  - gemini-cli
+  - opencode
+  - codex
+  - cursor
+  - antigravity
+requiredStopReasons:
+  - end_turn
+  - cancelled
+  - max_tokens
+  - max_turn_requests
+  - refusal
+nullableTurnCaseNames:
+  - nullable turns stay empty
+explicitPrecedenceCaseNames:
+  - explicit antigravity turns override canonical turns
+depthCaseNames:
+  - gemini flat git survives adaptation
+  - opencode cancellation preserves nesting
+  - codex token limit preserves nesting
+  - cursor turn limit preserves nesting
+stopReasonCaseNames:
+  - gemini flat git survives adaptation
+  - opencode cancellation preserves nesting
+  - codex token limit preserves nesting
+  - cursor turn limit preserves nesting
+  - explicit antigravity turns override canonical turns
+expectedBehaviorLoaderMutationCount: 10
+behaviorLoaderMutations:
+  - name: duplicate root cases key
+    find: "cases:\n"
+    replace: "cases:\ncases:\n"
+    expectedError: Map keys must be unique
+  - name: unknown root field
+    find: "cases:\n"
+    replace: "unknown: true\ncases:\n"
+    expectedError: fields are invalid
+  - name: missing root cases
+    find: "cases:\n"
+    replace: "removedCases:\n"
+    expectedError: missing=cases
+  - name: missing required behavior name
+    find: "name: gemini flat git survives adaptation"
+    replace: "name: removed behavior"
+    expectedError: behavior case names
+  - name: incomplete Harness coverage
+    find: "    harness: gemini-cli\n"
+    replace: "    harness: claude-code\n"
+    expectedError: Harness coverage
+  - name: incomplete StopReason coverage
+    find: "        stopReason: end_turn\n    useExplicitTurns: false\n    explicitTurns: []\n    expectedIndices: [1]\n    expectedDepths: [0]\n    expectedStopReasons: [end_turn]\n"
+    replace: "        stopReason: refusal\n    useExplicitTurns: false\n    explicitTurns: []\n    expectedIndices: [1]\n    expectedDepths: [0]\n    expectedStopReasons: [refusal]\n"
+    expectedError: StopReason coverage
+  - name: nullable case loses null wire value
+    find: "    turns: null\n"
+    replace: "    turns: []\n"
+    expectedError: nullable turn cases
+  - name: explicit precedence case loses override
+    find: "    useExplicitTurns: true\n    explicitTurns:\n      - index: 99\n        role: assistant\n        content: explicit refusal\n        timestamp: 2026-07-15T08:06:00Z\n        depth: 7\n        stopReason: refusal\n    expectedIndices: [99]\n    expectedDepths: [7]\n    expectedStopReasons: [refusal]\n"
+    replace: "    useExplicitTurns: false\n    explicitTurns: []\n    expectedIndices: [5]\n    expectedDepths: [4]\n    expectedStopReasons: [refusal]\n"
+    expectedError: explicit precedence cases
+  - name: selected turn expectations drift
+    find: "    expectedIndices: [99]\n"
+    replace: "    expectedIndices: [5]\n"
+    expectedError: expectations must match
+  - name: trailing behavior document
+    find: "name: explicit antigravity turns override canonical turns"
+    replace: "name: explicit antigravity turns override canonical turns\n---\nextra: true"
+    expectedError: exactly one YAML document
+expectedBehaviorTestCount: 6
+requiredBehaviorTestNames:
+  - nullable turns remain empty
+  - explicit turns override canonical turns
+  - flat git fields reach canonical adapter
+  - canonical Harness reaches adapter
+  - canonical depth reaches adapter
+  - canonical StopReason reaches adapter
+expectedMutationCount: 6
+mutations:
+  - name: nullable turns synthesize a phantom row
+    target: src/SessionDetail.tsx
+    find: turnsProp ?? prefilterTurns(detail.turns ?? [])
+    replace: 'turnsProp ?? prefilterTurns(detail.turns ?? [{ index: 999, role: "user", content: "phantom turn", timestamp: detail.startTime, depth: 0 }])'
+    expectedTestName: nullable turns remain empty
+    expectedFailurePattern: nullable turns must normalize before adaptation
+  - name: explicit turn precedence is bypassed
+    target: src/SessionDetail.tsx
+    find: turnsProp ?? prefilterTurns(detail.turns ?? [])
+    replace: prefilterTurns(detail.turns ?? [])
+    expectedTestName: explicit turns override canonical turns
+    expectedFailurePattern: explicit turn precedence must reach the adapter
+  - name: flat git fields are dropped before adaptation
+    target: src/SessionDetail.tsx
+    find: adaptTranscript({ ...detail, turns })
+    replace: 'adaptTranscript({ ...detail, turns, gitBranch: undefined, gitRemote: undefined })'
+    expectedTestName: flat git fields reach canonical adapter
+    expectedFailurePattern: flat git branch must reach the adapter
+  - name: Harness is replaced before adaptation
+    target: src/SessionDetail.tsx
+    find: adaptTranscript({ ...detail, turns })
+    replace: 'adaptTranscript({ ...detail, turns, harness: "cursor" })'
+    expectedTestName: canonical Harness reaches adapter
+    expectedFailurePattern: canonical Harness must reach the adapter
+  - name: depth is flattened before adaptation
+    target: src/SessionDetail.tsx
+    find: adaptTranscript({ ...detail, turns })
+    replace: 'adaptTranscript({ ...detail, turns: turns.map((turn) => ({ ...turn, depth: 0 })) })'
+    expectedTestName: canonical depth reaches adapter
+    expectedFailurePattern: canonical depth must reach the adapter
+  - name: StopReason is dropped before adaptation
+    target: src/SessionDetail.tsx
+    find: adaptTranscript({ ...detail, turns })
+    replace: 'adaptTranscript({ ...detail, turns: turns.map((turn) => ({ ...turn, stopReason: undefined })) })'
+    expectedTestName: canonical StopReason reaches adapter
+    expectedFailurePattern: canonical StopReason must reach the adapter
+expectedReporterControlCount: 1
+reporterControls:
+  - name: unrelated failed test is rejected
+    expectedTestName: nullable turns remain empty
+    expectedFailurePattern: nullable turns must normalize before adaptation
+    actualFailureTestName: canonical Harness reaches adapter
+    actualFailureMessage: nullable turns must normalize before adaptation
+    expectedRejectionPattern: designated test

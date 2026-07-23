@@ -1,9 +1,8 @@
 /**
- * Phase detection types for the session-detail viewer.
+ * Viewer-owned analytical envelopes.
  *
- * Source of truth: peasant `web/src/lib/insights/types.ts`. Village does not
- * define these — see DIVERGENCES.md. Only the data shapes are lifted here; the
- * phase-detection algorithm itself stays app-side for now.
+ * These are derived presentation records, not schema wire contracts. Canonical
+ * transport types come directly from `@peasant-labs/schema`.
  */
 
 export type PhaseType =
@@ -27,6 +26,6 @@ export interface Phase {
   type: PhaseType;
   startTurn: number;
   endTurn: number;
-  /** Badges for absorbed micro-phases (e.g., "1 error"). */
+  /** Badges for absorbed micro-phases, such as a single error. */
   badges: PhaseBadge[];
 }

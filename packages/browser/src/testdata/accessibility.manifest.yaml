@@ -1,0 +1,271 @@
+expectedCaseCount: 3
+requiredCaseNames:
+  - mounted_transcript_and_checkbox
+  - alternate_session_and_checked_checkbox
+  - nullable_turns_empty_session
+expectedRequiredFieldMutationCount: 33
+requiredFieldPaths:
+  - root.expectedCaseCount
+  - root.cases
+  - case.name
+  - case.session
+  - case.checkbox
+  - case.expected
+  - session.id
+  - session.harness
+  - session.startTime
+  - session.endTime
+  - session.durationMins
+  - session.totalTokens
+  - session.tokensIn
+  - session.tokensOut
+  - session.turnCount
+  - session.toolCallCount
+  - session.workingDirectory
+  - session.gitBranch
+  - session.gitRemote
+  - session.scorecard
+  - session.turns
+  - turn.index
+  - turn.role
+  - turn.content
+  - turn.timestamp
+  - turn.depth
+  - turn.stopReason
+  - checkbox.label
+  - checkbox.count
+  - checkbox.initialChecked
+  - checkbox.expectedAfterClick
+  - expected.mainLandmarks
+  - expected.tabPanelLabel
+expectedStructuralMutationCount: 5
+expectedLoaderMutationCount: 38
+loaderMutations:
+  - category: required
+    path: root.expectedCaseCount
+    name: missing root expected case count
+    find: "expectedCaseCount: 3\n"
+    replace: "# expected case count removed\n"
+    expectedError: missing=expectedCaseCount
+  - category: required
+    path: root.cases
+    name: missing root cases
+    find: "cases:\n  - name: mounted_transcript_and_checkbox\n"
+    replace: "removedCases:\n  - name: mounted_transcript_and_checkbox\n"
+    expectedError: missing=cases
+  - category: required
+    path: case.name
+    name: missing case name
+    find: "  - name: mounted_transcript_and_checkbox\n"
+    replace: "  - removedName: mounted_transcript_and_checkbox\n"
+    expectedError: missing=name
+  - category: required
+    path: case.session
+    name: missing case session
+    find: "    session:\n      id: session-accessibility\n"
+    replace: "    removedSession:\n      id: session-accessibility\n"
+    expectedError: missing=session
+  - category: required
+    path: case.checkbox
+    name: missing case checkbox
+    find: "    checkbox:\n      label: tool calls\n"
+    replace: "    removedCheckbox:\n      label: tool calls\n"
+    expectedError: missing=checkbox
+  - category: required
+    path: case.expected
+    name: missing case expected result
+    find: "      count: 7\n      initialChecked: false\n      expectedAfterClick: true\n    expected:\n      mainLandmarks: 0\n"
+    replace: "      count: 7\n      initialChecked: false\n      expectedAfterClick: true\n    removedExpected:\n      mainLandmarks: 0\n"
+    expectedError: missing=expected
+  - category: required
+    path: session.id
+    name: missing session id
+    find: "      id: session-accessibility\n"
+    replace: ""
+    expectedError: missing=id
+  - category: required
+    path: session.harness
+    name: missing session harness
+    find: "      harness: codex\n"
+    replace: ""
+    expectedError: missing=harness
+  - category: required
+    path: session.startTime
+    name: missing session start time
+    find: "      startTime: 2026-07-15T08:00:00Z\n"
+    replace: ""
+    expectedError: missing=startTime
+  - category: required
+    path: session.endTime
+    name: missing session end time
+    find: "      endTime: 2026-07-15T08:01:00Z\n"
+    replace: ""
+    expectedError: missing=endTime
+  - category: required
+    path: session.durationMins
+    name: missing session duration
+    find: "      durationMins: 1\n"
+    replace: ""
+    expectedError: missing=durationMins
+  - category: required
+    path: session.totalTokens
+    name: missing session total tokens
+    find: "      totalTokens: 12\n"
+    replace: ""
+    expectedError: missing=totalTokens
+  - category: required
+    path: session.tokensIn
+    name: missing session input tokens
+    find: "      tokensIn: 5\n"
+    replace: ""
+    expectedError: missing=tokensIn
+  - category: required
+    path: session.tokensOut
+    name: missing session output tokens
+    find: "      tokensOut: 7\n"
+    replace: ""
+    expectedError: missing=tokensOut
+  - category: required
+    path: session.turnCount
+    name: missing session turn count
+    find: "      tokensOut: 7\n      turnCount: 1\n"
+    replace: "      tokensOut: 7\n"
+    expectedError: missing=turnCount
+  - category: required
+    path: session.toolCallCount
+    name: missing session tool call count
+    find: "      turnCount: 1\n      toolCallCount: 0\n      workingDirectory: /work/session-accessibility\n"
+    replace: "      turnCount: 1\n      workingDirectory: /work/session-accessibility\n"
+    expectedError: missing=toolCallCount
+  - category: required
+    path: session.workingDirectory
+    name: missing session working directory
+    find: "      workingDirectory: /work/session-accessibility\n"
+    replace: ""
+    expectedError: missing=workingDirectory
+  - category: required
+    path: session.gitBranch
+    name: missing session git branch
+    find: "      gitBranch: feature/accessibility\n"
+    replace: ""
+    expectedError: missing=gitBranch
+  - category: required
+    path: session.gitRemote
+    name: missing session git remote
+    find: "      gitRemote: https://example.test/accessibility.git\n"
+    replace: ""
+    expectedError: missing=gitRemote
+  - category: required
+    path: session.scorecard
+    name: missing session scorecard
+    find: "      gitRemote: https://example.test/accessibility.git\n      scorecard: null\n"
+    replace: "      gitRemote: https://example.test/accessibility.git\n"
+    expectedError: missing=scorecard
+  - category: required
+    path: session.turns
+    name: missing session turns
+    find: "      scorecard: null\n      turns:\n        - index: 0\n          role: user\n"
+    replace: "      scorecard: null\n      removedTurns:\n        - index: 0\n          role: user\n"
+    expectedError: missing=turns
+  - category: required
+    path: turn.index
+    name: missing turn index
+    find: "        - index: 0\n          role: user\n          content: show the mounted transcript\n"
+    replace: "        - role: user\n          content: show the mounted transcript\n"
+    expectedError: missing=index
+  - category: required
+    path: turn.role
+    name: missing turn role
+    find: "          role: user\n          content: show the mounted transcript\n"
+    replace: "          content: show the mounted transcript\n"
+    expectedError: missing=role
+  - category: required
+    path: turn.content
+    name: missing turn content
+    find: "          content: show the mounted transcript\n"
+    replace: ""
+    expectedError: missing=content
+  - category: required
+    path: turn.timestamp
+    name: missing turn timestamp
+    find: "          timestamp: 2026-07-15T08:00:00Z\n"
+    replace: ""
+    expectedError: missing=timestamp
+  - category: required
+    path: turn.depth
+    name: missing turn depth
+    find: "          depth: 0\n          stopReason: max_turn_requests\n"
+    replace: "          stopReason: max_turn_requests\n"
+    expectedError: missing=depth
+  - category: required
+    path: turn.stopReason
+    name: missing turn stop reason
+    find: "          stopReason: max_turn_requests\n"
+    replace: ""
+    expectedError: missing=stopReason
+  - category: required
+    path: checkbox.label
+    name: missing checkbox label
+    find: "      label: tool calls\n"
+    replace: ""
+    expectedError: missing=label
+  - category: required
+    path: checkbox.count
+    name: missing checkbox count
+    find: "      count: 7\n"
+    replace: ""
+    expectedError: missing=count
+  - category: required
+    path: checkbox.initialChecked
+    name: missing checkbox initial state
+    find: "      count: 7\n      initialChecked: false\n      expectedAfterClick: true\n"
+    replace: "      count: 7\n      expectedAfterClick: true\n"
+    expectedError: missing=initialChecked
+  - category: required
+    path: checkbox.expectedAfterClick
+    name: missing checkbox click result
+    find: "      count: 7\n      initialChecked: false\n      expectedAfterClick: true\n"
+    replace: "      count: 7\n      initialChecked: false\n"
+    expectedError: missing=expectedAfterClick
+  - category: required
+    path: expected.mainLandmarks
+    name: missing expected landmark count
+    find: "    expected:\n      mainLandmarks: 0\n      tabPanelLabel: full trace\n  - name: alternate_session_and_checked_checkbox\n"
+    replace: "    expected:\n      tabPanelLabel: full trace\n  - name: alternate_session_and_checked_checkbox\n"
+    expectedError: missing=mainLandmarks
+  - category: required
+    path: expected.tabPanelLabel
+    name: missing expected tab panel label
+    find: "      tabPanelLabel: full trace\n  - name: alternate_session_and_checked_checkbox\n"
+    replace: "  - name: alternate_session_and_checked_checkbox\n"
+    expectedError: missing=tabPanelLabel
+  - category: structural
+    path: structural.duplicateKey
+    name: duplicate checkbox label
+    find: "      label: tool calls\n"
+    replace: "      label: tool calls\n      label: duplicate\n"
+    expectedError: Map keys must be unique
+  - category: structural
+    path: structural.unknownField
+    name: unknown checkbox field
+    find: "      count: 7\n"
+    replace: "      count: 7\n      unknown: true\n"
+    expectedError: fields are invalid
+  - category: structural
+    path: structural.duplicateSemanticName
+    name: duplicate semantic case name
+    find: "name: alternate_session_and_checked_checkbox"
+    replace: "name: mounted_transcript_and_checkbox"
+    expectedError: duplicated
+  - category: structural
+    path: structural.trailingDocument
+    name: trailing YAML document
+    find: "name: nullable_turns_empty_session"
+    replace: "name: nullable_turns_empty_session\n---\nextra: true"
+    expectedError: exactly one YAML document
+  - category: structural
+    path: structural.missingSemanticFamily
+    name: missing required semantic family
+    find: "name: mounted_transcript_and_checkbox"
+    replace: "name: removed_behavior"
+    expectedError: missing a required semantic case name

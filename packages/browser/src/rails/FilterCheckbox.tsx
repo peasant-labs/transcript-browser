@@ -32,6 +32,7 @@ export function FilterCheckbox({
     <button
       type="button"
       role="checkbox"
+      aria-label={label}
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onCheckedChange(!checked)}

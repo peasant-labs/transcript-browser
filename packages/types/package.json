@@ -1,7 +1,7 @@
 {
   "name": "@peasant-labs/types",
   "version": "0.0.0",
-  "description": "Shared, framework-agnostic transcript types for AI agent session transcripts.",
+  "description": "Deprecated compatibility re-export for @peasant-labs/schema.",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.js",
@@ -20,6 +20,9 @@
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@peasant-labs/schema": "0.1.0-rc6"
   },
   "devDependencies": {
     "tsup": "^8.3.5",

@@ -1,5 +1,5 @@
-import { ToolCallKind } from "@peasant-labs/types";
-import type { TurnDetail, ToolCallDetail } from "@peasant-labs/types";
+import { ToolCallKind } from "@peasant-labs/schema";
+import type { TurnDetail, ToolCallDetail } from "@peasant-labs/schema";
 
 /**
  * Filter / view-option state + pure classification helpers for the right rail.

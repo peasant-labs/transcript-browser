@@ -5,10 +5,8 @@ import { defineConfig } from "tsup";
 /**
  * The published tarball must be self-contained for an EXTERNAL npm consumer:
  *
- *  - The sibling workspace package `@peasant-labs/types` is INLINED via
- *    `noExternal` so a consumer never needs it installed. This applies to both
- *    the JS bundle and the generated `.d.ts` (tsup's dts bundler follows
- *    `noExternal`, so the bundled types are emitted inline).
+ *  - Canonical wire types and runtime values come from
+ *    `@peasant-labs/schema`, which stays external as a real package dependency.
  *  - `react` / `react-dom` stay EXTERNAL (peer deps — the host owns React).
  *  - `@xyflow/react` stays EXTERNAL and is an OPTIONAL peer (only the graph view
  *    needs it).
@@ -25,16 +23,10 @@ import { defineConfig } from "tsup";
 export default defineConfig({
   entry: ["src/index.ts"],
   format: ["esm"],
-  // `dts.resolve` forces the declaration bundler to follow the workspace
-  // packages and inline their `.d.ts` content, so the published `index.d.ts`
-  // carries no `@peasant-labs/*` imports — a consumer typechecks without them.
-  dts: {
-    resolve: ["@peasant-labs/types"],
-  },
+  dts: true,
   clean: true,
   sourcemap: true,
   external: ["react", "react-dom", "@xyflow/react"],
-  noExternal: ["@peasant-labs/types"],
   // Ship DOMAIN-ONLY CSS. `dist/styles.css` carries ONLY the `tb-`-prefixed
   // domain rules — it does NOT re-bundle fairtrade fonts/tokens/base/components.
   // Re-bundling them per package meant an app loading both this and

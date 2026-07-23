@@ -2,15 +2,15 @@ import { memo } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { GraphTurnNode } from "@peasant-labs/fairtrade/ui";
 import { NODE_DIMENSIONS } from "../constants.js";
-import type { Provider } from "@peasant-labs/types";
+import type { Harness } from "@peasant-labs/schema";
 import type { TurnNodeData } from "../types.js";
 
 interface TurnCardNodeData extends TurnNodeData {
-  provider?: Provider;
+  provider?: Harness;
 }
 
 /**
- * Turn card used as a React Flow node. After the R7 graph split this is a thin
+ * Turn card used as a React Flow node. After the graph split this is a thin
  * ENGINE wrapper: it keeps the @xyflow <Handle>s + the node's DOM identity
  * (`data-turn-index`) and maps its cooked `TurnNodeData` onto fairtrade's
  * presentation-only `GraphTurnNode`, which renders the body + all aesthetics
@@ -46,8 +46,8 @@ function TurnCardNodeImpl({ data, selected }: NodeProps) {
         contentPreview={contentPreview(turn.content, 160)}
         toolCount={turn.toolCalls?.length ?? 0}
         totalTokens={(turn.tokensIn ?? 0) + (turn.tokensOut ?? 0)}
-        tokensIn={turn.tokensIn}
-        tokensOut={turn.tokensOut}
+        tokensIn={turn.tokensIn ?? undefined}
+        tokensOut={turn.tokensOut ?? undefined}
         hasError={hasError}
         hasRetry={hasRetry}
         hasRevert={hasRevert}

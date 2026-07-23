@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { Check, Download, Link as LinkIcon, MessageSquareText, MoreHorizontal, Pencil, Share2, Users } from "@peasant-labs/fairtrade/icons";
 import { cn } from "../internal/cn.js";
 import { ACTION_LABELS } from "../lib/labels.js";
-import type { SessionDetailPayload } from "@peasant-labs/types";
+import type { SessionDetailPayload } from "@peasant-labs/schema";
 import type { ViewerCallbacks, ViewerCapabilities, DownloadFormat } from "../canvas/types.js";
 
 export interface ActionMenuProps {
@@ -294,7 +294,7 @@ export function renderDownload(detail: SessionDetailPayload, format: DownloadFor
   const lines: string[] = [];
   lines.push(`# Session \`${detail.id}\``);
   lines.push("");
-  lines.push(`- **Provider:** ${detail.harness}`);
+  lines.push(`- **Harness:** ${detail.harness}`);
   if (detail.model) lines.push(`- **Model:** ${detail.model}`);
   lines.push(`- **Started:** ${detail.startTime}`);
   if (detail.durationMins) lines.push(`- **Duration:** ${detail.durationMins.toFixed(1)} min`);

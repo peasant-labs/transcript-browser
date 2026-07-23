@@ -1,13 +1,11 @@
-import type { Provider } from "@peasant-labs/types";
-import { PROVIDER_LABELS } from "./labels.js";
+import { providerDisplayName } from "@peasant-labs/fairtrade/ui";
+import type { Harness } from "@peasant-labs/schema";
 
 /**
- * Human-readable display labels for the supported providers — the lowercase
- * harness name shown as the assistant role label. The strings live in the
- * central `lib/labels.ts` source of truth so casing cannot drift. Falls back to
- * the raw provider string for any unknown value.
+ * Human-readable display label for a canonical provider. Fairtrade owns the
+ * canonical name; transcript chrome applies its lowercase presentation only
+ * after that validated lookup.
  */
-export function providerLabel(provider: Provider | string | undefined): string {
-  if (!provider) return "";
-  return PROVIDER_LABELS[provider as Provider] ?? String(provider);
+export function providerLabel(provider: Harness): string {
+  return providerDisplayName(provider).toLocaleLowerCase("en-US");
 }
