@@ -18,6 +18,7 @@ describe("generated schema boundary", () => {
   it("uses generated runtime values and the required-depth contract", () => {
     expect(depthIsRequired).toBe(true);
     expect(Harness.Antigravity).toBe("antigravity");
+    expect(Harness.Strike).toBe("strike");
     expect(StopReason.MaxTurnRequests).toBe("max_turn_requests");
     expect(StopReason.Refusal).toBe("refusal");
     expect(fixture.cases.some(({ session }) => session.harness === Harness.Antigravity)).toBe(true);

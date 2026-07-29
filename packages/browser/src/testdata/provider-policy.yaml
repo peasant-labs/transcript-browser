@@ -1,6 +1,6 @@
-expectedValidCount: 6
+expectedValidCount: 7
 expectedInvalidCount: 3
-expectedMountedCount: 10
+expectedMountedCount: 11
 turn:
   index: 1
   role: assistant
@@ -36,6 +36,10 @@ valid:
     harness: antigravity
     expected: google antigravity
     expectedAccent: teal
+  - name: strike chrome label
+    harness: strike
+    expected: strike
+    expectedAccent: clay
 invalid:
   - name: empty harness rejected
     value: ""

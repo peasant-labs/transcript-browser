@@ -121,7 +121,7 @@ A derivation the viewer performs (and exports, so hosts can reuse it):
 
 The producing agent comes from `SessionDetailPayload.harness` — the backend
 `bestiary.Harness` wire values (`claude-code`, `gemini-cli`, `codex`,
-`opencode`, `cursor`, `antigravity`), which the viewer keys its
+`opencode`, `cursor`, `antigravity`, `strike`), which the viewer keys its
 icons/labels/tokens on directly.
 
 ### 2. Actions OUT via callbacks + capability flags

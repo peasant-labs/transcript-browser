@@ -22,7 +22,7 @@
     "sxs": "node scripts/visual/stitch-sxs.mjs"
   },
   "devDependencies": {
-    "@peasant-labs/fairtrade": "^0.0.7",
+    "@peasant-labs/fairtrade": ">=0.0.10 <0.1.0",
     "@peasant-labs/transcript-browser": "workspace:*",
     "@storybook/react-vite": "^10.4.6",
     "@types/react": "^19.0.1",

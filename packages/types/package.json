@@ -22,7 +22,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@peasant-labs/schema": "0.1.0-rc6"
+    "@peasant-labs/schema": "0.1.0-rc10"
   },
   "devDependencies": {
     "tsup": "^8.3.5",

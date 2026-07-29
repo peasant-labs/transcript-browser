@@ -1,4 +1,4 @@
-expectedBehaviorCaseCount: 6
+expectedBehaviorCaseCount: 7
 requiredBehaviorNames:
   - nullable turns stay empty
   - gemini flat git survives adaptation
@@ -6,13 +6,7 @@ requiredBehaviorNames:
   - codex token limit preserves nesting
   - cursor turn limit preserves nesting
   - explicit antigravity turns override canonical turns
-requiredHarnesses:
-  - claude-code
-  - gemini-cli
-  - opencode
-  - codex
-  - cursor
-  - antigravity
+  - strike provider policy reaches mounted transcript
 requiredStopReasons:
   - end_turn
   - cancelled
@@ -34,7 +28,9 @@ stopReasonCaseNames:
   - codex token limit preserves nesting
   - cursor turn limit preserves nesting
   - explicit antigravity turns override canonical turns
-expectedBehaviorLoaderMutationCount: 10
+providerCompositionCaseNames:
+  - strike provider policy reaches mounted transcript
+expectedBehaviorLoaderMutationCount: 11
 behaviorLoaderMutations:
   - name: duplicate root cases key
     find: "cases:\n"
@@ -72,19 +68,24 @@ behaviorLoaderMutations:
     find: "    expectedIndices: [99]\n"
     replace: "    expectedIndices: [5]\n"
     expectedError: expectations must match
+  - name: provider composition loses top-level assistant
+    find: "        role: assistant\n        content: render the canonical strike provider\n"
+    replace: "        role: user\n        content: render the canonical strike provider\n"
+    expectedError: must mount a top-level assistant turn
   - name: trailing behavior document
     find: "name: explicit antigravity turns override canonical turns"
     replace: "name: explicit antigravity turns override canonical turns\n---\nextra: true"
     expectedError: exactly one YAML document
-expectedBehaviorTestCount: 6
+expectedBehaviorTestCount: 7
 requiredBehaviorTestNames:
   - nullable turns remain empty
   - explicit turns override canonical turns
   - flat git fields reach canonical adapter
   - canonical Harness reaches adapter
+  - canonical provider policy reaches mounted transcript
   - canonical depth reaches adapter
   - canonical StopReason reaches adapter
-expectedMutationCount: 6
+expectedMutationCount: 7
 mutations:
   - name: nullable turns synthesize a phantom row
     target: src/SessionDetail.tsx
@@ -110,6 +111,12 @@ mutations:
     replace: 'adaptTranscript({ ...detail, turns, harness: "cursor" })'
     expectedTestName: canonical Harness reaches adapter
     expectedFailurePattern: canonical Harness must reach the adapter
+  - name: Harness is omitted from mounted transcript
+    target: src/SessionDetail.tsx
+    find: '                    provider={provider}'
+    replace: '                    provider={undefined}'
+    expectedTestName: canonical provider policy reaches mounted transcript
+    expectedFailurePattern: canonical Harness must reach the mounted TurnRow
   - name: depth is flattened before adaptation
     target: src/SessionDetail.tsx
     find: adaptTranscript({ ...detail, turns })

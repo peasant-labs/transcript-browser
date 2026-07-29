@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
+  Harness as SchemaHarness,
   isHarness,
   isRole,
   isStopReason,
@@ -37,6 +38,7 @@ export type SchemaBoundaryFixture = {
   cases: SchemaBoundaryCase[];
   depthCaseNames: string[];
   stopReasonCaseNames: string[];
+  providerCompositionCaseNames: string[];
   loaderMutations: SchemaBoundaryLoaderMutation[];
   source: string;
 };
@@ -69,7 +71,7 @@ function integerArray(value: unknown, path: string): number[] {
 
 function sameSet(actual: readonly string[], expected: readonly string[], label: string): void {
   if (actual.length !== expected.length || actual.some((value) => !expected.includes(value)) || expected.some((value) => !actual.includes(value))) {
-    throw new Error(`schema behavior fixture ${label} must exactly match its independent manifest set`);
+    throw new Error(`schema behavior fixture ${label} must exactly match its required set`);
   }
 }
 
@@ -79,20 +81,19 @@ export function loadSchemaBoundaryFixture(
   mutationAnchorSource = readFileSync(behaviorPath, "utf8"),
 ): SchemaBoundaryFixture {
   const manifest = parseStrictYamlObject(manifestSource, "schema behavior manifest");
-  requireExactFields(manifest, ["expectedBehaviorCaseCount", "requiredBehaviorNames", "requiredHarnesses", "requiredStopReasons", "nullableTurnCaseNames", "explicitPrecedenceCaseNames", "depthCaseNames", "stopReasonCaseNames", "expectedBehaviorLoaderMutationCount", "behaviorLoaderMutations", "expectedBehaviorTestCount", "requiredBehaviorTestNames", "expectedMutationCount", "mutations", "expectedReporterControlCount", "reporterControls"], "schema behavior fixture manifest");
+  requireExactFields(manifest, ["expectedBehaviorCaseCount", "requiredBehaviorNames", "requiredStopReasons", "nullableTurnCaseNames", "explicitPrecedenceCaseNames", "depthCaseNames", "stopReasonCaseNames", "providerCompositionCaseNames", "expectedBehaviorLoaderMutationCount", "behaviorLoaderMutations", "expectedBehaviorTestCount", "requiredBehaviorTestNames", "expectedMutationCount", "mutations", "expectedReporterControlCount", "reporterControls"], "schema behavior fixture manifest");
   for (const field of ["expectedBehaviorCaseCount", "expectedBehaviorLoaderMutationCount", "expectedBehaviorTestCount", "expectedMutationCount", "expectedReporterControlCount"] as const) requireSafeNonnegativeInteger(manifest[field], `schema behavior fixture manifest.${field}`);
   const requiredNames = requireUniqueStringSet(manifest.requiredBehaviorNames, "schema behavior fixture manifest.requiredBehaviorNames");
-  const requiredHarnesses = requireUniqueStringSet(manifest.requiredHarnesses, "schema behavior fixture manifest.requiredHarnesses");
   const requiredStopReasons = requireUniqueStringSet(manifest.requiredStopReasons, "schema behavior fixture manifest.requiredStopReasons");
   const nullableNames = requireUniqueStringSet(manifest.nullableTurnCaseNames, "schema behavior fixture manifest.nullableTurnCaseNames");
   const precedenceNames = requireUniqueStringSet(manifest.explicitPrecedenceCaseNames, "schema behavior fixture manifest.explicitPrecedenceCaseNames");
   const depthCaseNames = requireUniqueStringSet(manifest.depthCaseNames, "schema behavior fixture manifest.depthCaseNames");
   const stopReasonCaseNames = requireUniqueStringSet(manifest.stopReasonCaseNames, "schema behavior fixture manifest.stopReasonCaseNames");
+  const providerCompositionCaseNames = requireUniqueStringSet(manifest.providerCompositionCaseNames, "schema behavior fixture manifest.providerCompositionCaseNames");
   const requiredTestNames = requireUniqueStringSet(manifest.requiredBehaviorTestNames, "schema behavior fixture manifest.requiredBehaviorTestNames");
   if (requiredNames.length !== manifest.expectedBehaviorCaseCount || requiredTestNames.length !== manifest.expectedBehaviorTestCount) throw new Error("schema behavior manifest case and test counts must match their independent names");
-  if (requiredHarnesses.some((harness) => !isHarness(harness))) throw new Error("schema behavior manifest requiredHarnesses must all be canonical");
   if (requiredStopReasons.some((reason) => !isStopReason(reason))) throw new Error("schema behavior manifest requiredStopReasons must all be canonical");
-  if ([...nullableNames, ...precedenceNames, ...depthCaseNames, ...stopReasonCaseNames].some((name) => !requiredNames.includes(name))) throw new Error("schema behavior manifest relation case names must be required behavior cases");
+  if ([...nullableNames, ...precedenceNames, ...depthCaseNames, ...stopReasonCaseNames, ...providerCompositionCaseNames].some((name) => !requiredNames.includes(name))) throw new Error("schema behavior manifest relation case names must be required behavior cases");
 
   if (!Array.isArray(manifest.behaviorLoaderMutations)) throw new Error("schema behavior manifest behaviorLoaderMutations must be an array");
   const loaderFields = ["name", "find", "replace", "expectedError"] as const;
@@ -163,7 +164,7 @@ export function loadSchemaBoundaryFixture(
   const actualNullableNames = cases.filter(({ session }) => session.turns === null).map(({ name }) => name);
   const actualPrecedenceNames = cases.filter(({ explicitTurns }) => explicitTurns !== undefined).map(({ name }) => name);
   sameSet(names, requiredNames, "behavior case names");
-  sameSet(harnesses, requiredHarnesses, "Harness coverage");
+  sameSet(harnesses, Object.values(SchemaHarness), "Harness coverage");
   sameSet(stopReasons, requiredStopReasons, "StopReason coverage");
   sameSet(actualNullableNames, nullableNames, "nullable turn cases");
   sameSet(actualPrecedenceNames, precedenceNames, "explicit precedence cases");
@@ -176,5 +177,12 @@ export function loadSchemaBoundaryFixture(
       throw new Error(`schema behavior fixture ${name} must exercise distinct canonical and explicit turn precedence`);
     }
   }
-  return { cases, depthCaseNames, stopReasonCaseNames, loaderMutations, source };
+  for (const name of providerCompositionCaseNames) {
+    const fixtureCase = cases.find((entry) => entry.name === name)!;
+    const selected = fixtureCase.explicitTurns ?? fixtureCase.session.turns ?? [];
+    if (!selected.some((turn) => turn.role === "assistant" && turn.depth === 0)) {
+      throw new Error(`schema behavior fixture ${name} must mount a top-level assistant turn for provider composition`);
+    }
+  }
+  return { cases, depthCaseNames, stopReasonCaseNames, providerCompositionCaseNames, loaderMutations, source };
 }

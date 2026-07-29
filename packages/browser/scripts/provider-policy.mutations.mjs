@@ -8,7 +8,7 @@ const manifestPath = resolve("src/testdata/provider-policy.manifest.yaml");
 const document = YAML.parseDocument(readFileSync(manifestPath, "utf8"), { strict: true, uniqueKeys: true });
 if (document.errors.length) throw new Error(`provider mutation manifest is invalid: ${document.errors.map((error) => error.message).join("; ")}`);
 const manifest = document.toJS();
-exactFields(manifest, ["expectedHarnessCount", "expectedMountedCount", "requiredHarnesses", "absentTestName", "expectedMutationCount", "mutations"], "provider mutation manifest");
+exactFields(manifest, ["absentTestName", "expectedMutationCount", "mutations"], "provider mutation manifest");
 if (!Number.isSafeInteger(manifest.expectedMutationCount) || manifest.expectedMutationCount < 0 || !Array.isArray(manifest.mutations) || manifest.mutations.length !== manifest.expectedMutationCount) {
   throw new Error("provider mutation manifest count must match its exact mutation inventory");
 }
