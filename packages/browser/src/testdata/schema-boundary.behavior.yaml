@@ -95,3 +95,19 @@ cases:
     expectedIndices: [99]
     expectedDepths: [7]
     expectedStopReasons: [refusal]
+  - name: strike provider policy reaches mounted transcript
+    harness: strike
+    gitBranch: feature/strike
+    gitRemote: https://example.test/strike.git
+    turns:
+      - index: 6
+        role: assistant
+        content: render the canonical strike provider
+        timestamp: 2026-07-15T08:07:00Z
+        depth: 0
+        stopReason: refusal
+    useExplicitTurns: false
+    explicitTurns: []
+    expectedIndices: [6]
+    expectedDepths: [0]
+    expectedStopReasons: [refusal]

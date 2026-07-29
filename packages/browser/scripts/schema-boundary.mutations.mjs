@@ -9,7 +9,7 @@ if (document.errors.length) throw new Error(`schema-boundary mutation manifest i
 const manifest = document.toJS();
 if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)) throw new Error("schema-boundary manifest root must be an object");
 
-const rootFields = ["expectedBehaviorCaseCount", "requiredBehaviorNames", "requiredHarnesses", "requiredStopReasons", "nullableTurnCaseNames", "explicitPrecedenceCaseNames", "depthCaseNames", "stopReasonCaseNames", "expectedBehaviorLoaderMutationCount", "behaviorLoaderMutations", "expectedBehaviorTestCount", "requiredBehaviorTestNames", "expectedMutationCount", "mutations", "expectedReporterControlCount", "reporterControls"];
+const rootFields = ["expectedBehaviorCaseCount", "requiredBehaviorNames", "requiredStopReasons", "nullableTurnCaseNames", "explicitPrecedenceCaseNames", "depthCaseNames", "stopReasonCaseNames", "providerCompositionCaseNames", "expectedBehaviorLoaderMutationCount", "behaviorLoaderMutations", "expectedBehaviorTestCount", "requiredBehaviorTestNames", "expectedMutationCount", "mutations", "expectedReporterControlCount", "reporterControls"];
 exactFields(manifest, rootFields, "manifest");
 for (const field of ["expectedBehaviorLoaderMutationCount", "expectedBehaviorTestCount", "expectedMutationCount", "expectedReporterControlCount"]) {
   if (!Number.isSafeInteger(manifest[field]) || manifest[field] < 0) throw new Error(`schema-boundary manifest ${field} must be a non-negative safe integer`);

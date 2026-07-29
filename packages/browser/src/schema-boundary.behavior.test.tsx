@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { SessionDetailPayload } from "@peasant-labs/schema";
-import type { TranscriptViewModel } from "@peasant-labs/fairtrade/ui";
+import { providerAccent, providerDisplayName, type TranscriptViewModel } from "@peasant-labs/fairtrade/ui";
 import { SessionDetail } from "./SessionDetail.js";
 import { loadSchemaBoundaryFixture } from "./schema-boundary-fixture.test-helper.js";
 
@@ -52,7 +52,6 @@ vi.mock("@peasant-labs/fairtrade/ui", async (importOriginal) => {
     Kbd: Stub,
     MetaItem: Stub,
     PhaseDivider: Stub,
-    ProviderIcon: Stub,
     StepsWaterfall: Stub,
     Tooltip: Stub,
     TranscriptDiffEntryCard: Stub,
@@ -64,13 +63,11 @@ vi.mock("@peasant-labs/fairtrade/ui", async (importOriginal) => {
 const schemaFixture = loadSchemaBoundaryFixture();
 const cases = schemaFixture.cases;
 
-function renderCases(): Array<{ fixture: (typeof cases)[number]; wire: SessionDetailPayload; view: TranscriptViewModel }> {
+function renderCases(): Array<{ fixture: (typeof cases)[number]; wire: SessionDetailPayload; view: TranscriptViewModel; html: string }> {
   capture.calls.length = 0;
-  for (const fixture of cases) {
-    renderToStaticMarkup(<SessionDetail detail={fixture.session} turns={fixture.explicitTurns} />);
-  }
+  const html = cases.map((fixture) => renderToStaticMarkup(<SessionDetail detail={fixture.session} turns={fixture.explicitTurns} />));
   expect(capture.calls, "every mounted SessionDetail must cross the adapter exactly once").toHaveLength(cases.length);
-  return cases.map((fixture, index) => ({ fixture, ...capture.calls[index]! }));
+  return cases.map((fixture, index) => ({ fixture, ...capture.calls[index]!, html: html[index]! }));
 }
 
 describe("mounted SessionDetail schema behavior", () => {
@@ -100,6 +97,20 @@ describe("mounted SessionDetail schema behavior", () => {
     for (const { fixture, wire, view } of renderCases()) {
       expect(wire.harness, "canonical Harness must reach the adapter").toBe(fixture.session.harness);
       expect(view.session.harness, "canonical Harness must reach the view model").toBe(fixture.session.harness);
+    }
+  });
+
+  it("canonical provider policy reaches mounted transcript", () => {
+    for (const { fixture, html } of renderCases().filter(({ fixture }) => schemaFixture.providerCompositionCaseNames.includes(fixture.name))) {
+      const container = document.createElement("div");
+      container.innerHTML = html;
+      const turn = container.querySelector<HTMLElement>(`.txn-turn[data-harness="${fixture.session.harness}"]`);
+      expect(turn, "canonical Harness must reach the mounted TurnRow").not.toBeNull();
+      const roleLabel = turn!.querySelector<HTMLElement>(".txn-rolelabel");
+      const expectedLabel = providerDisplayName(fixture.session.harness).toLocaleLowerCase("en-US");
+      expect(roleLabel?.textContent, "mounted TurnRow must render Fairtrade's provider display name").toContain(expectedLabel);
+      expect(roleLabel?.getAttribute("style"), "mounted TurnRow must render Fairtrade's provider accent").toContain(`color:var(--${providerAccent(fixture.session.harness)})`);
+      expect(turn!.querySelector(".pv-icon svg.brand"), "mounted TurnRow must render Fairtrade's provider mark").not.toBeNull();
     }
   });
 

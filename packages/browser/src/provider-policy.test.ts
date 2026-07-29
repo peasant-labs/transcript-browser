@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { isHarness, type Harness, type TurnDetail } from "@peasant-labs/schema";
+import { Harness as SchemaHarness, isHarness, type Harness, type TurnDetail } from "@peasant-labs/schema";
 import { TurnRow, type TurnRowProps } from "./canvas/TurnRow.js";
 import { providerLabel } from "./lib/provider.js";
 import {
@@ -41,9 +41,9 @@ function loadProviderCases(): ProviderFixture {
   const root = parseStrictYamlObject(readFileSync(fixturePath, "utf8"), "provider fixture");
   const manifest = parseStrictYamlObject(readFileSync(manifestPath, "utf8"), "provider manifest");
   requireExactFields(root, ["expectedValidCount", "expectedInvalidCount", "expectedMountedCount", "turn", "absent", "valid", "invalid"], "provider fixture root");
-  requireExactFields(manifest, ["expectedHarnessCount", "expectedMountedCount", "requiredHarnesses", "absentTestName", "expectedMutationCount", "mutations"], "provider manifest root");
+  requireExactFields(manifest, ["absentTestName", "expectedMutationCount", "mutations"], "provider manifest root");
   for (const field of ["expectedValidCount", "expectedInvalidCount", "expectedMountedCount"] as const) requireSafeNonnegativeInteger(root[field], `provider fixture ${field}`);
-  for (const field of ["expectedHarnessCount", "expectedMountedCount", "expectedMutationCount"] as const) requireSafeNonnegativeInteger(manifest[field], `provider manifest ${field}`);
+  requireSafeNonnegativeInteger(manifest.expectedMutationCount, "provider manifest expectedMutationCount");
 
   const turn = requireRecord(root.turn, ["index", "role", "content", "depth", "timestamp"], "provider fixture turn");
   requireSafeNonnegativeInteger(turn.index, "provider fixture turn.index");
@@ -70,18 +70,16 @@ function loadProviderCases(): ProviderFixture {
     return record as unknown as InvalidCase;
   });
 
-  const requiredHarnesses = requireUniqueStringSet(manifest.requiredHarnesses, "provider manifest requiredHarnesses");
-  if (requiredHarnesses.some((harness) => !isHarness(harness))) throw new Error("provider manifest requiredHarnesses must all be canonical");
-  const canonicalRequiredHarnesses = requiredHarnesses as Harness[];
   requireNonEmptyString(manifest.absentTestName, "provider manifest absentTestName");
   if (!Array.isArray(manifest.mutations)) throw new Error("provider manifest mutations must be an array");
   const mutations = manifest.mutations.map((row, index) => requireStringRecord(row, ["name", "target", "find", "replace", "expectedTestName", "expectedFailurePattern"], `provider manifest mutations[${index}]`) as unknown as MutationCase);
 
   if (valid.length !== root.expectedValidCount || invalid.length !== root.expectedInvalidCount) throw new Error("provider fixture case counts do not match their declarations");
-  if (valid.length + invalid.length + 1 !== root.expectedMountedCount || root.expectedMountedCount !== manifest.expectedMountedCount) throw new Error("provider mounted case counts do not match fixture and manifest declarations");
-  if (valid.length !== manifest.expectedHarnessCount || mutations.length !== manifest.expectedMutationCount) throw new Error("provider manifest counts do not match their inventories");
+  if (valid.length + invalid.length + 1 !== root.expectedMountedCount) throw new Error("provider mounted case count does not match the behavior corpus declaration");
+  if (mutations.length !== manifest.expectedMutationCount) throw new Error("provider manifest mutation count does not match its inventory");
   const harnesses = valid.map(({ harness }) => harness);
-  if (harnesses.some((harness) => !canonicalRequiredHarnesses.includes(harness)) || canonicalRequiredHarnesses.some((harness) => !harnesses.includes(harness))) throw new Error("provider fixture and manifest harness inventories differ");
+  const schemaHarnesses = Object.values(SchemaHarness);
+  if (harnesses.length !== schemaHarnesses.length || harnesses.some((harness) => !schemaHarnesses.includes(harness)) || schemaHarnesses.some((harness) => !harnesses.includes(harness))) throw new Error("provider behavior corpus must exactly cover the canonical schema Harness set");
   const absentCase = absent as unknown as AbsentCase;
   if (manifest.absentTestName !== absentCase.name) throw new Error("provider fixture and manifest absent test names differ");
   const mountedNames = [absentCase.name, ...invalid.map(({ mountedName }) => mountedName)];
@@ -120,6 +118,7 @@ describe("canonical provider display policy", () => {
       const html = renderTurn(row.harness);
       expect(html).toContain(`style="color:var(--${row.expectedAccent})"`);
       expect(html).toContain(row.expected);
+      expect(html).toContain('class="brand"');
     });
   }
 

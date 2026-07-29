@@ -33,7 +33,7 @@ describe("schema boundary architecture", () => {
     ].map((path) => readFileSync(resolve(process.cwd(), path), "utf8")).join("\n");
     expect(provider).toContain("providerDisplayName(provider)");
     expect(provider).not.toContain("isHarness");
-    expect(`${provider}\n${callSites}`).not.toMatch(/PROVIDER_LABELS|Harness\s*\|\s*string|as\s+Harness/);
+    expect(`${provider}\n${callSites}`).not.toMatch(/PROVIDER_(?:LABELS|DISPLAY_NAMES|BRANDS|ACCENTS)|Harness\s*\|\s*string|as\s+Harness/);
   });
 
   it("keeps the deprecated package as a pure external schema re-export", () => {

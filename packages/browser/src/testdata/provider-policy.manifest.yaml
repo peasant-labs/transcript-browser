@@ -1,12 +1,3 @@
-expectedHarnessCount: 6
-expectedMountedCount: 10
-requiredHarnesses:
-  - claude-code
-  - gemini-cli
-  - opencode
-  - codex
-  - cursor
-  - antigravity
 absentTestName: mounted TurnRow uses amber when provider is absent
 expectedMutationCount: 2
 mutations:
