@@ -3,6 +3,11 @@
   "version": "0.0.5",
   "description": "Framework-agnostic React viewer for AI agent session transcripts.",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/peasant-labs/transcript-browser",
+    "directory": "packages/browser"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -24,6 +29,7 @@
     "test:initial-position:mutations": "node scripts/initial-position.mutations.mjs",
     "test:schema-boundary:mutations": "node scripts/schema-boundary.mutations.mjs",
     "test:provider-policy:mutations": "node scripts/provider-policy.mutations.mjs",
+    "test:package-provenance": "node scripts/package-provenance.test.mjs",
     "clean": "rm -rf dist",
     "prepack": "tsup"
   },
