@@ -60,10 +60,15 @@ The release ceremony: squash the epoch branch to one `release(vX.Y.Z): <summary>
 tag the merge `transcript-browser-vX.Y.Z` (lightweight), push `main` + the tag. **Pushing
 the tag publishes**: `.github/workflows/npm-publish.yml` runs the full `pnpm check` gate
 chain, re-packs via `prepack` (tsup), and publishes
-`@peasant-labs/transcript-browser` via **npm Trusted Publishing (OIDC)** — no `NPM_TOKEN`
-secret exists, provenance attestation is automatic. A prerelease version (`-rcN` etc.)
-lands under dist-tag `next`; a final under `latest`. The workflow refuses a tag whose
-version does not match the package manifest.
+`@peasant-labs/transcript-browser` via **npm Trusted Publishing (OIDC)** - no `NPM_TOKEN`
+secret exists. `pnpm test:package-provenance` keeps the publishable package's canonical
+repository and monorepo directory metadata exact. npm generates provenance automatically
+only when this source repository is public; private source repositories remain unattested
+even though OIDC authentication succeeds. A prerelease version (`-rcN` etc.) lands under
+dist-tag `next`; a final under `latest`. The workflow refuses a tag whose version does not
+match the package manifest, reports the expected missing attestation while this repository
+is private, and hard-fails after publication if a public-source release lacks the SLSA
+provenance predicate.
 
 One-time maintainer registrations (state lives on GitHub/npmjs.com, not in-repo): (1) a
 `npm-publish` GitHub Actions **environment** on this repo; (2) on npmjs.com, this repo +
