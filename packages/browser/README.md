@@ -27,9 +27,6 @@ that canonical wire contract automatically. Fairtrade is a required peer at
 
 ```bash
 pnpm add @peasant-labs/transcript-browser @peasant-labs/fairtrade @xyflow/react react react-dom
-
-# npm
-npm install @peasant-labs/transcript-browser @peasant-labs/fairtrade @xyflow/react react react-dom
 ```
 
 Import Fairtrade's styles before transcript-browser's domain-only stylesheet.
