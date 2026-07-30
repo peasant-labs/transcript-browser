@@ -17,7 +17,7 @@ older `SessionDetail` composer as a compatibility API and deprecation candidate.
 | Package | Name | Status |
 |---|---|---|
 | `packages/types` | deprecated compatibility package | Pure re-export of the generated `@peasant-labs/schema` contract. |
-| `packages/browser` | `@peasant-labs/transcript-browser` | Transcript graph engine, browser-specific components, and compatibility viewer. Current version: `0.0.5`. See its [README](./packages/browser/README.md). |
+| `packages/browser` | `@peasant-labs/transcript-browser` | Transcript graph engine, browser-specific components, and compatibility viewer. See its [README](./packages/browser/README.md). |
 | `examples/minimal` | `@peasant-labs/example-minimal` | Vite app rendering Fairtrade's `<TranscriptViewer>` against a realistic sample. |
 
 ## Quick start
@@ -35,9 +35,13 @@ pnpm dev:minimal     # run the minimal example (Vite dev server)
 transcript-browser/
 ├── packages/
 │   ├── types/      deprecated schema re-export
-│   ├── browser/    @peasant-labs/transcript-browser
+│   └── browser/    @peasant-labs/transcript-browser
 ├── examples/
 │   └── minimal/    minimal Vite wiring proof
+├── scripts/         repository validation and visual tooling
+├── stories/         Storybook stories
+├── .storybook/      Storybook configuration
+├── flake.nix        Nix development environment
 ├── pnpm-workspace.yaml
 ├── tsconfig.base.json
 └── package.json
@@ -48,7 +52,7 @@ transcript-browser/
 - Canonical wire types and runtime values come from the generated
   `@peasant-labs/schema` package. The browser owns only viewer-specific
   presentation envelopes.
-- The viewer follows a strict **agnosticism contract**: data in via props only,
+- The viewer follows a strict **package boundary**: data in via props only,
   actions out via optional callbacks + capability flags, theming via fairtrade
   CSS variables only. See the [browser README](./packages/browser/README.md).
 - See [`DIVERGENCES.md`](./DIVERGENCES.md) for the migration boundary.

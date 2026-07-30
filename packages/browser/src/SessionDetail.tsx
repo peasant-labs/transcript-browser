@@ -448,7 +448,7 @@ export function SessionDetail({
     apply: applyInitialPosition,
   });
 
-  // Vim-style j/k (and ArrowDown/Up) turn navigation (roadmap 4.1). The anchor
+  // Vim-style j/k (and ArrowDown/Up) turn navigation. The anchor
   // follows the top visible turn while you scroll manually; j/k then step from
   // there. Disabled while search owns the keyboard. The pure index math
   // (nextNavTurn) is exported + unit-tested by the host.

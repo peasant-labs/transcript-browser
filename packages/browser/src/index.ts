@@ -17,9 +17,10 @@
  *   import "@peasant-labs/fairtrade/components.css";
  *   import "@peasant-labs/transcript-browser/styles.css";
  *
- * The primary entry point is `<SessionDetail detail={…} … />` — the full viewer
- * (header + tabs + canvas/graph/rails/views). `<TranscriptCanvas>` remains
- * available as the bare list view.
+ * The canonical viewer pipeline adapts schema payloads with Fairtrade's
+ * `adaptTranscript` and renders Fairtrade's `TranscriptViewer`, optionally with
+ * this package's graph engine. `<SessionDetail>` remains available as a
+ * compatibility composer, and `<TranscriptCanvas>` remains the bare list view.
  */
 
 // --- Top-level composer ----------------------------------------------------
@@ -33,8 +34,8 @@ export * from "./canvas/index.js";
 
 // Generic UI comes directly from @peasant-labs/fairtrade — import generics from
 // `@peasant-labs/fairtrade/ui`, not from this package. The old `primitives`
-// compat namespace was a second import path that re-exported the whole fairtrade
-// catalog (the duplication this adoption removes), so it was dropped;
+// compat namespace re-exported the whole fairtrade catalog through a second
+// import path, so it was dropped;
 // transcript-browser exports only its DOMAIN surface (./primitives + the
 // views/rails/etc. below).
 export * from "./graph/index.js";
