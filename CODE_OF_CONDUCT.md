@@ -45,12 +45,12 @@ officially representing the project in public spaces.
 
 ## Enforcement
 
-Report abusive, harassing, or otherwise unacceptable behavior privately through
-the repository's **Security** tab by selecting **Advisories** and then
-**Report a vulnerability**. The project does not publish a separate verified
-conduct email address. If that GitHub option is unavailable, contact a
+Report abusive, harassing, or otherwise unacceptable behavior by contacting a
 repository maintainer through their GitHub profile to request a private channel.
-Do not include sensitive conduct details in a public issue.
+The project does not publish a separate verified conduct email address. If
+GitHub private vulnerability reporting is enabled, the repository's **Security**
+tab is an alternative private route. Do not include sensitive conduct details
+in a public issue.
 
 Maintainers will review reports promptly as their availability permits, respect
 the privacy and security of reporters, and respond in a way appropriate to the

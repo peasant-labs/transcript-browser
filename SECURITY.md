@@ -3,8 +3,8 @@
 ## Supported versions
 
 This project is pre-1.0. Only the latest published release of
-`@peasant-labs/transcript-browser` receives security fixes. The current release
-is `0.0.5`; older releases are unsupported.
+`@peasant-labs/transcript-browser` receives security fixes; older releases are
+unsupported.
 
 ## Reporting a vulnerability
 

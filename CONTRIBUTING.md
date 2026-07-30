@@ -6,7 +6,8 @@ agreed before implementation.
 
 ## Prerequisites
 
-- Node.js 24, matching the development shell and continuous-integration build
+- Node.js 24, matching the development shell and continuous-integration build;
+  the npm publication workflow uses Node.js 26 for OIDC trusted publishing
 - pnpm 10.33.2, as pinned by the root `packageManager` field
 
 ## Setup
@@ -17,17 +18,19 @@ pnpm install --frozen-lockfile
 
 ## Repository layout
 
-- `packages/browser` contains the published React viewer,
-  `@peasant-labs/transcript-browser`.
+- `packages/browser` contains the published package
+  `@peasant-labs/transcript-browser`: the graph engine, browser-specific
+  presentation surfaces, and the retained `SessionDetail` compatibility
+  composer.
 - `packages/types` is a deprecated compatibility re-export of the generated
   `@peasant-labs/schema` package. Do not add new wire definitions there.
 - `examples/minimal` is the integration playground for mounting the viewer.
 
 Fairtrade (`@peasant-labs/fairtrade`) owns `adaptTranscript`, cooked view
-models, and graph node visuals. This repository owns the `@xyflow` graph-engine
-topology and interaction. Do not copy or fork Fairtrade's canonical visuals
-here. `@peasant-labs/fairtrade` is a required peer dependency of the published
-viewer.
+models, and graph node visuals. This repository owns the React Flow
+(`@xyflow/react`) graph-engine topology and interaction. Do not copy or fork
+Fairtrade's canonical visuals here. `@peasant-labs/fairtrade` is a required peer
+dependency of the published viewer.
 
 ## Development checks
 
