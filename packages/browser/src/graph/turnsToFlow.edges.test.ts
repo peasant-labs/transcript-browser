@@ -1,14 +1,11 @@
-// Defensive regression guard for a UAT-found transcript-viewer defect: the
-// full-trace GRAPH view was found rendering with NO VISIBLE edges between nodes.
-// Root-caused end-to-end: the edges were always present and correctly computed by
-// `turnsToFlow` — the symptom was entirely a fairtrade-side CSS container collapse
-// (`.txn-center` shrink-wrapping instead of stretching to its grid track), fixed in
-// fairtrade's own index.css. `turnsToFlow` itself was never the bug.
+// The full-trace graph requires its data transform to emit every connector even
+// when presentation-layer layout makes those connectors invisible. A collapsing
+// container can hide correctly computed edges, but it must not be confused with
+// a topology failure in `turnsToFlow`.
 //
-// This test is the belt-and-suspenders guard for the transcript-browser side of
-// that incident: it exercises `turnsToFlow` — the PURE data transform that decides
-// which edges exist — directly, with no DOM, no CSS, no @xyflow rendering, and
-// therefore no container/width dependency whatsoever. If a future change to
+// This test exercises `turnsToFlow`, the pure data transform that decides which
+// edges exist, directly, with no DOM, no CSS, no @xyflow rendering, and therefore
+// no container/width dependency whatsoever. If a future change to
 // `turnsToFlow` ever drops an edge (sequential, turn-to-tool, spawn, or return),
 // this fails here regardless of how any consumer's container is sized.
 import { readFileSync } from "node:fs";
@@ -140,7 +137,7 @@ function toTurnDetail(fixture: TurnFixture): TurnDetail {
   };
 }
 
-describe("turnsToFlow edge emission (peasant#166 graph-view regression guard)", () => {
+describe("turnsToFlow emits complete graph topology from data alone (no DOM, CSS, or React Flow)", () => {
   const cases = loadCases();
 
   // Non-vacuity floor: this suite must never silently shrink to fewer scenarios.

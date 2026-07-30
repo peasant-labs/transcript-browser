@@ -16,9 +16,8 @@ import { defineConfig } from "tsup";
  * `dependency`/`peerDependency` external, so they stay real npm `dependencies`
  * the consumer installs (they are NOT inlined into the bundle).
  * `@peasant-labs/fairtrade` is a PEER dependency (also external): the host app
- * supplies its single fairtrade copy, so the viewer can never render stale DS
- * bytes from a nested pin (0.0.2 nested a fairtrade 0.0.3 under consumers that
- * were already on 0.0.5 — the drift shipped visibly stale chrome).
+ * supplies one fairtrade copy, preventing a nested dependency from rendering
+ * stale design-system chrome.
  */
 export default defineConfig({
   entry: ["src/index.ts"],

@@ -64,8 +64,8 @@ export interface ViewerCapabilities {
 }
 
 /**
- * Action callbacks. All optional. Wired by future slices (header / action menu)
- * — declared here so the prop surface is stable from this slice forward.
+ * Action callbacks. All optional. Declared here so the prop surface stays stable
+ * for hosts as viewer controls evolve.
  */
 export interface ViewerCallbacks {
   /** Persist a manual label on a turn. Host returns the saved label (with id). */

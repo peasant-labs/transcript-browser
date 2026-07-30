@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 /**
- * Vim-style turn navigation (peasant roadmap 4.1).
+ * Vim-style keyboard navigation between visible turns.
  *
  * `nextNavTurn` is the pure index math — given the ordered list of visible turn
  * indices, the current anchor, and a direction (+1 = down/next, -1 = up/prev),

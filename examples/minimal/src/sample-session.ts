@@ -16,8 +16,8 @@ import type {
  * `buildWire()` (fairtrade `src/mockups/inuse/TranscriptApp.jsx`): the editorial
  * fixtures below are projected into the canonical wire `SessionDetailPayload`,
  * which the example feeds through the ONE adapter `adaptTranscript()` exactly
- * like the demo. Rendering the same data lets the UAT capture stitch a true
- * height-matched, same-data side-by-side of the demo vs the assembled app.
+ * like the demo. Rendering the same data lets the side-by-side capture stitch a
+ * truly height-matched comparison of the demo and assembled app.
  *
  * WIRE FAITHFULNESS (the reason tool outputs render): on the real wire a tool
  * call's `arguments` AND `result` are JSON-ENCODED STRINGS — so a plain-text
