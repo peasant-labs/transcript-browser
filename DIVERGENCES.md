@@ -4,10 +4,11 @@ The generated `@peasant-labs/schema` package is the sole wire-contract source.
 The old hand-maintained compatibility package is deprecated and performs only
 a root re-export of that generated package.
 
-Transcript-browser owns presentation-only envelopes such as `Phase`,
-`PhaseBadge`, filters, graph records, and cooked Fairtrade view-model inputs. It
-does not redefine transcript payloads, enums, WebSocket messages, metadata, or
-quality wire records.
+Fairtrade owns `adaptTranscript`, the cooked transcript view models, and graph
+node visuals. Transcript-browser owns the React Flow graph topology and
+interaction plus browser-specific presentation envelopes such as `Phase`,
+`PhaseBadge`, filters, and graph records. It does not redefine transcript
+payloads, enums, WebSocket messages, metadata, or quality wire records.
 
 Fairtrade's `adaptTranscript` is the only compatibility boundary for historical
 nested git input. Browser production consumes the cooked `SessionGitVM` and

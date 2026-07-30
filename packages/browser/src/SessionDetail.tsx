@@ -189,10 +189,13 @@ function positionFromHash(): TranscriptInitialPosition | undefined {
 const STICKY_PAD = 24;
 
 /**
- * Top-level session-detail composer. Assembles the header (hero, sticky header,
+ * @deprecated Compatibility composer retained for existing consumers. New
+ * integrations should pass `adaptTranscript(detail)` to Fairtrade's
+ * `TranscriptViewer` and use this package for the graph engine.
+ *
+ * Assembles the header (hero, sticky header,
  * tab strip, turn-context bar), the center content (canvas / graph / per-tab
- * views), and the right rail (outline + filters) from props and callbacks. This
- * is the single component both apps mount.
+ * views), and the right rail (outline + filters) from props and callbacks.
  *
  * It owns only *view* state (active tab, trajectory mode, filters, search,
  * scroll tracking, sticky-header visibility) — never data. All data flows IN

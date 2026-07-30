@@ -1,22 +1,24 @@
 # transcript-browser
 
-Shared, framework-agnostic **transcript browser** for AI agent session
-transcripts, consumed by two existing apps:
+Shared, framework-agnostic **transcript browser** building blocks for AI agent
+session transcripts, consumed by two existing apps:
 
 - `peasant/web`
 - `village/frontend`
 
-This is a pnpm workspace monorepo. The viewer, graph, rails, header, overlays,
-and domain primitives are exposed as agnostic, props-driven components from
-`@peasant-labs/transcript-browser`.
+This is a pnpm workspace monorepo. The canonical viewer pipeline is a wire
+`SessionDetailPayload` passed through Fairtrade's `adaptTranscript`, then
+rendered by Fairtrade's `TranscriptViewer`. This package supplies the React Flow
+graph engine and browser-specific presentation envelopes. It also retains its
+older `SessionDetail` composer as a compatibility API and deprecation candidate.
 
 ## Packages
 
 | Package | Name | Status |
 |---|---|---|
 | `packages/types` | deprecated compatibility package | Pure re-export of the generated `@peasant-labs/schema` contract. |
-| `packages/browser` | `@peasant-labs/transcript-browser` | Framework-agnostic React transcript viewer. See its [README](./packages/browser/README.md). |
-| `examples/minimal` | `@peasant-labs/example-minimal` | Vite app rendering `<SessionDetail>` against a realistic sample. |
+| `packages/browser` | `@peasant-labs/transcript-browser` | Transcript graph engine, browser-specific components, and compatibility viewer. Current version: `0.0.5`. See its [README](./packages/browser/README.md). |
+| `examples/minimal` | `@peasant-labs/example-minimal` | Vite app rendering Fairtrade's `<TranscriptViewer>` against a realistic sample. |
 
 ## Quick start
 
@@ -55,7 +57,7 @@ transcript-browser/
 
 ## npm publication
 
-The release ceremony: squash the epoch branch to one `release(vX.Y.Z): <summary>` commit
+The release process: squash the release branch to one `release(vX.Y.Z): <summary>` commit
 (bumping `packages/browser/package.json` to the same version), `merge --no-ff` into `main`,
 tag the merge `transcript-browser-vX.Y.Z` (lightweight), push `main` + the tag. **Pushing
 the tag publishes**: `.github/workflows/npm-publish.yml` runs the full `pnpm check` gate
