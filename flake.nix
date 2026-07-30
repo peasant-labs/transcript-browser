@@ -1,147 +1,28 @@
 {
-  description = "Reproducible Go dev environment with build and test support";
+  description = "Node.js and pnpm development environment for transcript-browser";
 
-  # ============================================================
-  # INPUTS
-  # ============================================================
-
-  inputs = rec {
-    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs = nixpkgs-unstable;
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  # ============================================================
-  # OUTPUTS
-  # ============================================================
+  outputs = { nixpkgs, flake-utils, ... }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = import nixpkgs { inherit system; };
+      in
+      {
+        devShells.default = pkgs.mkShell {
+          packages = with pkgs; [
+            nodejs_24
+            corepack
+          ];
 
-  outputs =
-    inputs@{ self
-    , nixpkgs
-    , nixpkgs-stable
-    , nixpkgs-unstable
-    , flake-utils
-    , ...
-    }:
-    let
-      # ==========================================================
-      # PROJECT CONFIGURATION — edit this section for your project
-      # ==========================================================
-
-      # Package metadata
-      pname = "myproject";
-      version = "0.1.0";
-
-      # Go package attribute (e.g., go, go_1_24)
-      # Set to null to use the default Go version from nixpkgs
-      goAttr = null;
-
-      # Vendor hash for buildGoModule (run `nix build` once with
-      # lib.fakeHash to get the real hash from the error message)
-      vendorHash = null; # null = vendored in repo; otherwise sha256 string
-
-      # Extra CLI tools available in the dev shell
-      devTools = pkgs: with pkgs; [
-        gopls # LSP
-        gotools # goimports, godoc, etc.
-        go-tools # staticcheck
-        delve # debugger
-        ast-grep # structural code search and lint
-        golangci-lint # linter suite
-        sqlite # CLI for inspecting analytics store
-        nodejs_24 # Node.js runtime (npm ci, npm run build)
-        pnpm # pnpm workspace builds for first-party file: deps (@peasant-labs/transcript-browser + analytics)
-        typescript
-        typescript-language-server
-      ];
-
-      # Native build dependencies (C libraries, system packages)
-      # gcc is required for tree-sitter CGo bindings (github.com/tree-sitter/go-tree-sitter)
-      nativeBuildDeps = pkgs: with pkgs; [
-        gcc
-        # pkg-config
-        # openssl
-        # sqlite
-      ];
-
-      # Extra check commands run during `nix build` after go test
-      extraCheckPhase = ''
-        # go vet ./...
-        # staticcheck ./...
-      '';
-
-      # Files to install alongside the binary (relative to src)
-      extraInstallPhase = ''
-        # mkdir -p $out/share/policies
-        # cp authz/policies/*.rego $out/share/policies/
-      '';
-
-      # ==========================================================
-      # IMPLEMENTATION — you shouldn't need to edit below here
-      # ==========================================================
-
-      mkOutputs = nixpkgs-channel:
-        flake-utils.lib.eachDefaultSystem (system:
-          let
-            pkgs = import nixpkgs-channel {
-              inherit system;
-              config.allowUnfree = true;
-            };
-
-            goPackage =
-              if goAttr != null
-              then pkgs.${goAttr}
-              else pkgs.go;
-
-            # ----------------------------------------------------------
-            # Build
-            # ----------------------------------------------------------
-
-            package = pkgs.buildGoModule {
-              inherit pname version;
-              src = ./.;
-              inherit vendorHash;
-
-              nativeBuildInputs = nativeBuildDeps pkgs;
-
-              checkPhase = ''
-                runHook preCheck
-                go test -race ./...
-                ${extraCheckPhase}
-                runHook postCheck
-              '';
-
-              postInstall = extraInstallPhase;
-            };
-
-            # ----------------------------------------------------------
-            # Development Shell
-            # ----------------------------------------------------------
-
-            devShell = pkgs.mkShell {
-              name = "${pname}-dev";
-              inputsFrom = [ package ];
-              packages = (devTools pkgs);
-
-              shellHook = ''
-                echo "Go $(go version | cut -d' ' -f3) dev shell"
-                export CGO_ENABLED=1
-                source .envrc.local
-              '';
-            };
-
-          in
-          {
-            packages.default = package;
-            packages.${pname} = package;
-
-            devShells.default = devShell;
-
-            # Quick check: nix flake check
-            checks.build = package;
-          }
-        );
-    in
-    mkOutputs nixpkgs;
+          shellHook = ''
+            mkdir -p "$PWD/.direnv/bin"
+            corepack enable --install-directory "$PWD/.direnv/bin"
+            export PATH="$PWD/.direnv/bin:$PATH"
+          '';
+        };
+      });
 }
