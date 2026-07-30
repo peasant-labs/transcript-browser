@@ -5,12 +5,12 @@ export {
 export { TurnRow, type TurnRowProps } from "./TurnRow.js";
 export { TurnContent, type TurnContentProps } from "./TurnContent.js";
 export { ThinkingBlock, type ThinkingBlockProps } from "./ThinkingBlock.js";
-// Single-transcript tool rendering uses the cooked-VM-driven TranscriptToolCall
-// and TranscriptToolBody from @peasant-labs/fairtrade/ui. Consumers should import
-// those canonical presentation components from fairtrade, which also owns the
-// wire-parsing boundary. PhaseDivider, TaskBoundary, and CheckpointMarker likewise
-// come from fairtrade's TranscriptMarkers family; the canvas maps domain data to
-// their props.
+// Single-transcript tool rendering, the phase/task/checkpoint markers, and
+// wire-argument parsing all live in @peasant-labs/fairtrade/ui
+// (TranscriptToolCall/TranscriptToolBody, the TranscriptMarkers family, and
+// adaptTranscript). This package intentionally exports no ToolCallRow,
+// ToolCallList, per-tool renderer, or parseArgs; the canvas only maps domain data
+// onto Fairtrade props.
 export { EmptyState, type EmptyStateProps } from "./EmptyState.js";
 export {
   ViewModeToggle,
@@ -19,7 +19,8 @@ export {
 } from "./ViewModeToggle.js";
 
 // Parse-free compact-label helpers used by the outline rails and
-// highlight/annotation views.
+// highlight/annotation views (they still live under tool-renderers/ for
+// historical reasons).
 export { preview, basename, langFromPath } from "./tool-renderers/types.js";
 
 export type {

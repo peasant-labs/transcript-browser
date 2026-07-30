@@ -30,14 +30,15 @@ import { sampleSessions } from "./sample-analytics.js";
 type View = "transcript" | "analytics";
 
 /**
- * Integration smoke for the adopt-fairtrade migration. The transcript view is
+ * Integration smoke for the canonical viewer pipeline. The transcript view is
  * the REAL assembled app rendering through the lifted composite:
  *
  *     wire SessionDetailPayload → adaptTranscript() → <TranscriptViewer>
  *
  * It renders the SAME session as the canonical fairtrade demo (sess_demo_0001),
- * so the UAT capture is a true height-matched, same-data side-by-side. The ONE
- * fairtrade adapter cooks the wire payload once; the lifted composite renders it.
+ * so the side-by-side capture is truly height-matched and uses the same data.
+ * The ONE fairtrade adapter cooks the wire payload once; the lifted composite
+ * renders it.
  * The host plugs transcript-browser's @xyflow `TrajectoryGraph` engine into the
  * composite's `graphSlot` (the graph-visuals/engine split: aesthetics in
  * fairtrade, topology/pan/zoom in transcript-browser), so this also smokes the graph seam. The

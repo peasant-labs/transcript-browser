@@ -3,9 +3,9 @@
 // container can hide correctly computed edges, but it must not be confused with
 // a topology failure in `turnsToFlow`.
 //
-// This test exercises `turnsToFlow` — the pure data transform that decides
-// which edges exist — directly, with no DOM, no CSS, no @xyflow rendering, and
-// therefore no container/width dependency whatsoever. If a future change to
+// This test exercises `turnsToFlow`, the pure data transform that decides which
+// edges exist, directly, with no DOM, no CSS, no @xyflow rendering, and therefore
+// no container/width dependency whatsoever. If a future change to
 // `turnsToFlow` ever drops an edge (sequential, turn-to-tool, spawn, or return),
 // this fails here regardless of how any consumer's container is sized.
 import { readFileSync } from "node:fs";
@@ -137,7 +137,7 @@ function toTurnDetail(fixture: TurnFixture): TurnDetail {
   };
 }
 
-describe("turnsToFlow emits complete graph topology independently of layout", () => {
+describe("turnsToFlow emits complete graph topology from data alone (no DOM, CSS, or React Flow)", () => {
   const cases = loadCases();
 
   // Non-vacuity floor: this suite must never silently shrink to fewer scenarios.

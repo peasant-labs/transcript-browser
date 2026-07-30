@@ -5,14 +5,14 @@ import { dirname, join, relative } from "node:path";
 
 /**
  * The fairtrade adapter (`adaptTranscript`, in `@peasant-labs/fairtrade`) is the
- * sole wire-parse boundary. Every transcript-browser component renders the cooked
- * `TranscriptViewModel`
- * (parsed `ToolCallVM.args`/`.output`/`preview`/`diff`, cooked `vm.diffs`/
- * `vm.files`) and NEVER calls `JSON.parse` / a `parseArgs` on a wire string.
+ * sole wire-parse boundary. Every transcript-browser component renders the
+ * cooked `TranscriptViewModel` (parsed `ToolCallVM.args`/`.output`/`preview`/
+ * `diff`, cooked `vm.diffs`/`vm.files`) and NEVER calls `JSON.parse` / a
+ * `parseArgs` on a wire string.
  *
  * This audit scans the whole production source tree (excluding tests) and fails
- * if any `JSON.parse(` or `parseArgs<`/`parseArgs(` call appears outside that
- * boundary.
+ * if any `JSON.parse(` or `parseArgs<`/`parseArgs(` call appears anywhere in this
+ * package's production source.
  */
 const SRC_ROOT = dirname(fileURLToPath(import.meta.url));
 
