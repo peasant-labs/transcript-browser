@@ -1,5 +1,5 @@
 /**
- * Steps waterfall (peasant roadmap 5.2): turn the tasks of a session into a
+ * Steps waterfall: turn the tasks of a session into a
  * proportional duration lane — each task a horizontal segment whose width is its
  * share of total work time and whose offset is the cumulative work before it
  * (segments tile back-to-back, idle gaps compressed out). Pure function of its
@@ -7,10 +7,9 @@
  * at offset 0 so the caller renders the list without bars rather than dividing by
  * zero.
  *
- * CONSOLIDATED into the one shared fairtrade transcript analytics util
- * (`@peasant-labs/fairtrade/ui`) and re-exported here so peasant's
- * `@peasant-labs/transcript-browser` import path stays stable. Same logic as
- * before; one implementation now backs all three consumers.
+ * The implementation lives in the shared fairtrade transcript analytics utility
+ * (`@peasant-labs/fairtrade/ui`) and is re-exported here to keep the
+ * `@peasant-labs/transcript-browser` import path stable for consumers.
  */
 export {
   buildTaskWaterfall,

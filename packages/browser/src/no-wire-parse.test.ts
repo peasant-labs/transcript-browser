@@ -4,15 +4,15 @@ import { fileURLToPath } from "node:url";
 import { dirname, join, relative } from "node:path";
 
 /**
- * The migration's load-bearing invariant: the ONE fairtrade adapter
- * (`adaptTranscript`, in `@peasant-labs/fairtrade`) is the SOLE wire-parse site.
- * Every transcript-browser component now renders the cooked `TranscriptViewModel`
+ * The fairtrade adapter (`adaptTranscript`, in `@peasant-labs/fairtrade`) is the
+ * sole wire-parse boundary. Every transcript-browser component renders the cooked
+ * `TranscriptViewModel`
  * (parsed `ToolCallVM.args`/`.output`/`preview`/`diff`, cooked `vm.diffs`/
  * `vm.files`) and NEVER calls `JSON.parse` / a `parseArgs` on a wire string.
  *
  * This audit scans the whole production source tree (excluding tests) and fails
- * if any `JSON.parse(` or `parseArgs<`/`parseArgs(` call survives — the slice's
- * "zero JSON.parse(args) outside the fairtrade adapter" acceptance.
+ * if any `JSON.parse(` or `parseArgs<`/`parseArgs(` call appears outside that
+ * boundary.
  */
 const SRC_ROOT = dirname(fileURLToPath(import.meta.url));
 

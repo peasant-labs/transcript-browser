@@ -4,10 +4,9 @@ cases:
       Four plain turns (no tool calls, no depth change) must produce exactly
       N-1 sequential edges connecting consecutive turn nodes, and NO tool
       edges. This is the graph's basic node-link topology guarantee — the
-      guard peasant#166 UAT found broken end-to-end (edges rendered but
-      invisible because the ancestor container collapsed; this test proves
-      the DATA layer itself, independent of any container/CSS width, always
-      emits the edges).
+      data-layer guard: edges must be emitted independently of container or
+      CSS width. This distinguishes topology failures from presentation-layer
+      layout failures that can make correctly emitted edges invisible.
     turns:
       - index: 0
         depth: 0

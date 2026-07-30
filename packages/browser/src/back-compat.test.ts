@@ -21,13 +21,12 @@ import type { TurnDetail } from "@peasant-labs/schema";
  * from `@peasant-labs/transcript-browser` across SessionDetailV2 / StepsWaterfall
  * / SessionPicker / MapRail / scopeTurns / turnNav.test / waterfall.test.
  *
- * The adopt-fairtrade migration consolidated several of them into the one
- * fairtrade analytics util + adapter (re-exported here via thin typed wrappers
- * that keep the `@peasant-labs/schema` input signatures). This test pins that the
- * names still resolve AND keep their back-compat shapes, so peasant compiles +
- * runs unchanged against the published package — the slice's "peasant's import
- * sites still resolve" acceptance, asserted at runtime against the production
- * barrel (`./index.js`), not a test-only export.
+ * Several are implemented by the shared fairtrade analytics utility and adapter,
+ * then re-exported here through thin typed wrappers that preserve the
+ * `@peasant-labs/schema` input signatures. This test pins the exported names and
+ * their compatibility shapes so consumers compile and run unchanged against the
+ * published package. It asserts the production barrel (`./index.js`), not a
+ * test-only export.
  */
 describe("peasant back-compat export surface (13 symbols)", () => {
   it("exposes every runtime value peasant imports", () => {
