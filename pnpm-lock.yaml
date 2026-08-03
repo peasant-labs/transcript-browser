@@ -10,7 +10,7 @@ importers:
     devDependencies:
       '@peasant-labs/fairtrade':
         specifier: '>=0.0.10 <0.1.0'
-        version: 0.0.10(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react-is@19.2.7)(react@19.2.6)(redux@5.0.1)
+        version: 0.0.11(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react-is@19.2.7)(react@19.2.6)(redux@5.0.1)
       '@peasant-labs/transcript-browser':
         specifier: workspace:*
         version: link:packages/browser
@@ -52,7 +52,7 @@ importers:
     dependencies:
       '@peasant-labs/fairtrade':
         specifier: '>=0.0.10 <0.1.0'
-        version: 0.0.10(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react-is@19.2.7)(react@19.2.6)(redux@5.0.1)
+        version: 0.0.11(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react-is@19.2.7)(react@19.2.6)(redux@5.0.1)
       '@peasant-labs/transcript-browser':
         specifier: workspace:*
         version: link:../../packages/browser
@@ -85,8 +85,8 @@ importers:
   packages/browser:
     dependencies:
       '@peasant-labs/schema':
-        specifier: 0.1.0-rc10
-        version: 0.1.0-rc10
+        specifier: 0.1.0
+        version: 0.1.0
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -105,7 +105,7 @@ importers:
     devDependencies:
       '@peasant-labs/fairtrade':
         specifier: '>=0.0.10 <0.1.0'
-        version: 0.0.10(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react-is@19.2.7)(react@19.2.6)(redux@5.0.1)
+        version: 0.0.11(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react-is@19.2.7)(react@19.2.6)(redux@5.0.1)
       '@types/diff':
         specifier: ^7.0.0
         version: 7.0.2
@@ -143,8 +143,8 @@ importers:
   packages/types:
     dependencies:
       '@peasant-labs/schema':
-        specifier: 0.1.0-rc10
-        version: 0.1.0-rc10
+        specifier: 0.1.0
+        version: 0.1.0
     devDependencies:
       tsup:
         specifier: ^8.3.5
@@ -1008,15 +1008,15 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@peasant-labs/fairtrade@0.0.10':
-    resolution: {integrity: sha512-5lVlSewLTVglbt45Zilk7xCpkTXPOxV3EjrKhb2e1flVEVaDM1vnTvuu3cQyUGk3fUwNf0OiYyv+uTdtaL6vmg==}
+  '@peasant-labs/fairtrade@0.0.11':
+    resolution: {integrity: sha512-oPg3UKmT4e0aLQPFGzjnGEr7rBG5hq+KwP11oiTsxH1fmc3E5vpHSojBsxEl6OjIy1LdARQ7MmtRbMbHO3ENPw==}
     engines: {node: '>=24'}
     peerDependencies:
       react: '>=19.0.0 <20'
       react-dom: '>=19.0.0 <20'
 
-  '@peasant-labs/schema@0.1.0-rc10':
-    resolution: {integrity: sha512-m9q0GrXE3vSmHK8DOB7Ln1w/+CTK6dfckvdk5zrNXK4JoKg0YAxyvAGdfu361FtJzrsjQqGVELNIVAxQ/kNtwA==}
+  '@peasant-labs/schema@0.1.0':
+    resolution: {integrity: sha512-TEQEmab+Fn6DCvq6CxTF8zrrSygDW2zHZ56fj9shMp2ySWNUSrf3RkrhcKTnaf1kRCRAHt4AyDJY+VTHrd1rFQ==}
     engines: {node: '>=24'}
 
   '@puppeteer/browsers@3.0.5':
@@ -3574,9 +3574,9 @@ snapshots:
   '@oxc-resolver/binding-win32-x64-msvc@11.21.3':
     optional: true
 
-  '@peasant-labs/fairtrade@0.0.10(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react-is@19.2.7)(react@19.2.6)(redux@5.0.1)':
+  '@peasant-labs/fairtrade@0.0.11(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react-is@19.2.7)(react@19.2.6)(redux@5.0.1)':
     dependencies:
-      '@peasant-labs/schema': 0.1.0-rc10
+      '@peasant-labs/schema': 0.1.0
       '@tanstack/react-table': 8.21.3(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       lucide: 1.21.0
       lucide-react: 1.18.0(react@19.2.6)
@@ -3588,7 +3588,7 @@ snapshots:
       - react-is
       - redux
 
-  '@peasant-labs/schema@0.1.0-rc10':
+  '@peasant-labs/schema@0.1.0':
     dependencies:
       yaml: 2.9.0
       zod: 4.4.3

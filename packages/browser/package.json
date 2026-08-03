@@ -1,6 +1,6 @@
 {
   "name": "@peasant-labs/transcript-browser",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Framework-agnostic React viewer for AI agent session transcripts.",
   "license": "Apache-2.0",
   "repository": {
@@ -45,7 +45,7 @@
     }
   },
   "dependencies": {
-    "@peasant-labs/schema": "0.1.0-rc10",
+    "@peasant-labs/schema": "0.1.0",
     "clsx": "^2.1.1",
     "diff": "^7.0.0",
     "react-markdown": "^9.0.1",
