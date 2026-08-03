@@ -61,10 +61,13 @@ transcript-browser/
 
 ## npm publication
 
-The release process: squash the release branch to one `release(vX.Y.Z): <summary>` commit
-(bumping `packages/browser/package.json` to the same version), `merge --no-ff` into `main`,
-tag the merge `transcript-browser-vX.Y.Z` (lightweight), push `main` + the tag. **Pushing
-the tag publishes**: `.github/workflows/npm-publish.yml` runs the full `pnpm check` gate
+The release PR title is the cut interface: `release(vX.Y.Z[-rcN]): <summary>`. It must target
+`main`, be authored by an `admin` or `maintain` collaborator, and match the version in
+`packages/browser/package.json`. After merge, the releaser GitHub App mints the append-only,
+annotated tag `transcript-browser-vX.Y.Z[-rcN]` on the exact merge SHA. Do not create manual
+tags for future releases. A failed run can be retried only with the number of an already-merged
+PR; the retry accepts no SHA, version, or tag. **Pushing the App-authenticated tag publishes**:
+`.github/workflows/npm-publish.yml` runs the full `pnpm check` gate
 chain, re-packs via `prepack` (tsup), and publishes
 `@peasant-labs/transcript-browser` via **npm Trusted Publishing (OIDC)** - no `NPM_TOKEN`
 secret exists. `pnpm test:package-provenance` keeps the publishable package's canonical
@@ -76,7 +79,14 @@ match the package manifest, reports the expected missing attestation while this 
 is private, and hard-fails after publication if a public-source release lacks the SLSA
 provenance predicate.
 
-One-time maintainer registrations (state lives on GitHub/npmjs.com, not in-repo): (1) a
-`npm-publish` GitHub Actions **environment** on this repo; (2) on npmjs.com, this repo +
+The latest-review approval reduction is implemented and tested, but merge-time enforcement is
+disabled while one active maintainer cannot approve their own PR. Enable it with independent
+multi-maintainer branch protection. The deprecated `@peasant-labs/types@0.0.0` package is
+already published and remains compatible, but this browser workflow does not republish it.
+
+One-time maintainer registrations (state lives on GitHub/npmjs.com, not in-repo): (1) install
+the releaser App on `peasant-labs/transcript-browser` with Contents write permission and add
+repository secrets `PEASANT_RELEASER_APP_ID` and `PEASANT_RELEASER_APP_PRIVATE_KEY`; (2) a
+`npm-publish` GitHub Actions **environment** on this repo; (3) on npmjs.com, this repo +
 `npm-publish.yml` + that environment registered as the package's **Trusted Publisher**.
 Never add a token secret as a fallback; if OIDC exchange fails, fix the registration.
