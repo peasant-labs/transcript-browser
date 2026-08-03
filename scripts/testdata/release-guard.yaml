@@ -30,6 +30,10 @@ tags:
     - {name: rc zero, input: "transcript-browser-v1.2.3-rc0"}
     - {name: rc padded, input: "transcript-browser-v1.2.3-rc01"}
 permissions: {allowed: [admin, maintain], denied: [write, triage, read, none]}
+yaml_invalid:
+  - {name: duplicate root key, source: "titles: {}\ntitles: {}\n", error: "fixture YAML invalid"}
+  - {name: extra document, append: "\n---\nextra: true\n", error: "exactly one document"}
+  - {name: unknown root key, append: "\nunknown: true\n", error: "keys drifted"}
 reviews:
   - {name: latest approval wins, maintainers: [alice], reviews: [{user: alice, state: CHANGES_REQUESTED}, {user: alice, state: APPROVED}], approved: true}
   - {name: approval revoked, maintainers: [alice], reviews: [{user: alice, state: APPROVED}, {user: alice, state: CHANGES_REQUESTED}], approved: false}
@@ -47,6 +51,18 @@ github:
       - {body: {number: 17, state: closed, merged: true, title: "release(v0.0.6): automate release tags", user: {login: alice}, base: {ref: main}, merge_commit_sha: abc123}}
       - {body: {permission: admin}}
     expected_merge_sha: abc123
+  malformed_response: {body: {}}
+  malformed_reviews:
+    - name: malformed first page
+      responses: [{body: {}}]
+      expected_paths: ["/pulls/17/reviews?per_page=100"]
+      error: "reviews page 1 must be an array"
+    - name: malformed second page
+      responses:
+        - {body: [], link: '<https://api.github.com/repos/peasant-labs/transcript-browser/pulls/17/reviews?per_page=100&page=2>; rel="next"'}
+        - {body: {}}
+      expected_paths: ["/pulls/17/reviews?per_page=100", "/pulls/17/reviews?per_page=100&page=2"]
+      error: "reviews page 2 must be an array"
   pagination:
     - name: page two revokes approval
       responses:
@@ -54,12 +70,44 @@ github:
         - {body: [{user: {login: alice}, state: CHANGES_REQUESTED}]}
         - {body: {permission: maintain}}
       approved: false
+      expected_paths: ["/pulls/17/reviews?per_page=100", "/pulls/17/reviews?per_page=100&page=2", "/collaborators/alice/permission"]
     - name: page two grants approval
       responses:
         - {body: [{user: {login: alice}, state: CHANGES_REQUESTED}], link: '<https://api.github.com/repos/peasant-labs/transcript-browser/pulls/17/reviews?per_page=100&page=2>; rel="next"'}
         - {body: [{user: {login: alice}, state: APPROVED}]}
         - {body: {permission: maintain}}
       approved: true
+      expected_paths: ["/pulls/17/reviews?per_page=100", "/pulls/17/reviews?per_page=100&page=2", "/collaborators/alice/permission"]
+  pagination_failures:
+    - name: next link cycle
+      responses:
+        - {body: [], link: '<https://api.github.com/repos/peasant-labs/transcript-browser/pulls/17/reviews?per_page=100>; rel="next"'}
+      expected_paths: ["/pulls/17/reviews?per_page=100"]
+      error: cycle
+    - name: malformed next link
+      responses:
+        - {body: [], link: 'not a valid next link'}
+      expected_paths: ["/pulls/17/reviews?per_page=100"]
+      error: 'exactly one valid rel="next" URL'
+    - name: external next link
+      responses:
+        - {body: [], link: '<https://example.invalid/repos/peasant-labs/transcript-browser/pulls/17/reviews?page=2>; rel="next"'}
+      expected_paths: ["/pulls/17/reviews?per_page=100"]
+      error: "outside the expected reviews endpoint"
+    - name: safety bound overflow
+      responses:
+        - {body: [], link: '<https://api.github.com/repos/peasant-labs/transcript-browser/pulls/17/reviews?page=2>; rel="next"'}
+        - {body: [], link: '<https://api.github.com/repos/peasant-labs/transcript-browser/pulls/17/reviews?page=3>; rel="next"'}
+        - {body: [], link: '<https://api.github.com/repos/peasant-labs/transcript-browser/pulls/17/reviews?page=4>; rel="next"'}
+        - {body: [], link: '<https://api.github.com/repos/peasant-labs/transcript-browser/pulls/17/reviews?page=5>; rel="next"'}
+        - {body: [], link: '<https://api.github.com/repos/peasant-labs/transcript-browser/pulls/17/reviews?page=6>; rel="next"'}
+        - {body: [], link: '<https://api.github.com/repos/peasant-labs/transcript-browser/pulls/17/reviews?page=7>; rel="next"'}
+        - {body: [], link: '<https://api.github.com/repos/peasant-labs/transcript-browser/pulls/17/reviews?page=8>; rel="next"'}
+        - {body: [], link: '<https://api.github.com/repos/peasant-labs/transcript-browser/pulls/17/reviews?page=9>; rel="next"'}
+        - {body: [], link: '<https://api.github.com/repos/peasant-labs/transcript-browser/pulls/17/reviews?page=10>; rel="next"'}
+        - {body: [], link: '<https://api.github.com/repos/peasant-labs/transcript-browser/pulls/17/reviews?page=11>; rel="next"'}
+      expected_paths: ["/pulls/17/reviews?per_page=100", "/pulls/17/reviews?page=2", "/pulls/17/reviews?page=3", "/pulls/17/reviews?page=4", "/pulls/17/reviews?page=5", "/pulls/17/reviews?page=6", "/pulls/17/reviews?page=7", "/pulls/17/reviews?page=8", "/pulls/17/reviews?page=9", "/pulls/17/reviews?page=10"]
+      error: "safety bound"
 workflow:
   validate_if: "github.event_name == 'pull_request' && github.event.action != 'closed' && startsWith(github.event.pull_request.title, 'release(')"
   tag_if: "github.event_name == 'workflow_dispatch' || (github.event.action == 'closed' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.title, 'release('))"
@@ -69,4 +117,7 @@ workflow:
     - {name: unconditional tag, target: tag_if, replacement: "true || github.event_name == 'workflow_dispatch'"}
     - {name: missing merged restriction, target: tag_if, replacement: "github.event_name == 'workflow_dispatch' || github.event.action == 'closed'"}
     - {name: weakened validation, target: validate_if, replacement: "true || github.event_name == 'pull_request'"}
+  publish_mutations:
+    - {name: remove shared tag parser, match: 'node scripts/release-guard.mjs parse-tag "$TAG"', replacement: "true"}
+    - {name: bypass shared tag parser, match: 'node scripts/release-guard.mjs parse-tag "$TAG"', replacement: 'true || node scripts/release-guard.mjs parse-tag "$TAG"'}
 git: {tag: transcript-browser-v1.2.3, first_message: first release, second_message: attempted replacement}
