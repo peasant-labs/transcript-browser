@@ -7,7 +7,8 @@
   "packageManager": "pnpm@10.33.2",
   "scripts": {
     "build": "pnpm -r build",
-    "check": "pnpm build && pnpm typecheck && pnpm test && pnpm gates && pnpm storybook:build && pnpm sbsmoke && pnpm fidelity",
+    "check": "pnpm test:release-guard && pnpm build && pnpm typecheck && pnpm test && pnpm gates && pnpm storybook:build && pnpm sbsmoke && pnpm fidelity",
+    "test:release-guard": "node --test scripts/release-guard.test.mjs",
     "contrast": "node scripts/contrast.mjs",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
@@ -35,6 +36,7 @@
     "react-dom": "^19.0.0",
     "storybook": "^10.4.6",
     "tsup": "^8.3.5",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "yaml": "2.9.0"
   }
 }
