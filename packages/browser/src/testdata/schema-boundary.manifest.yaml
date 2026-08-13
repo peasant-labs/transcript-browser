@@ -95,20 +95,20 @@ mutations:
     expectedFailurePattern: nullable turns must normalize before adaptation
   - name: explicit turn precedence is bypassed
     target: src/SessionDetail.tsx
-    find: '  const adapterTurns = projectionMode ? canonicalTurns : turnsProp!;'
+    find: '    () => projectionMode || turnsProp === detail.turns ? canonicalTurns : turnsProp!,'
     replace: '  const adapterTurns = canonicalTurns;'
     expectedTestName: explicit turns override canonical turns
     expectedFailurePattern: selected turns must reach the adapter
   - name: flat git fields are dropped before adaptation
     target: src/SessionDetail.tsx
-    find: '    gitBranch: detail.gitBranch,'
-    replace: '    gitBranch: undefined,'
+    find: '      : { ...detail, turns: adapterTurns as TurnDetail[] },'
+    replace: '      : { ...detail, gitBranch: undefined, turns: adapterTurns as TurnDetail[] },'
     expectedTestName: flat git fields reach canonical adapter
     expectedFailurePattern: flat git branch must reach the adapter
   - name: Harness is replaced before adaptation
     target: src/SessionDetail.tsx
-    find: '    harness: detail.harness,'
-    replace: '    harness: "cursor",'
+    find: '      : { ...detail, turns: adapterTurns as TurnDetail[] },'
+    replace: '      : { ...detail, harness: "cursor", turns: adapterTurns as TurnDetail[] },'
     expectedTestName: canonical Harness reaches adapter
     expectedFailurePattern: canonical Harness must reach the adapter
   - name: Harness is omitted from mounted transcript
@@ -119,14 +119,14 @@ mutations:
     expectedFailurePattern: mounted TurnRow must render Fairtrade's assistant accent
   - name: depth is flattened before adaptation
     target: src/SessionDetail.tsx
-    find: '        depth: turn.depth,'
-    replace: '        depth: 0,'
+    find: '      : { ...detail, turns: adapterTurns as TurnDetail[] },'
+    replace: '      : { ...detail, turns: (adapterTurns as TurnDetail[]).map((turn) => ({ ...turn, depth: 0 })) },'
     expectedTestName: canonical depth reaches adapter
     expectedFailurePattern: canonical depth must reach the adapter
   - name: StopReason is dropped before adaptation
     target: src/SessionDetail.tsx
-    find: '        stopReason: turn.stopReason,'
-    replace: '        stopReason: undefined,'
+    find: '      : { ...detail, turns: adapterTurns as TurnDetail[] },'
+    replace: '      : { ...detail, turns: (adapterTurns as TurnDetail[]).map((turn) => ({ ...turn, stopReason: undefined })) },'
     expectedTestName: canonical StopReason reaches adapter
     expectedFailurePattern: canonical StopReason must reach the adapter
 expectedReporterControlCount: 1
