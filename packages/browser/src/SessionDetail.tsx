@@ -264,7 +264,7 @@ export function SessionDetail({
   // visible-index projection. Lifted views read cooked fields and never parse
   // wire values here.
   const adapterPayload = useMemo<SessionDetailPayload>(
-    () => adapterTurns === detail.turns || (detail.turns == null && adapterTurns === EMPTY_TURNS)
+    () => adapterTurns === detail.turns
       ? detail
       : { ...detail, turns: adapterTurns as TurnDetail[] },
     [adapterTurns, detail],
