@@ -149,6 +149,30 @@ function visibleRemainderDiagnostic(
   };
 }
 
+function matchVisibleRows(
+  displayTurns: readonly TurnDetail[],
+  displayOccurrences: readonly number[],
+  vmTurns: readonly TurnVM[],
+  vmOccurrences: readonly number[],
+): Array<number | null> {
+  const matches: Array<number | null> = [];
+  let cursor = 0;
+  for (let position = 0; position < displayTurns.length; position += 1) {
+    const turn = displayTurns[position]!;
+    const occurrence = displayOccurrences[position]!;
+    let matchedPosition: number | null = null;
+    for (let vmPosition = cursor; vmPosition < vmTurns.length; vmPosition += 1) {
+      if (vmTurns[vmPosition]!.index === turn.index && vmOccurrences[vmPosition] === occurrence) {
+        matchedPosition = vmPosition;
+        cursor = vmPosition + 1;
+        break;
+      }
+    }
+    matches.push(matchedPosition);
+  }
+  return matches;
+}
+
 /**
  * Pair wire rows with Fairtrade view models without guessing by object identity
  * or substituting another turn. A failed pair deliberately carries no cooked
@@ -185,35 +209,31 @@ export function alignTranscriptRows({
   }
 
   const vmOccurrences = occurrenceOrdinals(vmTurns);
-  const consumed = new Set<number>();
+  const fullMatches = matchVisibleRows(displayTurns, displayOccurrences, vmTurns, vmOccurrences);
+  const projectedOccurrences = occurrenceOrdinals(displayTurns);
+  const projectedMatches = matchVisibleRows(displayTurns, projectedOccurrences, vmTurns, vmOccurrences);
+  const fullMatchCount = fullMatches.filter((match) => match !== null).length;
+  const projectedMatchCount = projectedMatches.filter((match) => match !== null).length;
+  const matches = projectedMatchCount > fullMatchCount ? projectedMatches : fullMatches;
   const rows: AlignedTurnRow[] = [];
-  let cursor = 0;
 
   for (let position = 0; position < displayTurns.length; position += 1) {
     const turn = displayTurns[position]!;
     const occurrence = displayOccurrences[position]!;
-    let matchedPosition = -1;
-    for (let vmPosition = cursor; vmPosition < vmTurns.length; vmPosition += 1) {
-      const candidate = vmTurns[vmPosition]!;
-      if (candidate.index === turn.index && vmOccurrences[vmPosition] === occurrence) {
-        matchedPosition = vmPosition;
-        break;
-      }
-    }
+    const matchedPosition = matches[position];
 
-    if (matchedPosition === -1) {
+    if (matchedPosition === null || matchedPosition === undefined) {
       report(onDiagnostic, visibleRowDiagnostic(turn, occurrence, position));
       rows.push(unalignedRow(turn, occurrence));
       continue;
     }
 
-    consumed.add(matchedPosition);
-    cursor = matchedPosition + 1;
     rows.push(alignedRow(turn, occurrence, vmTurns[matchedPosition]!));
   }
 
-  const unconsumedCount = vmTurns.length - consumed.size;
-  if (unconsumedCount > 0) {
+  const unconsumedCount = vmTurns.length - matches.filter((match) => match !== null).length;
+  const unmatchedDisplayCount = matches.filter((match) => match === null).length;
+  if (unmatchedDisplayCount === 0 && unconsumedCount > 0) {
     report(onDiagnostic, visibleRemainderDiagnostic(unconsumedCount, displayTurns.length));
   }
 

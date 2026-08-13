@@ -1,4 +1,4 @@
-expectedCaseCount: 9
+expectedCaseCount: 10
 requiredCaseNames:
   - sticky observations carry across omissions
   - legacy payload uses stable session fallback
@@ -9,6 +9,7 @@ requiredCaseNames:
   - reordered replacement preserves occurrence order
   - duplicate replacement preserves both occurrences
   - changed replacement content remains distinct
+  - unmatched replacement fails closed
 expectedLoaderMutationCount: 1
 loaderMutations:
   - name: count-preserving case name swap

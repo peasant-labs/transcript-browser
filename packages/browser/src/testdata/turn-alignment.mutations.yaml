@@ -1,0 +1,14 @@
+expectedMutationCount: 2
+mutations:
+  - name: blind positional alignment
+    target: src/lib/turn-alignment.ts
+    find: "const aligned = sameLength && candidate !== undefined && candidate.index === turn.index;"
+    replace: "const aligned = sameLength && candidate !== undefined;"
+    expectedTestName: unmatched-replacement-row
+    expectedFailurePattern: wrong-vm-tool-0
+  - name: graph collapse becomes last occurrence wins
+    target: src/SessionDetail.tsx
+    find: "if (!byIndex.has(row.index) && row.toolVMs !== null) {"
+    replace: "if (row.toolVMs !== null) {"
+    expectedTestName: renders every strict fixture replacement row with its own content, model, tools, and occurrence identity
+    expectedFailurePattern: duplicate tool second

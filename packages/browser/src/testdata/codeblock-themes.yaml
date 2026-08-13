@@ -4,9 +4,7 @@ cases:
     theme: light
     expectedLight: '#D73A49'
     expectedDark: '#F97583'
-    expectedComputedColor: 'rgb(215, 58, 73)'
   - name: dark theme token variables
     theme: dark
     expectedLight: '#D73A49'
     expectedDark: '#F97583'
-    expectedComputedColor: 'rgb(249, 117, 131)'

@@ -1,151 +1,344 @@
-expectedCaseCount: 9
+expectedCaseCount: 10
 cases:
   - name: sticky observations carry across omissions
     sessionModel: anthropic/claude-fable-5
     turns:
-      - index: 0
+      - ref: sticky-first
+        index: 0
         role: assistant
         content: first response
         timestamp: 2026-08-13T00:00:00Z
         depth: 0
         observedModel: anthropic/claude-fable-5
-      - index: 1
+      - ref: sticky-second
+        index: 1
         role: assistant
         content: continued response
         timestamp: 2026-08-13T00:00:01Z
         depth: 0
-      - index: 2
+      - ref: sticky-boundary
+        index: 2
         role: assistant
         content: changed response
         timestamp: 2026-08-13T00:00:02Z
         depth: 0
         observedModel: anthropic/claude-opus-4-8
-      - index: 3
+      - ref: sticky-final
+        index: 3
         role: assistant
         content: final response
         timestamp: 2026-08-13T00:00:03Z
         depth: 0
     turnsMode: replace
-    suppliedIndices: [0, 1, 2, 3]
-    suppliedContents: [first response, continued response, changed response, final response]
+    suppliedTurns:
+      - sourceRef: sticky-first
+      - sourceRef: sticky-second
+      - sourceRef: sticky-boundary
+      - sourceRef: sticky-final
+    expectedRows:
+      - content: first response
+        effectiveModel: anthropic/claude-fable-5
+        toolPreview: null
+        id: turn-0
+        rowKey: "0:0"
+      - content: continued response
+        effectiveModel: anthropic/claude-fable-5
+        toolPreview: null
+        id: turn-1
+        rowKey: "1:0"
+      - content: changed response
+        effectiveModel: anthropic/claude-opus-4-8
+        toolPreview: null
+        id: turn-2
+        rowKey: "2:0"
+      - content: final response
+        effectiveModel: anthropic/claude-opus-4-8
+        toolPreview: null
+        id: turn-3
+        rowKey: "3:0"
+    expectedMarkerCount: 1
+    expectedMarkerText: "model changed: anthropic/claude-fable-5 -> anthropic/claude-opus-4-8"
+    expectedGraphToolPreview: null
   - name: legacy payload uses stable session fallback
     sessionModel: anthropic/claude-fable-5
     turns:
-      - index: 10
+      - ref: legacy-first
+        index: 10
         role: assistant
         content: legacy response one
         timestamp: 2026-08-13T00:01:00Z
         depth: 0
-      - index: 11
+      - ref: legacy-second
+        index: 11
         role: assistant
         content: legacy response two
         timestamp: 2026-08-13T00:01:01Z
         depth: 0
     turnsMode: replace
-    suppliedIndices: [10, 11]
-    suppliedContents: [legacy response one, legacy response two]
+    suppliedTurns:
+      - sourceRef: legacy-first
+      - sourceRef: legacy-second
+    expectedRows:
+      - content: legacy response one
+        effectiveModel: anthropic/claude-fable-5
+        toolPreview: null
+        id: turn-10
+        rowKey: "10:0"
+      - content: legacy response two
+        effectiveModel: anthropic/claude-fable-5
+        toolPreview: null
+        id: turn-11
+        rowKey: "11:0"
+    expectedMarkerCount: 0
+    expectedMarkerText: null
+    expectedGraphToolPreview: null
   - name: non-assistant observations stay out of attribution
     sessionModel: anthropic/claude-fable-5
     turns:
-      - index: 20
+      - ref: user-observation
+        index: 20
         role: user
         content: user request
         timestamp: 2026-08-13T00:02:00Z
         depth: 0
         observedModel: anthropic/claude-opus-4-8
-      - index: 21
+      - ref: user-followup
+        index: 21
         role: assistant
         content: assistant response
         timestamp: 2026-08-13T00:02:01Z
         depth: 0
     turnsMode: replace
-    suppliedIndices: [20, 21]
-    suppliedContents: [user request, assistant response]
+    suppliedTurns:
+      - sourceRef: user-observation
+      - sourceRef: user-followup
+    expectedRows:
+      - content: user request
+        effectiveModel: null
+        toolPreview: null
+        id: turn-20
+        rowKey: "20:0"
+      - content: assistant response
+        effectiveModel: anthropic/claude-fable-5
+        toolPreview: null
+        id: turn-21
+        rowKey: "21:0"
+    expectedMarkerCount: 0
+    expectedMarkerText: null
+    expectedGraphToolPreview: null
   - name: overlapping replacement preserves supplied content
     sessionModel: anthropic/claude-fable-5
     turns:
-      - index: 30
+      - ref: overlap-first
+        index: 30
         role: assistant
         content: canonical content
         timestamp: 2026-08-13T00:03:00Z
         depth: 0
-      - index: 31
+      - ref: overlap-second
+        index: 31
         role: assistant
         content: second canonical
         timestamp: 2026-08-13T00:03:01Z
         depth: 0
     turnsMode: replace
-    suppliedIndices: [30]
-    suppliedContents: [replacement content]
+    suppliedTurns:
+      - sourceRef: overlap-first
+        content: replacement content
+    expectedRows:
+      - content: replacement content
+        effectiveModel: anthropic/claude-fable-5
+        toolPreview: null
+        id: turn-30
+        rowKey: "30:0"
+    expectedMarkerCount: 0
+    expectedMarkerText: null
+    expectedGraphToolPreview: null
   - name: visible subset resolves hidden boundary
     sessionModel: anthropic/claude-fable-5
     turns:
-      - index: 40
+      - ref: visible-first
+        index: 40
         role: assistant
         content: first visible
         timestamp: 2026-08-13T00:04:00Z
         depth: 0
         observedModel: anthropic/claude-fable-5
-      - index: 41
+      - ref: visible-boundary
+        index: 41
         role: assistant
         content: hidden boundary
         timestamp: 2026-08-13T00:04:01Z
         depth: 0
         observedModel: anthropic/claude-opus-4-8
-      - index: 42
+      - ref: visible-after
+        index: 42
         role: assistant
         content: visible after boundary
         timestamp: 2026-08-13T00:04:02Z
         depth: 0
     turnsMode: visible
-    suppliedIndices: [40, 42]
-    suppliedContents: [first visible, visible after boundary]
+    suppliedTurns:
+      - sourceRef: visible-first
+      - sourceRef: visible-after
+    expectedRows:
+      - content: first visible
+        effectiveModel: anthropic/claude-fable-5
+        toolPreview: null
+        id: turn-40
+        rowKey: "40:0"
+      - content: visible after boundary
+        effectiveModel: anthropic/claude-opus-4-8
+        toolPreview: null
+        id: turn-42
+        rowKey: "42:0"
+    expectedMarkerCount: 0
+    expectedMarkerText: null
+    expectedGraphToolPreview: null
   - name: same-index replacement changes content
     sessionModel: anthropic/claude-fable-5
     turns:
-      - index: 50
+      - ref: same-index
+        index: 50
         role: assistant
         content: canonical same-index
         timestamp: 2026-08-13T00:05:00Z
         depth: 0
     turnsMode: replace
-    suppliedIndices: [50]
-    suppliedContents: [replacement same-index]
+    suppliedTurns:
+      - sourceRef: same-index
+        content: replacement same-index
+    expectedRows:
+      - content: replacement same-index
+        effectiveModel: anthropic/claude-fable-5
+        toolPreview: null
+        id: turn-50
+        rowKey: "50:0"
+    expectedMarkerCount: 0
+    expectedMarkerText: null
+    expectedGraphToolPreview: null
   - name: reordered replacement preserves occurrence order
-    sessionModel: anthropic/claude-fable-5
+    sessionModel: model/second
     turns:
-      - index: 60
+      - ref: reorder-first
+        index: 60
         role: assistant
         content: canonical first
         timestamp: 2026-08-13T00:06:00Z
         depth: 0
-      - index: 61
+        observedModel: model/first
+        toolPreview: tool first
+      - ref: reorder-second
+        index: 61
         role: assistant
         content: canonical second
         timestamp: 2026-08-13T00:06:01Z
         depth: 0
+        observedModel: model/second
+        toolPreview: tool second
     turnsMode: replace
-    suppliedIndices: [61, 60]
-    suppliedContents: [replacement second, replacement first]
+    suppliedTurns:
+      - sourceRef: reorder-second
+        content: replacement second
+      - sourceRef: reorder-first
+        content: replacement first
+    expectedRows:
+      - content: replacement second
+        effectiveModel: model/second
+        toolPreview: tool second
+        id: turn-61
+        rowKey: "61:0"
+      - content: replacement first
+        effectiveModel: model/first
+        toolPreview: tool first
+        id: turn-60
+        rowKey: "60:0"
+    expectedMarkerCount: 1
+    expectedMarkerText: "model changed: model/second -> model/first"
+    expectedGraphToolPreview: null
   - name: duplicate replacement preserves both occurrences
     sessionModel: anthropic/claude-fable-5
     turns:
-      - index: 70
+      - ref: duplicate-first
+        index: 70
         role: assistant
-        content: canonical duplicate
+        content: canonical duplicate first
         timestamp: 2026-08-13T00:07:00Z
         depth: 0
+        observedModel: model/duplicate-first
+        toolPreview: duplicate tool first
+      - ref: duplicate-second
+        index: 70
+        role: assistant
+        content: canonical duplicate second
+        timestamp: 2026-08-13T00:07:01Z
+        depth: 0
+        observedModel: model/duplicate-second
+        toolPreview: duplicate tool second
     turnsMode: replace
-    suppliedIndices: [70, 70]
-    suppliedContents: [duplicate first, duplicate second]
+    suppliedTurns:
+      - sourceRef: duplicate-first
+        content: duplicate first
+      - sourceRef: duplicate-second
+        content: duplicate second
+    expectedRows:
+      - content: duplicate first
+        effectiveModel: model/duplicate-first
+        toolPreview: duplicate tool first
+        id: turn-70
+        rowKey: "70:0"
+      - content: duplicate second
+        effectiveModel: model/duplicate-second
+        toolPreview: duplicate tool second
+        id: turn-70--1
+        rowKey: "70:1"
+    expectedMarkerCount: 1
+    expectedMarkerText: "model changed: model/duplicate-first -> model/duplicate-second"
+    expectedGraphToolPreview: duplicate tool first
   - name: changed replacement content remains distinct
     sessionModel: anthropic/claude-fable-5
     turns:
-      - index: 80
+      - ref: changed-content
+        index: 80
         role: assistant
         content: canonical changed
         timestamp: 2026-08-13T00:08:00Z
         depth: 0
     turnsMode: replace
-    suppliedIndices: [80]
-    suppliedContents: [changed replacement]
+    suppliedTurns:
+      - sourceRef: changed-content
+        content: changed replacement
+    expectedRows:
+      - content: changed replacement
+        effectiveModel: anthropic/claude-fable-5
+        toolPreview: null
+        id: turn-80
+        rowKey: "80:0"
+    expectedMarkerCount: 0
+    expectedMarkerText: null
+    expectedGraphToolPreview: null
+  - name: unmatched replacement fails closed
+    sessionModel: model/canonical
+    turns:
+      - ref: unmatched-canonical
+        index: 90
+        role: assistant
+        content: canonical unmatched
+        timestamp: 2026-08-13T00:09:00Z
+        depth: 0
+        observedModel: model/canonical
+        toolPreview: canonical tool preview
+    turnsMode: replace
+    suppliedTurns:
+      - sourceRef: unmatched-canonical
+        index: 91
+        content: unmatched replacement content
+    expectedRows:
+      - content: unmatched replacement content
+        effectiveModel: null
+        toolPreview: null
+        id: turn-91
+        rowKey: "91:0"
+    expectedMarkerCount: 0
+    expectedMarkerText: null
+    expectedGraphToolPreview: null

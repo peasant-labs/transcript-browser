@@ -29,6 +29,7 @@
     "test:initial-position:mutations": "node scripts/initial-position.mutations.mjs",
     "test:schema-boundary:mutations": "node scripts/schema-boundary.mutations.mjs",
     "test:provider-policy:mutations": "node scripts/provider-policy.mutations.mjs",
+    "test:turn-alignment:mutations": "node scripts/turn-alignment.mutations.mjs",
     "test:package-provenance": "node scripts/package-provenance.test.mjs",
     "clean": "rm -rf dist",
     "prepack": "tsup"

@@ -23,6 +23,7 @@ const ROOT = new URL("..", import.meta.url).pathname;
 const STORYBOOK_DIR = join(ROOT, "storybook-static");
 const INDEX_JSON = join(STORYBOOK_DIR, "index.json");
 const LABELS_FILE = join(ROOT, "packages/browser/src/lib/labels.ts");
+const CODEBLOCK_THEME_FILE = join(ROOT, "packages/browser/src/testdata/codeblock-themes.yaml");
 
 function die(message, details = []) {
   console.error(`fidelity gate failed: ${message}`);
@@ -79,6 +80,15 @@ const index = JSON.parse(readFileSync(INDEX_JSON, "utf8"));
 const stories = Object.values(index.entries ?? {}).filter((e) => e.type === "story");
 if (stories.length === 0) die("no stories in storybook-static/index.json");
 
+const codeBlockThemeFixture = (() => {
+  const source = readFileSync(CODEBLOCK_THEME_FILE, "utf8");
+  const values = [...source.matchAll(/expected(Light|Dark):\s*['"]?([^'"\n]+)['"]?/g)];
+  const light = values.find((match) => match[1] === "Light")?.[2]?.trim();
+  const dark = values.find((match) => match[1] === "Dark")?.[2]?.trim();
+  if (!light || !dark) die("codeblock theme fixture must declare expectedLight and expectedDark");
+  return { light, dark };
+})();
+
 function commandPath(command) {
   try {
     return execFileSync("sh", ["-c", `command -v ${command}`], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
@@ -100,7 +110,7 @@ const failures = [];
 // The in-page assertion bundle. Runs inside each story iframe and returns a
 // list of human-readable error strings. Token comparisons use a probe element
 // injected INTO each [data-theme] pane so the value resolves in that theme.
-const ASSERT = ({ EXPECTED_GLYPHS, ACCENTS }) => {
+const ASSERT = ({ EXPECTED_GLYPHS, ACCENTS, CODEBLOCK_THEME }) => {
   const errors = [];
   const root = document.querySelector("#storybook-root") ?? document.body;
   const marker = root.querySelector("[data-sbsmoke]")?.getAttribute("data-sbsmoke") ?? "";
@@ -248,6 +258,22 @@ const ASSERT = ({ EXPECTED_GLYPHS, ACCENTS }) => {
     if (marker === "brand-marks" && pane.querySelectorAll(".brand").length < 5) {
       errors.push(`${tag}: expected 5 brand marks, found ${pane.querySelectorAll(".brand").length}`);
     }
+
+    if (marker === "codeblock-themes") {
+      const token = pane.querySelector(".tb-codeblock-host .shiki-token");
+      if (!token) {
+        errors.push(`${tag}: highlighted CodeBlock token did not mount`);
+      } else {
+        const expectedHex = theme === "dark" ? CODEBLOCK_THEME.dark : CODEBLOCK_THEME.light;
+        const colorProbe = document.createElement("span");
+        colorProbe.style.color = expectedHex;
+        pane.appendChild(colorProbe);
+        const expectedColor = getComputedStyle(colorProbe).color;
+        colorProbe.remove();
+        const actualColor = getComputedStyle(token).color;
+        if (actualColor !== expectedColor) errors.push(`${tag}: CodeBlock token colour ${actualColor} != fixture ${expectedHex} (${expectedColor})`);
+      }
+    }
   }
   return errors;
 };
@@ -274,7 +300,7 @@ try {
     const resp = await page.goto(`${baseUrl}/iframe.html?id=${story.id}`, { waitUntil: "networkidle" });
     if (!resp?.ok()) consoleErrors.push(`HTTP ${resp?.status() ?? "no response"}`);
     await page.waitForSelector("#storybook-root", { state: "attached", timeout: 10000 });
-    const errors = await page.evaluate(ASSERT, { EXPECTED_GLYPHS, ACCENTS });
+    const errors = await page.evaluate(ASSERT, { EXPECTED_GLYPHS, ACCENTS, CODEBLOCK_THEME: codeBlockThemeFixture });
     const all = [...errors, ...consoleErrors];
     if (all.length > 0) failures.push(`${story.id}:\n    ${all.join("\n    ")}`);
     await page.close();
@@ -285,4 +311,4 @@ try {
 }
 
 if (failures.length > 0) die("per-story fidelity assertions failed", failures);
-console.log(`Fidelity gate passed (${stories.length} stories; fonts, layout, BrandMark, casing, tone, accent, icon-identity).`);
+console.log(`Fidelity gate passed (${stories.length} stories; fonts, layout, BrandMark, casing, tone, accent, icon-identity, CodeBlock themes).`);

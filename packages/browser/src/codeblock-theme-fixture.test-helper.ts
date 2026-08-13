@@ -14,7 +14,6 @@ export type CodeBlockThemeCase = {
   theme: "light" | "dark";
   expectedLight: string;
   expectedDark: string;
-  expectedComputedColor: string;
 };
 
 export type CodeBlockThemeFixture = {
@@ -56,11 +55,10 @@ export function loadCodeBlockThemeFixture(
   const cases = root.cases.map((raw, index) => {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error(`code block theme case ${index} must be an object`);
     const row = raw as Record<string, unknown>;
-    requireExactFields(row, ["name", "theme", "expectedLight", "expectedDark", "expectedComputedColor"], `code block theme case ${index}`);
+    requireExactFields(row, ["name", "theme", "expectedLight", "expectedDark"], `code block theme case ${index}`);
     requireNonEmptyString(row.name, `code block theme case ${index}.name`);
     requireNonEmptyString(row.expectedLight, `code block theme case ${index}.expectedLight`);
     requireNonEmptyString(row.expectedDark, `code block theme case ${index}.expectedDark`);
-    requireNonEmptyString(row.expectedComputedColor, `code block theme case ${index}.expectedComputedColor`);
     if (row.theme !== "light" && row.theme !== "dark") throw new Error(`code block theme case ${index}.theme must be light or dark`);
     if (names.has(row.name)) throw new Error(`code block theme case ${index}.name must be unique; duplicate names are not allowed`);
     names.add(row.name);

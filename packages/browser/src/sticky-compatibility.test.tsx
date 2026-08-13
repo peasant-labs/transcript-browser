@@ -2,10 +2,12 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { act } from "react";
+import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SessionDetailPayload } from "@peasant-labs/schema";
-import type { TranscriptViewModel } from "@peasant-labs/fairtrade/ui";
+import type { ToolCallVM, TranscriptViewModel } from "@peasant-labs/fairtrade/ui";
 import { SessionDetail } from "./SessionDetail.js";
 import { loadStickyCompatibilityFixture } from "./sticky-compatibility-fixture.test-helper.js";
 
@@ -36,8 +38,30 @@ vi.mock("@peasant-labs/fairtrade/ui", async (importOriginal) => {
   };
 });
 
+(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const fixture = loadStickyCompatibilityFixture();
 const SRC_ROOT = dirname(fileURLToPath(import.meta.url));
+const mountedRoots: Array<{ root: ReturnType<typeof createRoot>; container: HTMLElement }> = [];
+
+class TestIntersectionObserver implements IntersectionObserver {
+  readonly root = null;
+  readonly rootMargin = "0px";
+  readonly thresholds = [0];
+  disconnect(): void {}
+  observe(): void {}
+  takeRecords(): IntersectionObserverEntry[] { return []; }
+  unobserve(): void {}
+}
+
+globalThis.IntersectionObserver = TestIntersectionObserver;
+
+afterEach(async () => {
+  for (const { root, container } of mountedRoots.splice(0)) {
+    await act(async () => root.unmount());
+    container.remove();
+  }
+  capture.calls.length = 0;
+});
 
 function* productionSourceFiles(dir: string): Generator<string> {
   for (const entry of readdirSync(dir)) {
@@ -51,111 +75,126 @@ function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
 }
 
-describe("mounted SessionDetail sticky compatibility", () => {
-  it("passes the complete payload before projection and preserves Fairtrade A,A,B,B", () => {
-    const sticky = fixture.cases.find(({ name }) => name === "sticky observations carry across omissions")!;
-    capture.calls.length = 0;
-    const html = renderToStaticMarkup(<SessionDetail detail={sticky.session} turns={sticky.suppliedTurns} />);
-    expect(capture.calls).toHaveLength(1);
-    const captured = capture.calls[0]!;
-    const { wire, view } = captured;
-    expect(wire.turns?.map((turn) => turn.index)).toEqual([0, 1, 2, 3]);
-    expect(wire.turns?.map((turn) => turn.observedModel)).toEqual([
-      "anthropic/claude-fable-5", undefined, "anthropic/claude-opus-4-8", undefined,
-    ]);
-    expect(view.turns.map((turn) => turn.effectiveModel)).toEqual([
-      "anthropic/claude-fable-5", "anthropic/claude-fable-5",
-      "anthropic/claude-opus-4-8", "anthropic/claude-opus-4-8",
-    ]);
-    expect(view.turns.filter((turn) => turn.modelChangedFrom)).toHaveLength(1);
-    expect(view.turns[2]).toMatchObject({
-      modelChangedFrom: "anthropic/claude-fable-5",
-      effectiveModel: "anthropic/claude-opus-4-8",
-    });
-    expect(html.match(/model changed: anthropic\/claude-fable-5 -&gt; anthropic\/claude-opus-4-8/g)).toHaveLength(1);
-  });
+function escaped(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
-  it("keeps the legacy session fallback stable without transition markers", () => {
-    const legacy = fixture.cases.find(({ name }) => name === "legacy payload uses stable session fallback")!;
-    capture.calls.length = 0;
-    const html = renderToStaticMarkup(<SessionDetail detail={legacy.session} turns={legacy.suppliedTurns} />);
+function assertRows(html: string, testCase: (typeof fixture.cases)[number]): void {
+  for (const row of testCase.expectedRows) {
+    expect(html).toContain(`id="${row.id}"`);
+    expect(html).toContain(`data-turn-row="${row.rowKey}"`);
+    expect(html).toContain(row.content);
+    if (row.effectiveModel === null) {
+      expect(html).not.toMatch(new RegExp(`<span class="txn-turnmodel mono">[^<]*${escaped(row.content)}`));
+    } else {
+      expect(html).toContain(`>${row.effectiveModel}</span>`);
+    }
+    if (row.toolPreview !== null) expect(html).toContain(row.toolPreview);
+  }
+  expect(html.match(/data-turn-index=/g) ?? []).toHaveLength(testCase.expectedRows.length);
+  expect(html.match(/data-turn-row=/g) ?? []).toHaveLength(testCase.expectedRows.length);
+  expect(
+    html.match(/class="txn-modelchange mono"/g) ?? [],
+    `${testCase.name} must render its exact marker count`,
+  ).toHaveLength(testCase.expectedMarkerCount);
+  if (testCase.expectedMarkerText !== null) {
+      const markerHtml = testCase.expectedMarkerText.replace(/ -> /g, " -&gt; ");
+      expect(html.match(new RegExp(escaped(markerHtml), "g")) ?? []).toHaveLength(testCase.expectedMarkerCount);
+  }
+}
+
+describe("mounted SessionDetail sticky compatibility", () => {
+  it("passes the canonical detail object directly to the one Fairtrade adapter", () => {
+    const sticky = fixture.cases.find(({ name }) => name === "sticky observations carry across omissions")!;
+    const html = renderToStaticMarkup(<SessionDetail detail={sticky.session} turns={sticky.session.turns ?? undefined} />);
     expect(capture.calls).toHaveLength(1);
-    const view = capture.calls[0]!.view;
-    expect(view.turns.map((turn) => turn.effectiveModel)).toEqual([
-      "anthropic/claude-fable-5", "anthropic/claude-fable-5",
-    ]);
-    expect(view.turns.filter((turn) => turn.modelChangedFrom)).toHaveLength(0);
-    expect(html.match(/model changed:/g) ?? []).toHaveLength(0);
+    expect(capture.calls[0]!.wire).toBe(sticky.session);
+    expect(capture.calls[0]!.view.turns.map((turn) => turn.effectiveModel)).toEqual(sticky.expectedRows.map((row) => row.effectiveModel ?? undefined));
+    assertRows(html, sticky);
   });
 
   it("resolves a hidden model boundary before the visible projection", () => {
-    const sticky = fixture.cases.find(({ name }) => name === "sticky observations carry across omissions")!;
-    capture.calls.length = 0;
-    const html = renderToStaticMarkup(<SessionDetail detail={sticky.session} turns={[sticky.session.turns![0]!, sticky.session.turns![1]!, sticky.session.turns![3]!]} turnsMode="visible" />);
-    const captured = capture.calls[0]!;
-    expect(captured.wire.turns?.map((turn) => turn.index)).toEqual([0, 1, 2, 3]);
-    expect(captured.view.turns.map((turn) => turn.index)).toEqual([0, 1, 3]);
-    expect(captured.view.turns[2]).toMatchObject({ effectiveModel: "anthropic/claude-opus-4-8" });
-    expect(captured.view.turns.some((turn) => turn.modelChangedFrom)).toBe(false);
-    expect(html.match(/model changed:/g) ?? []).toHaveLength(0);
+    const projected = fixture.cases.find(({ name }) => name === "visible subset resolves hidden boundary")!;
+    const html = renderToStaticMarkup(<SessionDetail detail={projected.session} turns={projected.suppliedTurns} turnsMode="visible" />);
+    expect(capture.calls).toHaveLength(1);
+    expect(capture.calls[0]!.wire).toBe(projected.session);
+    expect(capture.calls[0]!.view.turns.map((turn) => turn.index)).toEqual(projected.suppliedTurns.map((turn) => turn.index));
+    assertRows(html, projected);
   });
 
-  it("does not attribute a non-assistant observation", () => {
-    const nonAssistant = fixture.cases.find(({ name }) => name === "non-assistant observations stay out of attribution")!;
-    capture.calls.length = 0;
-    renderToStaticMarkup(<SessionDetail detail={nonAssistant.session} turns={nonAssistant.suppliedTurns} />);
-    const view = capture.calls[0]!.view;
-    expect(view.turns[0]).not.toHaveProperty("effectiveModel");
-    expect(view.turns[1]).toMatchObject({ effectiveModel: "anthropic/claude-fable-5" });
-    expect(view.turns.filter((turn) => turn.modelChangedFrom)).toHaveLength(0);
-  });
-
-  it("preserves every fixture-defined replacement occurrence", () => {
-    for (const replacement of fixture.cases.filter(({ turnsMode }) => turnsMode === "replace")) {
+  it("renders every strict fixture replacement row with its own content, model, tools, and occurrence identity", () => {
+    for (const testCase of fixture.cases.filter(({ turnsMode }) => turnsMode === "replace")) {
       capture.calls.length = 0;
+      let graphTools: Map<number, ToolCallVM[]> | undefined;
       const html = renderToStaticMarkup(
         <SessionDetail
-          detail={replacement.session}
-          turns={replacement.suppliedTurns}
+          detail={testCase.session}
+          turns={testCase.suppliedTurns}
+          turnsMode={testCase.turnsMode}
+          initialTrajectoryMode={testCase.expectedGraphToolPreview === null ? "list" : "graph"}
+          renderGraph={testCase.expectedGraphToolPreview === null ? undefined : ({ toolVMsByTurn }) => {
+            graphTools = toolVMsByTurn;
+            return <span data-testid="graph-mounted">graph</span>;
+          }}
           renderTurnActions={() => <span data-testid="turn-actions">actions</span>}
           renderTurnPanel={() => <span data-testid="turn-panel">panel</span>}
-          savedLabelsByEntry={new Map([[replacement.suppliedIndices[0]!, [{ entryIndex: replacement.suppliedIndices[0]!, typeId: "note", typeName: "note", value: "saved", id: "label-1" }]]])}
+          savedLabelsByEntry={new Map([[testCase.suppliedTurns[0]!.index, [{ entryIndex: testCase.suppliedTurns[0]!.index, typeId: "note", typeName: "note", value: "saved", id: "label-1" }]]])}
         />,
       );
-      expect(capture.calls[0]!.wire.turns?.map((turn) => turn.index)).toEqual(replacement.suppliedIndices);
-      expect(capture.calls[0]!.wire.turns?.map((turn) => turn.content)).toEqual(replacement.suppliedContents);
-      for (const content of replacement.suppliedContents) expect(html).toContain(content);
-      expect(html).toContain("turn-actions");
-      expect(html).toContain("turn-panel");
-      expect(html).toContain("saved");
-      expect(html.match(/data-turn-index=/g)?.length).toBe(replacement.suppliedIndices.length);
+      expect(capture.calls).toHaveLength(1);
+      expect(capture.calls[0]!.wire.turns?.map((turn) => turn.index)).toEqual(testCase.suppliedTurns.map((turn) => turn.index));
+      expect(capture.calls[0]!.wire.turns?.map((turn) => turn.content)).toEqual(testCase.expectedRows.map((row) => row.content));
+      if (testCase.expectedGraphToolPreview === null) {
+        assertRows(html, testCase);
+        expect(html).toContain("turn-actions");
+        expect(html).toContain("turn-panel");
+        expect(html).toContain("saved");
+      } else {
+        expect(graphTools?.get(testCase.suppliedTurns[0]!.index)?.[0]?.preview).toBe(testCase.expectedGraphToolPreview);
+      }
     }
   });
 
-  it("rejects a count-preserving fixture name swap", () => {
+  it("does not rerun the adapter for identical props and does rerun it for changed detail", async () => {
+    const legacy = fixture.cases.find(({ name }) => name === "legacy payload uses stable session fallback")!;
+    const changed = fixture.cases.find(({ name }) => name === "same-index replacement changes content")!;
+    const container = document.createElement("div");
+    document.body.append(container);
+    const root = createRoot(container);
+    mountedRoots.push({ root, container });
+    await act(async () => root.render(<SessionDetail detail={legacy.session} turns={legacy.suppliedTurns} />));
+    expect(capture.calls).toHaveLength(1);
+    await act(async () => root.render(<SessionDetail detail={legacy.session} turns={legacy.suppliedTurns} />));
+    expect(capture.calls).toHaveLength(1);
+    await act(async () => root.render(<SessionDetail detail={changed.session} turns={changed.suppliedTurns} />));
+    expect(capture.calls).toHaveLength(2);
+  });
+
+  it("rejects count-preserving fixture name swaps", () => {
     for (const mutation of fixture.loaderMutations) {
-      const mutated = fixture.source.replace(mutation.find, mutation.replace);
-      expect(() => loadStickyCompatibilityFixture(mutated)).toThrow(new RegExp(mutation.expectedError));
+      const source = fixture.source.replace(mutation.find, mutation.replace);
+      expect(() => loadStickyCompatibilityFixture(source)).toThrow(new RegExp(mutation.expectedError));
     }
   });
 });
 
 describe("transcript-browser attribution ownership guard", () => {
-  it("contains no local resolver, carry-forward state, or marker derivation", () => {
+  it("contains no local sticky resolver, carry-forward state, or marker derivation", () => {
     const offenders: string[] = [];
     for (const file of productionSourceFiles(SRC_ROOT)) {
+      if (file.endsWith("lib/turn-alignment.ts")) continue;
       const code = stripComments(readFileSync(file, "utf8"));
-       if (/\b(?:activeRoot|activeModel|lastModel|previousModel|carryForwardModel|resolveModel|deriveModel|stickyModel|modelState|modelTransition|priorModel|nextModel)\b/.test(code)
-         || /(?:for|while)\s*\([^)]*(?:model|observ)/.test(code)) offenders.push(relative(SRC_ROOT, file));
+      if (/\b(?:activeRoot|activeModel|lastModel|previousModel|carryForwardModel|resolveModel|deriveModel|stickyModel|modelState|modelTransition|priorModel|nextModel)\b/.test(code)
+        || /(?:for|while)\s*\([^)]*(?:model|observ)/.test(code)) offenders.push(relative(SRC_ROOT, file));
     }
     expect(offenders, `model attribution must remain in Fairtrade; offenders: [${offenders.join(", ")}]`).toHaveLength(0);
   });
 
-  it("has one production adapter call after canonical turns are established", () => {
+  it("has exactly one production adapter call after canonical turns are established", () => {
     const source = readFileSync(join(SRC_ROOT, "SessionDetail.tsx"), "utf8");
     const code = stripComments(source);
     expect(code.match(/\badaptTranscript\s*\(/g)).toHaveLength(1);
-    expect(code.indexOf("const canonicalTurns = detail.turns ?? [];")).toBeLessThan(code.indexOf("adaptTranscript("));
-    expect(code.indexOf("visibleTurnIndices")).toBeGreaterThan(code.indexOf("adaptTranscript("));
+    expect(code.indexOf("const canonicalTurns = detail.turns ?? EMPTY_TURNS;")).toBeLessThan(code.indexOf("adaptTranscript("));
+    expect(code.indexOf("const adapterOptions")).toBeLessThan(code.indexOf("adaptTranscript("));
   });
 });

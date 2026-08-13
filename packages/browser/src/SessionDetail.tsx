@@ -192,7 +192,7 @@ function positionFromHash(): TranscriptInitialPosition | undefined {
 }
 
 const STICKY_PAD = 24;
-const EMPTY_TURNS: TurnDetail[] = [];
+const EMPTY_TURNS: readonly TurnDetail[] = [];
 
 /**
  * @deprecated Compatibility composer retained for existing consumers. New
@@ -245,12 +245,12 @@ export function SessionDetail({
   const canonicalTurns = detail.turns ?? EMPTY_TURNS;
   const projectionMode = turnsMode === "visible" || turnsProp === undefined;
   const turns = useMemo<TurnDetail[]>(
-    () => projectionMode ? (turnsProp ?? prefilterTurns(canonicalTurns)) : turnsProp!,
+    () => projectionMode ? (turnsProp ?? prefilterTurns(canonicalTurns as TurnDetail[])) : turnsProp!,
     [projectionMode, turnsProp, canonicalTurns],
   );
   const adapterTurns = useMemo(
-    () => projectionMode ? canonicalTurns : turnsProp!,
-    [projectionMode, canonicalTurns, turnsProp],
+    () => projectionMode || turnsProp === detail.turns ? canonicalTurns : turnsProp!,
+    [projectionMode, canonicalTurns, turnsProp, detail.turns],
   );
 
   // The wire-level harness id IS the viewer's provider key (icons, graph,
@@ -264,7 +264,9 @@ export function SessionDetail({
   // visible-index projection. Lifted views read cooked fields and never parse
   // wire values here.
   const adapterPayload = useMemo<SessionDetailPayload>(
-    () => adapterTurns === detail.turns ? detail : { ...detail, turns: adapterTurns },
+    () => adapterTurns === detail.turns || (detail.turns == null && adapterTurns === EMPTY_TURNS)
+      ? detail
+      : { ...detail, turns: adapterTurns as TurnDetail[] },
     [adapterTurns, detail],
   );
   const adapterOptions = useMemo(
