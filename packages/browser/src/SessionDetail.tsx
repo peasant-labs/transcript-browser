@@ -74,9 +74,11 @@ export interface SessionDetailProps {
 
   /**
    * Pre-filtered + deduped turns to render. Optional — when omitted, the
-   * composer applies `prefilterTurns` (exported) to `detail.turns`. Hosts that
-   * pass their own scoped list can call `prefilterTurns` first to hide the
-   * same noise turns the whole-session view hides.
+   * composer applies `prefilterTurns` (exported) to `detail.turns`. This is a
+   * display projection only: the complete payload always reaches Fairtrade's
+   * adapter first so ordered attribution remains intact. Hosts that pass their
+   * own scoped list can call `prefilterTurns` first to hide the same noise turns
+   * the whole-session view hides.
    */
   turns?: TurnDetail[];
 
@@ -231,12 +233,23 @@ export function SessionDetail({
   className,
 }: SessionDetailProps) {
   // -------------------------------------------------------------------------
-  // Derived: turn list (host may pass a pre-filtered list; else dedup here)
+  // Derived: canonical payload and display projection. The display list may be
+  // narrowed by the host, but it must never become the adapter's input: the
+  // Fairtrade adapter resolves ordered transcript state before this projection.
   // -------------------------------------------------------------------------
+  const canonicalTurns = detail.turns ?? [];
   const turns = useMemo<TurnDetail[]>(
-    () => turnsProp ?? prefilterTurns(detail.turns ?? []),
-    [turnsProp, detail.turns],
+    () => turnsProp ?? prefilterTurns(canonicalTurns),
+    [turnsProp, canonicalTurns],
   );
+  const canonicalIndices = useMemo(() => new Set(canonicalTurns.map((turn) => turn.index)), [canonicalTurns]);
+  // A legacy caller may supply a wholly alternate canonical list (the old
+  // explicit-turns compatibility contract). A scoped list whose indices belong
+  // to the payload is only a visibility projection and cannot replace the full
+  // wire sequence used for attribution.
+  const adapterTurns = turnsProp && turnsProp.some((turn) => !canonicalIndices.has(turn.index))
+    ? turnsProp
+    : canonicalTurns;
 
   // The wire-level harness id IS the viewer's provider key (icons, graph,
   // downloads all read it); aliased once so the surfaces below share one source.
@@ -244,15 +257,18 @@ export function SessionDetail({
 
   // The ONE wire→view-model projection. The fairtrade adapter parses the wire
   // (tool `arguments`/`result` JSON, git drift) exactly ONCE here, into the
-  // cooked `TranscriptViewModel` every lifted component renders. Built from the
-  // SAME `turns` this composer displays, so the cooked `vm.turns` are parallel
-  // to the wire turns by index — the lifted tool rows (via `toolVMsByTurn`), the
-  // Diffs/Files tabs (via `vm.diffs`/`vm.files`), and the file count all read
-  // cooked fields and NEVER JSON.parse. Fairtrade is the sole legacy wire
-  // compatibility boundary; this browser consumes only its cooked projection.
+  // cooked `TranscriptViewModel` every lifted component renders. Fairtrade
+  // resolves the complete canonical sequence before applying the optional
+  // visible-index projection. Lifted views read cooked fields and never parse
+  // wire values here.
   const vm = useMemo<TranscriptViewModel>(
-    () => adaptTranscript({ ...detail, turns }),
-    [detail, turns],
+    () => adaptTranscript(
+      { ...detail, turns: adapterTurns },
+      undefined,
+      undefined,
+      { visibleTurnIndices: turns.map((turn) => turn.index) },
+    ),
+    [detail, adapterTurns, turns],
   );
   const toolVMsByTurn = useMemo(
     () => new Map<number, ToolCallVM[]>(vm.turns.map((t) => [t.index, t.toolCalls])),

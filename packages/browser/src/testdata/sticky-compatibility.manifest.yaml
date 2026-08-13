@@ -1,0 +1,11 @@
+expectedCaseCount: 3
+requiredCaseNames:
+  - sticky observations carry across omissions
+  - legacy payload uses stable session fallback
+  - non-assistant observations stay out of attribution
+expectedLoaderMutationCount: 1
+loaderMutations:
+  - name: count-preserving case name swap
+    find: "name: legacy payload uses stable session fallback"
+    replace: "name: sticky observations carry across omissions"
+    expectedError: duplicate

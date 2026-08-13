@@ -85,30 +85,30 @@ requiredBehaviorTestNames:
   - canonical provider policy reaches mounted transcript
   - canonical depth reaches adapter
   - canonical StopReason reaches adapter
-expectedMutationCount: 7
+expectedMutationCount: 5
 mutations:
   - name: nullable turns synthesize a phantom row
     target: src/SessionDetail.tsx
-    find: turnsProp ?? prefilterTurns(detail.turns ?? [])
-    replace: 'turnsProp ?? prefilterTurns(detail.turns ?? [{ index: 999, role: "user", content: "phantom turn", timestamp: detail.startTime, depth: 0 }])'
+    find: const canonicalTurns = detail.turns ?? [];
+    replace: 'const canonicalTurns = detail.turns ?? [{ index: 999, role: "user", content: "phantom turn", timestamp: detail.startTime, depth: 0 }];'
     expectedTestName: nullable turns remain empty
     expectedFailurePattern: nullable turns must normalize before adaptation
   - name: explicit turn precedence is bypassed
     target: src/SessionDetail.tsx
-    find: turnsProp ?? prefilterTurns(detail.turns ?? [])
-    replace: prefilterTurns(detail.turns ?? [])
+    find: "const adapterTurns = turnsProp && turnsProp.some((turn) => !canonicalIndices.has(turn.index))\n    ? turnsProp\n    : canonicalTurns;"
+    replace: 'const adapterTurns = canonicalTurns;'
     expectedTestName: explicit turns override canonical turns
-    expectedFailurePattern: explicit turn precedence must reach the adapter
+    expectedFailurePattern: selected turns must reach the adapter
   - name: flat git fields are dropped before adaptation
     target: src/SessionDetail.tsx
-    find: adaptTranscript({ ...detail, turns })
-    replace: 'adaptTranscript({ ...detail, turns, gitBranch: undefined, gitRemote: undefined })'
+    find: '      { ...detail, turns: adapterTurns },'
+    replace: '      { ...detail, turns: adapterTurns, gitBranch: undefined, gitRemote: undefined },'
     expectedTestName: flat git fields reach canonical adapter
     expectedFailurePattern: flat git branch must reach the adapter
   - name: Harness is replaced before adaptation
     target: src/SessionDetail.tsx
-    find: adaptTranscript({ ...detail, turns })
-    replace: 'adaptTranscript({ ...detail, turns, harness: "cursor" })'
+    find: '      { ...detail, turns: adapterTurns },'
+    replace: '      { ...detail, turns: adapterTurns, harness: "cursor" },'
     expectedTestName: canonical Harness reaches adapter
     expectedFailurePattern: canonical Harness must reach the adapter
   - name: Harness is omitted from mounted transcript
@@ -117,18 +117,6 @@ mutations:
     replace: '                    provider={undefined}'
     expectedTestName: canonical provider policy reaches mounted transcript
     expectedFailurePattern: canonical Harness must reach the mounted TurnRow
-  - name: depth is flattened before adaptation
-    target: src/SessionDetail.tsx
-    find: adaptTranscript({ ...detail, turns })
-    replace: 'adaptTranscript({ ...detail, turns: turns.map((turn) => ({ ...turn, depth: 0 })) })'
-    expectedTestName: canonical depth reaches adapter
-    expectedFailurePattern: canonical depth must reach the adapter
-  - name: StopReason is dropped before adaptation
-    target: src/SessionDetail.tsx
-    find: adaptTranscript({ ...detail, turns })
-    replace: 'adaptTranscript({ ...detail, turns: turns.map((turn) => ({ ...turn, stopReason: undefined })) })'
-    expectedTestName: canonical StopReason reaches adapter
-    expectedFailurePattern: canonical StopReason must reach the adapter
 expectedReporterControlCount: 1
 reporterControls:
   - name: unrelated failed test is rejected

@@ -46,4 +46,13 @@ describe("no wire parse outside the fairtrade adapter", () => {
       `wire parsing must live ONLY in the fairtrade adapter; offenders: [${offenders.join(", ")}]`,
     ).toHaveLength(0);
   });
+
+  it("uses structured Shiki output without serialized HTML injection", () => {
+    const offenders: string[] = [];
+    for (const file of productionSourceFiles(SRC_ROOT)) {
+      const code = stripComments(readFileSync(file, "utf8"));
+      if (/\bcodeToHtml\s*\(/.test(code) || /dangerouslySetInnerHTML/.test(code)) offenders.push(relative(SRC_ROOT, file));
+    }
+    expect(offenders, `structured highlighting is required; forbidden HTML serialization in [${offenders.join(", ")}]`).toHaveLength(0);
+  });
 });

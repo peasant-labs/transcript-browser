@@ -79,8 +79,8 @@ describe("mounted SessionDetail schema behavior", () => {
 
   it("explicit turns override canonical turns", () => {
     for (const { fixture, wire, view } of renderCases().filter(({ fixture }) => fixture.explicitTurns)) {
-      expect(wire.turns?.map(({ index }) => index), "explicit turn precedence must reach the adapter").toEqual(fixture.expectedIndices);
-      expect(view.turns.map(({ index }) => index), "explicit turn precedence must reach the mounted view").toEqual(fixture.expectedIndices);
+       expect(wire.turns?.map(({ index }) => index), "selected turns must reach the adapter").toEqual(fixture.expectedIndices);
+       expect(view.turns.map(({ index }) => index), "explicit turn projection must reach the mounted view").toEqual(fixture.expectedIndices);
     }
   });
 

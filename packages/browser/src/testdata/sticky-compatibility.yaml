@@ -1,0 +1,54 @@
+expectedCaseCount: 3
+cases:
+  - name: sticky observations carry across omissions
+    sessionModel: anthropic/claude-fable-5
+    turns:
+      - index: 0
+        role: assistant
+        content: first response
+        timestamp: 2026-08-13T00:00:00Z
+        depth: 0
+        observedModel: anthropic/claude-fable-5
+      - index: 1
+        role: assistant
+        content: continued response
+        timestamp: 2026-08-13T00:00:01Z
+        depth: 0
+      - index: 2
+        role: assistant
+        content: changed response
+        timestamp: 2026-08-13T00:00:02Z
+        depth: 0
+        observedModel: anthropic/claude-opus-4-8
+      - index: 3
+        role: assistant
+        content: final response
+        timestamp: 2026-08-13T00:00:03Z
+        depth: 0
+  - name: legacy payload uses stable session fallback
+    sessionModel: anthropic/claude-fable-5
+    turns:
+      - index: 10
+        role: assistant
+        content: legacy response one
+        timestamp: 2026-08-13T00:01:00Z
+        depth: 0
+      - index: 11
+        role: assistant
+        content: legacy response two
+        timestamp: 2026-08-13T00:01:01Z
+        depth: 0
+  - name: non-assistant observations stay out of attribution
+    sessionModel: anthropic/claude-fable-5
+    turns:
+      - index: 20
+        role: user
+        content: user request
+        timestamp: 2026-08-13T00:02:00Z
+        depth: 0
+        observedModel: anthropic/claude-opus-4-8
+      - index: 21
+        role: assistant
+        content: assistant response
+        timestamp: 2026-08-13T00:02:01Z
+        depth: 0
