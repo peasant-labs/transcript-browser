@@ -119,14 +119,14 @@ mutations:
     expectedFailurePattern: mounted TurnRow must render Fairtrade's assistant accent
   - name: depth is flattened before adaptation
     target: src/SessionDetail.tsx
-    find: '      : { ...detail, turns: adapterTurns as TurnDetail[] },'
-    replace: '      : { ...detail, turns: (adapterTurns as TurnDetail[]).map((turn) => ({ ...turn, depth: 0 })) },'
+    find: "    () => adapterTurns === detail.turns\n      ? detail\n      : { ...detail, turns: adapterTurns as TurnDetail[] },"
+    replace: "    () => ({ ...detail, turns: (adapterTurns as TurnDetail[]).map((turn) => ({ ...turn, depth: 0 })) }),"
     expectedTestName: canonical depth reaches adapter
     expectedFailurePattern: canonical depth must reach the adapter
   - name: StopReason is dropped before adaptation
     target: src/SessionDetail.tsx
-    find: '      : { ...detail, turns: adapterTurns as TurnDetail[] },'
-    replace: '      : { ...detail, turns: (adapterTurns as TurnDetail[]).map((turn) => ({ ...turn, stopReason: undefined })) },'
+    find: "    () => adapterTurns === detail.turns\n      ? detail\n      : { ...detail, turns: adapterTurns as TurnDetail[] },"
+    replace: "    () => ({ ...detail, turns: (adapterTurns as TurnDetail[]).map((turn) => ({ ...turn, stopReason: undefined })) }),"
     expectedTestName: canonical StopReason reaches adapter
     expectedFailurePattern: canonical StopReason must reach the adapter
 expectedReporterControlCount: 1
