@@ -19,7 +19,7 @@ vi.mock("shiki", () => ({
 type ThemeCase = { name: string; theme: "light" | "dark"; expectedLight: string; expectedDark: string };
 const source = readFileSync(resolve(process.cwd(), "src/testdata/codeblock-themes.yaml"), "utf8");
 const root = YAML.parse(source) as { expectedCaseCount: number; cases: ThemeCase[] };
-globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 if (root.cases.length !== root.expectedCaseCount || new Set(root.cases.map(({ name }) => name)).size !== root.cases.length) {
   throw new Error("codeblock theme fixture must have the declared unique case count");
 }
