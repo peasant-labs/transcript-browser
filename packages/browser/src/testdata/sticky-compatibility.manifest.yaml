@@ -1,10 +1,14 @@
-expectedCaseCount: 5
+expectedCaseCount: 9
 requiredCaseNames:
   - sticky observations carry across omissions
   - legacy payload uses stable session fallback
   - non-assistant observations stay out of attribution
   - overlapping replacement preserves supplied content
   - visible subset resolves hidden boundary
+  - same-index replacement changes content
+  - reordered replacement preserves occurrence order
+  - duplicate replacement preserves both occurrences
+  - changed replacement content remains distinct
 expectedLoaderMutationCount: 1
 loaderMutations:
   - name: count-preserving case name swap

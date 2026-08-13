@@ -29,8 +29,14 @@ export interface TranscriptCanvasProps {
    * `TranscriptToolCall` renders from cooked fields and nothing here parses wire.
    */
   toolVMsByTurn?: Map<number, ToolCallVM[]>;
+  /** Cooked tool calls aligned by rendered turn occurrence. */
+  toolVMs?: ToolCallVM[][];
   /** Cooked turns from Fairtrade; supplied to the canonical card renderer. */
   turnVMsByTurn?: Map<number, TurnVM>;
+  /** Cooked turns aligned by rendered turn occurrence. */
+  cookedTurns?: TurnVM[];
+  /** Wire turns aligned with cookedTurns, retained for filtered/duplicate rows. */
+  cookedSourceTurns?: TurnDetail[];
   /** Harness — used to pick the assistant rail icon. */
   provider?: Harness;
   /** Optional phases — rendered as sticky inline dividers between turns. */
@@ -79,7 +85,10 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
     {
       turns,
       toolVMsByTurn,
+      toolVMs,
       turnVMsByTurn,
+      cookedTurns,
+      cookedSourceTurns,
       provider,
       phases = [],
       activePhaseIndex,
@@ -175,6 +184,10 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
     }, [turns]);
 
     const turnLabels = useMemo(() => computeTurnLabels(turns), [turns]);
+    const cookedOccurrenceByTurn = useMemo(() => {
+      if (!cookedTurns || !cookedSourceTurns) return undefined;
+      return new Map(cookedSourceTurns.map((turn, index) => [turn, index]));
+    }, [cookedSourceTurns, cookedTurns]);
 
     if (turns.length === 0) {
       return (
@@ -228,8 +241,12 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
                   turn={turn}
                   turnNumber={turnLabels[i] ?? `${i + 1}`}
                   provider={provider}
-                  toolVMs={toolVMsByTurn?.get(turn.index)}
-                  cookedTurn={turnVMsByTurn?.get(turn.index)}
+                  toolVMs={cookedOccurrenceByTurn && toolVMs
+                    ? toolVMs[cookedOccurrenceByTurn.get(turn) ?? i]
+                    : toolVMsByTurn?.get(turn.index)}
+                  cookedTurn={cookedOccurrenceByTurn && cookedTurns
+                    ? cookedTurns[cookedOccurrenceByTurn.get(turn) ?? i]
+                    : turnVMsByTurn?.get(turn.index)}
                   searchQuery={searchQuery}
                   isActiveMatch={turn.index === activeMatchTurnIndex}
                   isSearchMatch={matchSet?.has(i)}

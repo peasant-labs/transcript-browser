@@ -10,7 +10,7 @@ import {
   requireUniqueStringSet,
 } from "./strict-yaml-fixture.test-helper.js";
 
-export type StickyCompatibilityCase = { name: string; session: SessionDetailPayload; turnsMode?: "replace" | "visible"; suppliedTurns?: TurnDetail[] };
+export type StickyCompatibilityCase = { name: string; session: SessionDetailPayload; turnsMode?: "replace" | "visible"; suppliedIndices: number[]; suppliedContents: string[]; suppliedTurns?: TurnDetail[] };
 export type StickyCompatibilityFixture = {
   cases: StickyCompatibilityCase[];
   loaderMutations: Array<{ name: string; find: string; replace: string; expectedError: string }>;
@@ -97,7 +97,7 @@ export function loadStickyCompatibilityFixture(
       if (!source) throw new Error(`sticky compatibility fixture ${row.name} supplied index ${suppliedIndex} is not canonical`);
       return { ...source, content: suppliedContents[suppliedPosition]! };
     });
-    return { name: row.name, session, turnsMode: row.turnsMode as "replace" | "visible" | undefined, suppliedTurns };
+    return { name: row.name, session, turnsMode: row.turnsMode as "replace" | "visible" | undefined, suppliedIndices, suppliedContents, suppliedTurns };
   });
   if (names.size !== requiredNames.length || requiredNames.some((name) => !names.has(name))) throw new Error("sticky compatibility fixture required names must exactly match cases");
   return { cases, loaderMutations, source };

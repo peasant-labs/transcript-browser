@@ -52,6 +52,7 @@ import type {
   CommitVM,
   TranscriptInitialPosition,
   TranscriptViewModel,
+  TurnVM,
 } from "@peasant-labs/fairtrade/ui";
 import type {
   RenderTurnActions,
@@ -191,6 +192,7 @@ function positionFromHash(): TranscriptInitialPosition | undefined {
 }
 
 const STICKY_PAD = 24;
+const EMPTY_TURNS: TurnDetail[] = [];
 
 /**
  * @deprecated Compatibility composer retained for existing consumers. New
@@ -240,7 +242,7 @@ export function SessionDetail({
   // narrowed by the host, but it must never become the adapter's input: the
   // Fairtrade adapter resolves ordered transcript state before this projection.
   // -------------------------------------------------------------------------
-  const canonicalTurns = detail.turns ?? [];
+  const canonicalTurns = detail.turns ?? EMPTY_TURNS;
   const projectionMode = turnsMode === "visible" || turnsProp === undefined;
   const turns = useMemo<TurnDetail[]>(
     () => projectionMode ? (turnsProp ?? prefilterTurns(canonicalTurns)) : turnsProp!,
@@ -258,17 +260,20 @@ export function SessionDetail({
   // resolves the complete canonical sequence before applying the optional
   // visible-index projection. Lifted views read cooked fields and never parse
   // wire values here.
-  const adapterPayload = {
-    ...detail,
-    gitBranch: detail.gitBranch,
-    gitRemote: detail.gitRemote,
-    harness: detail.harness,
-    turns: adapterTurns.map((turn) => ({
-      ...turn,
-      depth: turn.depth,
-      stopReason: turn.stopReason,
-    })),
-  };
+  const adapterPayload = useMemo<SessionDetailPayload>(
+    () => ({
+      ...detail,
+      gitBranch: detail.gitBranch,
+      gitRemote: detail.gitRemote,
+      harness: detail.harness,
+      turns: adapterTurns.map((turn) => ({
+        ...turn,
+        depth: turn.depth,
+        stopReason: turn.stopReason,
+      })),
+    }),
+    [adapterTurns, detail],
+  );
   const vm = useMemo<TranscriptViewModel>(
     () => adaptTranscript(
       adapterPayload,
@@ -282,7 +287,32 @@ export function SessionDetail({
     () => new Map<number, ToolCallVM[]>(vm.turns.map((t) => [t.index, t.toolCalls])),
     [vm],
   );
-  const turnVMsByTurn = useMemo(() => new Map(vm.turns.map((turn) => [turn.index, turn])), [vm]);
+  const cookedTurns = useMemo((): TurnVM[] => {
+    if (vm.turns.length === 0) return [];
+    const cookedByIndex = new Map<number, TurnVM[]>();
+    for (const cooked of vm.turns) {
+      const entries = cookedByIndex.get(cooked.index) ?? [];
+      entries.push(cooked);
+      cookedByIndex.set(cooked.index, entries);
+    }
+    const fullOccurrences = new Map<number, number>();
+    const occurrenceByTurn = new Map<TurnDetail, number>();
+    for (const turn of turns) {
+      const occurrence = fullOccurrences.get(turn.index) ?? 0;
+      fullOccurrences.set(turn.index, occurrence + 1);
+      occurrenceByTurn.set(turn, occurrence);
+    }
+    return turns.map((turn) => {
+      const occurrence = occurrenceByTurn.get(turn) ?? 0;
+      const cooked = cookedByIndex.get(turn.index)?.[occurrence];
+      if (!cooked) return vm.turns[0]!;
+      return cooked;
+    });
+  }, [turns, vm]);
+  const toolVMs = useMemo(
+    () => cookedTurns.map((turn) => turn?.toolCalls ?? []),
+    [cookedTurns],
+  );
   // Per-file rollups for the Diffs/Files outline rails — computed once from the
   // cooked tool calls (no wire parse).
   const fileRollups = useMemo(() => rollupFiles(toolVMsByTurn), [toolVMsByTurn]);
@@ -760,7 +790,9 @@ export function SessionDetail({
                   <TranscriptCanvas
                     turns={filteredTurns}
                    toolVMsByTurn={toolVMsByTurn}
-                    turnVMsByTurn={turnVMsByTurn}
+                    toolVMs={toolVMs}
+                    cookedTurns={cookedTurns}
+                    cookedSourceTurns={turns}
                     provider={provider}
                     phases={viewOptions.showHidden ? filteredPhases : []}
                     activePhaseIndex={activePhaseIndex}

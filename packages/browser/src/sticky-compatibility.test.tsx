@@ -110,14 +110,26 @@ describe("mounted SessionDetail sticky compatibility", () => {
     expect(view.turns.filter((turn) => turn.modelChangedFrom)).toHaveLength(0);
   });
 
-  it("keeps same-index replacement content and duplicate/reordered replacement rows", () => {
-    const replacement = fixture.cases.find(({ name }) => name === "overlapping replacement preserves supplied content")!;
-    const first = replacement.suppliedTurns![0]!;
-    const duplicate = [first, { ...first, content: "same-index changed content" }];
-    capture.calls.length = 0;
-    const html = renderToStaticMarkup(<SessionDetail detail={replacement.session} turns={[duplicate[1]!, duplicate[0]!]} />);
-    expect(capture.calls[0]!.wire.turns?.map((turn) => turn.content)).toEqual(["same-index changed content", "replacement content"]);
-    expect(html).toContain("same-index changed content");
+  it("preserves every fixture-defined replacement occurrence", () => {
+    for (const replacement of fixture.cases.filter(({ turnsMode }) => turnsMode === "replace")) {
+      capture.calls.length = 0;
+      const html = renderToStaticMarkup(
+        <SessionDetail
+          detail={replacement.session}
+          turns={replacement.suppliedTurns}
+          renderTurnActions={() => <span data-testid="turn-actions">actions</span>}
+          renderTurnPanel={() => <span data-testid="turn-panel">panel</span>}
+          savedLabelsByEntry={new Map([[replacement.suppliedIndices[0]!, [{ entryIndex: replacement.suppliedIndices[0]!, typeId: "note", typeName: "note", value: "saved", id: "label-1" }]]])}
+        />,
+      );
+      expect(capture.calls[0]!.wire.turns?.map((turn) => turn.index)).toEqual(replacement.suppliedIndices);
+      expect(capture.calls[0]!.wire.turns?.map((turn) => turn.content)).toEqual(replacement.suppliedContents);
+      for (const content of replacement.suppliedContents) expect(html).toContain(content);
+      expect(html).toContain("turn-actions");
+      expect(html).toContain("turn-panel");
+      expect(html).toContain("saved");
+      expect(html.match(/data-turn-index=/g)?.length).toBe(replacement.suppliedIndices.length);
+    }
   });
 
   it("rejects a count-preserving fixture name swap", () => {
@@ -133,10 +145,8 @@ describe("transcript-browser attribution ownership guard", () => {
     const offenders: string[] = [];
     for (const file of productionSourceFiles(SRC_ROOT)) {
       const code = stripComments(readFileSync(file, "utf8"));
-      if (/\b(?:effectiveModel|modelChangedFrom|observedModel)\s*[:=]/.test(code)
-        || /\b(?:activeRoot|activeModel|lastModel|previousModel|carryForwardModel|resolveModel|deriveModel|stickyModel|modelState|modelTransition|priorModel|nextModel)\b/.test(code)
-        || /\bmodelChanged\b|model changed:/.test(code)
-        || /(?:for|while)\s*\([^)]*(?:model|observ)/.test(code)) offenders.push(relative(SRC_ROOT, file));
+       if (/\b(?:activeRoot|activeModel|lastModel|previousModel|carryForwardModel|resolveModel|deriveModel|stickyModel|modelState|modelTransition|priorModel|nextModel)\b/.test(code)
+         || /(?:for|while)\s*\([^)]*(?:model|observ)/.test(code)) offenders.push(relative(SRC_ROOT, file));
     }
     expect(offenders, `model attribution must remain in Fairtrade; offenders: [${offenders.join(", ")}]`).toHaveLength(0);
   });

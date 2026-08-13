@@ -1,0 +1,10 @@
+expectedCaseCount: 2
+requiredCaseNames:
+  - light theme token variables
+  - dark theme token variables
+expectedLoaderMutationCount: 1
+loaderMutations:
+  - name: count-preserving case name swap
+    find: "name: dark theme token variables"
+    replace: "name: light theme token variables"
+    expectedError: duplicate

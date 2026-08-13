@@ -89,7 +89,7 @@ expectedMutationCount: 7
 mutations:
   - name: nullable turns synthesize a phantom row
     target: src/SessionDetail.tsx
-    find: const canonicalTurns = detail.turns ?? [];
+    find: const canonicalTurns = detail.turns ?? EMPTY_TURNS;
     replace: 'const canonicalTurns = detail.turns ?? [{ index: 999, role: "user", content: "phantom turn", timestamp: detail.startTime, depth: 0 }];'
     expectedTestName: nullable turns remain empty
     expectedFailurePattern: nullable turns must normalize before adaptation
@@ -113,20 +113,20 @@ mutations:
     expectedFailurePattern: canonical Harness must reach the adapter
   - name: Harness is omitted from mounted transcript
     target: src/SessionDetail.tsx
-    find: '                    turnVMsByTurn={turnVMsByTurn}'
-    replace: '                    turnVMsByTurn={new Map()}'
+    find: '                    provider={provider}'
+    replace: '                    provider={undefined}'
     expectedTestName: canonical provider policy reaches mounted transcript
-    expectedFailurePattern: mounted TurnRow must render the canonical provider path
+    expectedFailurePattern: mounted TurnRow must render Fairtrade's assistant accent
   - name: depth is flattened before adaptation
     target: src/SessionDetail.tsx
-    find: '      depth: turn.depth,'
-    replace: '      depth: 0,'
+    find: '        depth: turn.depth,'
+    replace: '        depth: 0,'
     expectedTestName: canonical depth reaches adapter
     expectedFailurePattern: canonical depth must reach the adapter
   - name: StopReason is dropped before adaptation
     target: src/SessionDetail.tsx
-    find: '      stopReason: turn.stopReason,'
-    replace: '      stopReason: undefined,'
+    find: '        stopReason: turn.stopReason,'
+    replace: '        stopReason: undefined,'
     expectedTestName: canonical StopReason reaches adapter
     expectedFailurePattern: canonical StopReason must reach the adapter
 expectedReporterControlCount: 1

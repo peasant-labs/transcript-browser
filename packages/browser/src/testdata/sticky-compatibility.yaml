@@ -1,4 +1,4 @@
-expectedCaseCount: 5
+expectedCaseCount: 9
 cases:
   - name: sticky observations carry across omissions
     sessionModel: anthropic/claude-fable-5
@@ -100,3 +100,52 @@ cases:
     turnsMode: visible
     suppliedIndices: [40, 42]
     suppliedContents: [first visible, visible after boundary]
+  - name: same-index replacement changes content
+    sessionModel: anthropic/claude-fable-5
+    turns:
+      - index: 50
+        role: assistant
+        content: canonical same-index
+        timestamp: 2026-08-13T00:05:00Z
+        depth: 0
+    turnsMode: replace
+    suppliedIndices: [50]
+    suppliedContents: [replacement same-index]
+  - name: reordered replacement preserves occurrence order
+    sessionModel: anthropic/claude-fable-5
+    turns:
+      - index: 60
+        role: assistant
+        content: canonical first
+        timestamp: 2026-08-13T00:06:00Z
+        depth: 0
+      - index: 61
+        role: assistant
+        content: canonical second
+        timestamp: 2026-08-13T00:06:01Z
+        depth: 0
+    turnsMode: replace
+    suppliedIndices: [61, 60]
+    suppliedContents: [replacement second, replacement first]
+  - name: duplicate replacement preserves both occurrences
+    sessionModel: anthropic/claude-fable-5
+    turns:
+      - index: 70
+        role: assistant
+        content: canonical duplicate
+        timestamp: 2026-08-13T00:07:00Z
+        depth: 0
+    turnsMode: replace
+    suppliedIndices: [70, 70]
+    suppliedContents: [duplicate first, duplicate second]
+  - name: changed replacement content remains distinct
+    sessionModel: anthropic/claude-fable-5
+    turns:
+      - index: 80
+        role: assistant
+        content: canonical changed
+        timestamp: 2026-08-13T00:08:00Z
+        depth: 0
+    turnsMode: replace
+    suppliedIndices: [80]
+    suppliedContents: [changed replacement]

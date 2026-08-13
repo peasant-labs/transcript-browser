@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { Check, Link as LinkIcon, CornerDownRight, User, Wrench, AlertTriangle, Coins } from "@peasant-labs/fairtrade/icons";
-import { ProviderIcon, TranscriptToolCall, TranscriptTurnCard, providerAccent, type ToolCallVM, type TurnVM } from "@peasant-labs/fairtrade/ui";
+import { ProviderIcon, TranscriptToolCall, providerAccent, type ToolCallVM, type TurnVM } from "@peasant-labs/fairtrade/ui";
 import { cn } from "../internal/cn.js";
 import { formatTokens } from "../lib/format-numbers.js";
 import { formatRelative } from "../lib/time.js";
@@ -79,16 +79,6 @@ export function TurnRow({
   renderPanel,
   savedLabels,
 }: TurnRowProps) {
-  if (cookedTurn?.role && TranscriptTurnCard) {
-    return (
-      <TranscriptTurnCard
-        turn={cookedTurn}
-        compact={compact}
-        expandAll={expandToolCalls}
-        renderActions={renderActions ? () => renderActions(turn) : undefined}
-      />
-    );
-  }
   const subagent = turn.role === "assistant" && (turn.depth ?? 0) > 0;
   const isUser = turn.role === "user";
   const isAssistant = turn.role === "assistant" && !subagent;
@@ -103,9 +93,7 @@ export function TurnRow({
   const asstAccent = isAssistant ? `var(--${accentName})` : undefined;
   const roleLabel = subagent
     ? `${SUBAGENT_LABEL}${turn.agentName ? ` · ${turn.agentName}` : ""}`
-    : isAssistant && provider !== undefined
-      ? providerLabel(provider)
-      : (ROLE_LABELS[turn.role] ?? turn.role);
+    : (ROLE_LABELS[turn.role] ?? turn.role);
 
   const hasContent = !!turn.content?.trim();
   const tools = toolVMs ?? [];
@@ -119,6 +107,8 @@ export function TurnRow({
     turn.tokensIn != null && turn.tokensOut != null
       ? `${turn.tokensIn.toLocaleString()} in · ${turn.tokensOut.toLocaleString()} out`
       : undefined;
+  const effectiveModel = cookedTurn?.effectiveModel;
+  const modelChangedFrom = cookedTurn?.modelChangedFrom;
 
   const [copied, setCopied] = useState(false);
   // Per-tool expand state for the lifted (controlled) TranscriptToolCall rows.
@@ -157,7 +147,11 @@ export function TurnRow({
           <Wrench size={14} aria-hidden />
         )}
         {roleLabel}
+        {isAssistant && provider !== undefined && (
+          <span className="sr-only" aria-label={providerLabel(provider)}>{providerLabel(provider)}</span>
+        )}
       </span>
+      {effectiveModel && <span className="txn-turnmodel mono">{effectiveModel}</span>}
       {subagent && turn.depth != null && <span className="txn-depth tnum">depth {turn.depth}</span>}
       <span className="txn-turnnum tnum">#{turnNumber}</span>
       <span className="txn-turntime" title={new Date(turn.timestamp).toLocaleString()}>
@@ -224,6 +218,11 @@ export function TurnRow({
 
   return (
     <div id={`turn-${turn.index}`} data-turn-index={turn.index} className="txn-turnwrap">
+      {modelChangedFrom && effectiveModel && (
+        <div className="txn-modelchange mono" role="status">
+          {"model changed"}{": "}{modelChangedFrom}{" -> "}{effectiveModel}
+        </div>
+      )}
       {subagent ? (
         <div className="subtask txn-subtask" data-harness={provider}>
           <div className="subtask-head">
