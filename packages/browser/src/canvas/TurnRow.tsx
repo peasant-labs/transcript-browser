@@ -9,9 +9,12 @@ import { ROLE_LABELS, SUBAGENT_LABEL } from "../lib/labels.js";
 import { TurnContent } from "./TurnContent.js";
 import type { RenderTurnActions, RenderTurnPanel, TurnLabel, TurnLinkBuilder } from "./types.js";
 import type { TurnDetail, Harness } from "@peasant-labs/schema";
+import type { AlignedTurnRow } from "../lib/turn-alignment.js";
 
 export interface TurnRowProps {
   turn: TurnDetail;
+  /** Occurrence identity for duplicate-index rows aligned by SessionDetail. */
+  row?: AlignedTurnRow;
   /**
    * Label shown in the header. Pre-formatted by `computeTurnLabels` so the
    * inline label always matches an outline rail (e.g. `3`, `3a`, `3b`).
@@ -63,6 +66,7 @@ export interface TurnRowProps {
  */
 export function TurnRow({
   turn,
+  row,
   turnNumber,
   provider,
   toolVMs,
@@ -109,6 +113,11 @@ export function TurnRow({
       : undefined;
   const effectiveModel = cookedTurn?.effectiveModel;
   const modelChangedFrom = cookedTurn?.modelChangedFrom;
+  const occurrence = row?.occurrence ?? 0;
+  const turnRowKey = row?.key ?? `${turn.index}:${occurrence}`;
+  const turnId = occurrence === 0
+    ? `turn-${turn.index}`
+    : `turn-${turn.index}--${occurrence}`;
 
   const [copied, setCopied] = useState(false);
   // Per-tool expand state for the lifted (controlled) TranscriptToolCall rows.
@@ -217,7 +226,12 @@ export function TurnRow({
   );
 
   return (
-    <div id={`turn-${turn.index}`} data-turn-index={turn.index} className="txn-turnwrap">
+    <div
+      id={turnId}
+      data-turn-index={turn.index}
+      data-turn-row={turnRowKey}
+      className="txn-turnwrap"
+    >
       {modelChangedFrom && effectiveModel && (
         <div className="txn-modelchange mono" role="status">
           {"model changed"}{": "}{modelChangedFrom}{" -> "}{effectiveModel}

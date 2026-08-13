@@ -7,6 +7,7 @@ import { phaseLabel } from "../lib/phase.js";
 import { formatDuration } from "../lib/format-numbers.js";
 import { formatRelative } from "../lib/time.js";
 import { computeTasks, computeTurnLabels, type TaskGroup } from "../lib/tasks.js";
+import type { AlignedTurnRow } from "../lib/turn-alignment.js";
 import type {
   RenderTurnActions,
   RenderTurnPanel,
@@ -29,14 +30,10 @@ export interface TranscriptCanvasProps {
    * `TranscriptToolCall` renders from cooked fields and nothing here parses wire.
    */
   toolVMsByTurn?: Map<number, ToolCallVM[]>;
-  /** Cooked tool calls aligned by rendered turn occurrence. */
-  toolVMs?: ToolCallVM[][];
+  /** Occurrence-aware rows aligned once at the SessionDetail boundary. */
+  rows?: AlignedTurnRow[];
   /** Cooked turns from Fairtrade; supplied to the canonical card renderer. */
   turnVMsByTurn?: Map<number, TurnVM>;
-  /** Cooked turns aligned by rendered turn occurrence. */
-  cookedTurns?: TurnVM[];
-  /** Wire turns aligned with cookedTurns, retained for filtered/duplicate rows. */
-  cookedSourceTurns?: TurnDetail[];
   /** Harness — used to pick the assistant rail icon. */
   provider?: Harness;
   /** Optional phases — rendered as sticky inline dividers between turns. */
@@ -85,10 +82,8 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
     {
       turns,
       toolVMsByTurn,
-      toolVMs,
+      rows,
       turnVMsByTurn,
-      cookedTurns,
-      cookedSourceTurns,
       provider,
       phases = [],
       activePhaseIndex,
@@ -184,10 +179,6 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
     }, [turns]);
 
     const turnLabels = useMemo(() => computeTurnLabels(turns), [turns]);
-    const cookedOccurrenceByTurn = useMemo(() => {
-      if (!cookedTurns || !cookedSourceTurns) return undefined;
-      return new Map(cookedSourceTurns.map((turn, index) => [turn, index]));
-    }, [cookedSourceTurns, cookedTurns]);
 
     if (turns.length === 0) {
       return (
@@ -202,13 +193,14 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
         <div className="tb-canvas-rail" aria-hidden />
 
         {phaseSections.map((g) => {
-          const rows = [];
+          const renderedRows = [];
           for (let i = g.from; i <= g.to; i++) {
             const turn = turns[i]!;
+            const alignedRow = rows?.[i];
             const commitsAt = commitsByPosition.get(i);
             const taskAt = taskByStart.get(i);
-            rows.push(
-              <div key={turn.index}>
+            renderedRows.push(
+              <div key={alignedRow?.key ?? turn.index}>
                 {taskAt && (
                   <div className="txn-taskboundary">
                     <span className="txn-tb-chip">user turn {taskAt.ordinal}</span>
@@ -239,14 +231,11 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
                 ))}
                 <TurnRow
                   turn={turn}
+                  row={alignedRow}
                   turnNumber={turnLabels[i] ?? `${i + 1}`}
                   provider={provider}
-                  toolVMs={cookedOccurrenceByTurn && toolVMs
-                    ? toolVMs[cookedOccurrenceByTurn.get(turn) ?? i]
-                    : toolVMsByTurn?.get(turn.index)}
-                  cookedTurn={cookedOccurrenceByTurn && cookedTurns
-                    ? cookedTurns[cookedOccurrenceByTurn.get(turn) ?? i]
-                    : turnVMsByTurn?.get(turn.index)}
+                  toolVMs={alignedRow ? alignedRow.toolVMs ?? undefined : toolVMsByTurn?.get(turn.index)}
+                  cookedTurn={alignedRow ? alignedRow.cooked ?? undefined : turnVMsByTurn?.get(turn.index)}
                   searchQuery={searchQuery}
                   isActiveMatch={turn.index === activeMatchTurnIndex}
                   isSearchMatch={matchSet?.has(i)}
@@ -263,7 +252,7 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
           }
 
           if (!g.phase || g.index == null) {
-            return <Fragment key={`free-${g.from}`}>{rows}</Fragment>;
+            return <Fragment key={`free-${g.from}`}>{renderedRows}</Fragment>;
           }
 
           return (
@@ -275,7 +264,7 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
                 onClick={() => onPhaseClick?.(g.phase!, g.index!)}
                 stickyTop={`${phaseStickyTop}px`}
               />
-              {rows}
+              {renderedRows}
             </section>
           );
         })}

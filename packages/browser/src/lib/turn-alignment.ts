@@ -54,7 +54,15 @@ function report(
     return;
   }
   if (typeof process !== "undefined" && process.env.NODE_ENV !== "production") {
-    console.error("[transcript-browser] transcript row alignment failed", diagnostic);
+    const message = [
+      `what: ${diagnostic.what}`,
+      `why: ${diagnostic.why}`,
+      `where: ${diagnostic.where}`,
+      `when: ${diagnostic.when}`,
+      `meaning: ${diagnostic.meaning}`,
+      `fix: ${diagnostic.fix}`,
+    ].join("\n");
+    console.error(`[transcript-browser] ${message}`);
   }
 }
 

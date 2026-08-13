@@ -18,6 +18,7 @@ import { StickyHeader } from "./header/StickyHeader.js";
 import { TurnContextBar } from "./header/TurnContextBar.js";
 import { useTriggerOffscreen } from "./header/useTriggerOffscreen.js";
 import { useTurnKeyboardNav } from "./lib/turnNav.js";
+import { alignTranscriptRows } from "./lib/turn-alignment.js";
 import { TAB_LABELS } from "./lib/labels.js";
 import type { BreadcrumbItem } from "./header/Breadcrumb.js";
 import { TranscriptCanvas } from "./canvas/TranscriptCanvas.js";
@@ -52,7 +53,6 @@ import type {
   CommitVM,
   TranscriptInitialPosition,
   TranscriptViewModel,
-  TurnVM,
 } from "@peasant-labs/fairtrade/ui";
 import type {
   RenderTurnActions,
@@ -248,7 +248,10 @@ export function SessionDetail({
     () => projectionMode ? (turnsProp ?? prefilterTurns(canonicalTurns)) : turnsProp!,
     [projectionMode, turnsProp, canonicalTurns],
   );
-  const adapterTurns = projectionMode ? canonicalTurns : turnsProp!;
+  const adapterTurns = useMemo(
+    () => projectionMode ? canonicalTurns : turnsProp!,
+    [projectionMode, canonicalTurns, turnsProp],
+  );
 
   // The wire-level harness id IS the viewer's provider key (icons, graph,
   // downloads all read it); aliased once so the surfaces below share one source.
@@ -261,58 +264,42 @@ export function SessionDetail({
   // visible-index projection. Lifted views read cooked fields and never parse
   // wire values here.
   const adapterPayload = useMemo<SessionDetailPayload>(
-    () => ({
-      ...detail,
-      gitBranch: detail.gitBranch,
-      gitRemote: detail.gitRemote,
-      harness: detail.harness,
-      turns: adapterTurns.map((turn) => ({
-        ...turn,
-        depth: turn.depth,
-        stopReason: turn.stopReason,
-      })),
-    }),
+    () => adapterTurns === detail.turns ? detail : { ...detail, turns: adapterTurns },
     [adapterTurns, detail],
+  );
+  const adapterOptions = useMemo(
+    () => projectionMode ? { visibleTurnIndices: turns.map((turn) => turn.index) } : undefined,
+    [projectionMode, turns],
   );
   const vm = useMemo<TranscriptViewModel>(
     () => adaptTranscript(
       adapterPayload,
       undefined,
       undefined,
-      projectionMode ? { visibleTurnIndices: turns.map((turn) => turn.index) } : undefined,
+      adapterOptions,
     ),
-    [adapterPayload, turns, projectionMode],
+    [adapterPayload, adapterOptions],
   );
-  const toolVMsByTurn = useMemo(
-    () => new Map<number, ToolCallVM[]>(vm.turns.map((t) => [t.index, t.toolCalls])),
-    [vm],
+  const rows = useMemo(
+    () => alignTranscriptRows({
+      displayTurns: turns,
+      vmTurns: vm.turns,
+      mode: projectionMode ? "visible" : "replace",
+    }),
+    [turns, vm, projectionMode],
   );
-  const cookedTurns = useMemo((): TurnVM[] => {
-    if (vm.turns.length === 0) return [];
-    const cookedByIndex = new Map<number, TurnVM[]>();
-    for (const cooked of vm.turns) {
-      const entries = cookedByIndex.get(cooked.index) ?? [];
-      entries.push(cooked);
-      cookedByIndex.set(cooked.index, entries);
+  const toolVMsByTurn = useMemo(() => {
+    const byIndex = new Map<number, ToolCallVM[]>();
+    // Graph, files, and rollup contracts remain index-scoped. When duplicate
+    // display rows share an index, their first occurrence owns that collapsed
+    // index so later occurrences cannot silently overwrite its cooked tools.
+    for (const row of rows) {
+      if (!byIndex.has(row.index) && row.toolVMs !== null) {
+        byIndex.set(row.index, row.toolVMs);
+      }
     }
-    const fullOccurrences = new Map<number, number>();
-    const occurrenceByTurn = new Map<TurnDetail, number>();
-    for (const turn of turns) {
-      const occurrence = fullOccurrences.get(turn.index) ?? 0;
-      fullOccurrences.set(turn.index, occurrence + 1);
-      occurrenceByTurn.set(turn, occurrence);
-    }
-    return turns.map((turn) => {
-      const occurrence = occurrenceByTurn.get(turn) ?? 0;
-      const cooked = cookedByIndex.get(turn.index)?.[occurrence];
-      if (!cooked) return vm.turns[0]!;
-      return cooked;
-    });
-  }, [turns, vm]);
-  const toolVMs = useMemo(
-    () => cookedTurns.map((turn) => turn?.toolCalls ?? []),
-    [cookedTurns],
-  );
+    return byIndex;
+  }, [rows]);
   // Per-file rollups for the Diffs/Files outline rails — computed once from the
   // cooked tool calls (no wire parse).
   const fileRollups = useMemo(() => rollupFiles(toolVMsByTurn), [toolVMsByTurn]);
@@ -346,10 +333,11 @@ export function SessionDetail({
   // aggregates unique paths across every tool call; no wire parse here).
   const distinctFileCount = vm.files.length;
 
-  const filteredTurns = useMemo(
-    () => turns.filter((t) => applyFilter(t, filters, annotationsByTurn)),
-    [turns, filters, annotationsByTurn],
+  const filteredRows = useMemo(
+    () => rows.filter((row) => applyFilter(row.turn, filters, annotationsByTurn)),
+    [rows, filters, annotationsByTurn],
   );
+  const filteredTurns = useMemo(() => filteredRows.map((row) => row.turn), [filteredRows]);
 
   const filteredPhases = useMemo(() => {
     if (filteredTurns.length === turns.length) return phases;
@@ -531,7 +519,7 @@ export function SessionDetail({
     const container = containerRef.current;
     if (!container || turns.length === 0) return;
 
-    const visible = new Map<number, IntersectionObserverEntry>();
+    const visible = new Map<string, IntersectionObserverEntry>();
 
     function recompute() {
       if (visible.size === 0) return;
@@ -565,9 +553,12 @@ export function SessionDetail({
     const io = new IntersectionObserver(
       (records) => {
         for (const r of records) {
-          const idx = parseInt((r.target as HTMLElement).getAttribute("data-turn-index") ?? "0", 10);
-          if (r.isIntersecting) visible.set(idx, r);
-          else visible.delete(idx);
+          const target = r.target as HTMLElement;
+          const rowKey = target.getAttribute("data-turn-row")
+            ?? target.getAttribute("data-turn-index")
+            ?? "0";
+          if (r.isIntersecting) visible.set(rowKey, r);
+          else visible.delete(rowKey);
         }
         recompute();
       },
@@ -789,10 +780,8 @@ export function SessionDetail({
                 ) : (
                   <TranscriptCanvas
                     turns={filteredTurns}
-                   toolVMsByTurn={toolVMsByTurn}
-                    toolVMs={toolVMs}
-                    cookedTurns={cookedTurns}
-                    cookedSourceTurns={turns}
+                    rows={filteredRows}
+                    toolVMsByTurn={toolVMsByTurn}
                     provider={provider}
                     phases={viewOptions.showHidden ? filteredPhases : []}
                     activePhaseIndex={activePhaseIndex}
