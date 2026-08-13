@@ -96,7 +96,7 @@ mutations:
   - name: explicit turn precedence is bypassed
     target: src/SessionDetail.tsx
     find: '    () => projectionMode || turnsProp === detail.turns ? canonicalTurns : turnsProp!,'
-    replace: '  const adapterTurns = canonicalTurns;'
+    replace: '    () => canonicalTurns,'
     expectedTestName: explicit turns override canonical turns
     expectedFailurePattern: selected turns must reach the adapter
   - name: flat git fields are dropped before adaptation
