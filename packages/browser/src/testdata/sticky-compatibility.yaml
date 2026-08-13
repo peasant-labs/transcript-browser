@@ -1,4 +1,4 @@
-expectedCaseCount: 3
+expectedCaseCount: 5
 cases:
   - name: sticky observations carry across omissions
     sessionModel: anthropic/claude-fable-5
@@ -25,6 +25,9 @@ cases:
         content: final response
         timestamp: 2026-08-13T00:00:03Z
         depth: 0
+    turnsMode: replace
+    suppliedIndices: [0, 1, 2, 3]
+    suppliedContents: [first response, continued response, changed response, final response]
   - name: legacy payload uses stable session fallback
     sessionModel: anthropic/claude-fable-5
     turns:
@@ -38,6 +41,9 @@ cases:
         content: legacy response two
         timestamp: 2026-08-13T00:01:01Z
         depth: 0
+    turnsMode: replace
+    suppliedIndices: [10, 11]
+    suppliedContents: [legacy response one, legacy response two]
   - name: non-assistant observations stay out of attribution
     sessionModel: anthropic/claude-fable-5
     turns:
@@ -52,3 +58,45 @@ cases:
         content: assistant response
         timestamp: 2026-08-13T00:02:01Z
         depth: 0
+    turnsMode: replace
+    suppliedIndices: [20, 21]
+    suppliedContents: [user request, assistant response]
+  - name: overlapping replacement preserves supplied content
+    sessionModel: anthropic/claude-fable-5
+    turns:
+      - index: 30
+        role: assistant
+        content: canonical content
+        timestamp: 2026-08-13T00:03:00Z
+        depth: 0
+      - index: 31
+        role: assistant
+        content: second canonical
+        timestamp: 2026-08-13T00:03:01Z
+        depth: 0
+    turnsMode: replace
+    suppliedIndices: [30]
+    suppliedContents: [replacement content]
+  - name: visible subset resolves hidden boundary
+    sessionModel: anthropic/claude-fable-5
+    turns:
+      - index: 40
+        role: assistant
+        content: first visible
+        timestamp: 2026-08-13T00:04:00Z
+        depth: 0
+        observedModel: anthropic/claude-fable-5
+      - index: 41
+        role: assistant
+        content: hidden boundary
+        timestamp: 2026-08-13T00:04:01Z
+        depth: 0
+        observedModel: anthropic/claude-opus-4-8
+      - index: 42
+        role: assistant
+        content: visible after boundary
+        timestamp: 2026-08-13T00:04:02Z
+        depth: 0
+    turnsMode: visible
+    suppliedIndices: [40, 42]
+    suppliedContents: [first visible, visible after boundary]

@@ -10,7 +10,7 @@ import {
   requireUniqueStringSet,
 } from "./strict-yaml-fixture.test-helper.js";
 
-export type StickyCompatibilityCase = { name: string; session: SessionDetailPayload };
+export type StickyCompatibilityCase = { name: string; session: SessionDetailPayload; turnsMode?: "replace" | "visible"; suppliedTurns?: TurnDetail[] };
 export type StickyCompatibilityFixture = {
   cases: StickyCompatibilityCase[];
   loaderMutations: Array<{ name: string; find: string; replace: string; expectedError: string }>;
@@ -72,12 +72,16 @@ export function loadStickyCompatibilityFixture(
   const cases = root.cases.map((value, index) => {
     if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error(`sticky compatibility fixture cases[${index}] must be an object`);
     const row = value as Record<string, unknown>;
-    requireExactFields(row, ["name", "sessionModel", "turns"], `sticky compatibility fixture cases[${index}]`);
+    requireExactFields(row, ["name", "sessionModel", "turns", "turnsMode", "suppliedIndices", "suppliedContents"], `sticky compatibility fixture cases[${index}]`);
     requireNonEmptyString(row.name, `sticky compatibility fixture cases[${index}].name`);
     if (names.has(row.name)) throw new Error(`sticky compatibility fixture case name ${row.name} is duplicate`);
     names.add(row.name);
     requireNonEmptyString(row.sessionModel, `sticky compatibility fixture ${row.name}.sessionModel`);
     const turns = parseTurns(row.turns, `sticky compatibility fixture ${row.name}.turns`);
+    if (row.turnsMode !== undefined && row.turnsMode !== "replace" && row.turnsMode !== "visible") throw new Error(`sticky compatibility fixture ${row.name}.turnsMode must be replace or visible`);
+    if (!Array.isArray(row.suppliedIndices) || row.suppliedIndices.some((value) => typeof value !== "number" || !Number.isSafeInteger(value))) throw new Error(`sticky compatibility fixture ${row.name}.suppliedIndices must be integer array`);
+    if (!Array.isArray(row.suppliedContents) || row.suppliedContents.some((value) => typeof value !== "string")) throw new Error(`sticky compatibility fixture ${row.name}.suppliedContents must be string array`);
+    if (row.suppliedIndices.length !== row.suppliedContents.length) throw new Error(`sticky compatibility fixture ${row.name} supplied turn arrays must have equal lengths`);
     const indices = turns.map(({ index: turnIndex }) => turnIndex);
     if (new Set(indices).size !== indices.length) throw new Error(`sticky compatibility fixture ${row.name}.turn indices must be unique`);
     const session: SessionDetailPayload = {
@@ -86,7 +90,14 @@ export function loadStickyCompatibilityFixture(
       totalTokens: 0, tokensIn: 0, tokensOut: 0, turnCount: turns.length, toolCallCount: 0,
       workingDirectory: `/work/sticky-compatibility-${index}`, gitBranch: "main", gitRemote: "https://example.test/sticky-compatibility.git", scorecard: null, turns,
     };
-    return { name: row.name, session };
+    const suppliedContents = row.suppliedContents as string[];
+    const suppliedIndices = row.suppliedIndices as number[];
+    const suppliedTurns = suppliedIndices.map((suppliedIndex, suppliedPosition) => {
+      const source = turns.find((turn) => turn.index === suppliedIndex);
+      if (!source) throw new Error(`sticky compatibility fixture ${row.name} supplied index ${suppliedIndex} is not canonical`);
+      return { ...source, content: suppliedContents[suppliedPosition]! };
+    });
+    return { name: row.name, session, turnsMode: row.turnsMode as "replace" | "visible" | undefined, suppliedTurns };
   });
   if (names.size !== requiredNames.length || requiredNames.some((name) => !names.has(name))) throw new Error("sticky compatibility fixture required names must exactly match cases");
   return { cases, loaderMutations, source };

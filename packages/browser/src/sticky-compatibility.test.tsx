@@ -55,7 +55,7 @@ describe("mounted SessionDetail sticky compatibility", () => {
   it("passes the complete payload before projection and preserves Fairtrade A,A,B,B", () => {
     const sticky = fixture.cases.find(({ name }) => name === "sticky observations carry across omissions")!;
     capture.calls.length = 0;
-    renderToStaticMarkup(<SessionDetail detail={sticky.session} turns={[...sticky.session.turns!]} />);
+    const html = renderToStaticMarkup(<SessionDetail detail={sticky.session} turns={sticky.suppliedTurns} />);
     expect(capture.calls).toHaveLength(1);
     const captured = capture.calls[0]!;
     const { wire, view } = captured;
@@ -72,39 +72,52 @@ describe("mounted SessionDetail sticky compatibility", () => {
       modelChangedFrom: "anthropic/claude-fable-5",
       effectiveModel: "anthropic/claude-opus-4-8",
     });
+    expect(html.match(/model changed: anthropic\/claude-fable-5 -&gt; anthropic\/claude-opus-4-8/g)).toHaveLength(1);
   });
 
   it("keeps the legacy session fallback stable without transition markers", () => {
     const legacy = fixture.cases.find(({ name }) => name === "legacy payload uses stable session fallback")!;
     capture.calls.length = 0;
-    renderToStaticMarkup(<SessionDetail detail={legacy.session} />);
+    const html = renderToStaticMarkup(<SessionDetail detail={legacy.session} turns={legacy.suppliedTurns} />);
     expect(capture.calls).toHaveLength(1);
     const view = capture.calls[0]!.view;
     expect(view.turns.map((turn) => turn.effectiveModel)).toEqual([
       "anthropic/claude-fable-5", "anthropic/claude-fable-5",
     ]);
     expect(view.turns.filter((turn) => turn.modelChangedFrom)).toHaveLength(0);
+    expect(html.match(/model changed:/g) ?? []).toHaveLength(0);
   });
 
   it("resolves a hidden model boundary before the visible projection", () => {
     const sticky = fixture.cases.find(({ name }) => name === "sticky observations carry across omissions")!;
     capture.calls.length = 0;
-    renderToStaticMarkup(<SessionDetail detail={sticky.session} turns={[sticky.session.turns![0]!, sticky.session.turns![1]!, sticky.session.turns![3]!]} />);
+    const html = renderToStaticMarkup(<SessionDetail detail={sticky.session} turns={[sticky.session.turns![0]!, sticky.session.turns![1]!, sticky.session.turns![3]!]} turnsMode="visible" />);
     const captured = capture.calls[0]!;
     expect(captured.wire.turns?.map((turn) => turn.index)).toEqual([0, 1, 2, 3]);
     expect(captured.view.turns.map((turn) => turn.index)).toEqual([0, 1, 3]);
     expect(captured.view.turns[2]).toMatchObject({ effectiveModel: "anthropic/claude-opus-4-8" });
     expect(captured.view.turns.some((turn) => turn.modelChangedFrom)).toBe(false);
+    expect(html.match(/model changed:/g) ?? []).toHaveLength(0);
   });
 
   it("does not attribute a non-assistant observation", () => {
     const nonAssistant = fixture.cases.find(({ name }) => name === "non-assistant observations stay out of attribution")!;
     capture.calls.length = 0;
-    renderToStaticMarkup(<SessionDetail detail={nonAssistant.session} />);
+    renderToStaticMarkup(<SessionDetail detail={nonAssistant.session} turns={nonAssistant.suppliedTurns} />);
     const view = capture.calls[0]!.view;
     expect(view.turns[0]).not.toHaveProperty("effectiveModel");
     expect(view.turns[1]).toMatchObject({ effectiveModel: "anthropic/claude-fable-5" });
     expect(view.turns.filter((turn) => turn.modelChangedFrom)).toHaveLength(0);
+  });
+
+  it("keeps same-index replacement content and duplicate/reordered replacement rows", () => {
+    const replacement = fixture.cases.find(({ name }) => name === "overlapping replacement preserves supplied content")!;
+    const first = replacement.suppliedTurns![0]!;
+    const duplicate = [first, { ...first, content: "same-index changed content" }];
+    capture.calls.length = 0;
+    const html = renderToStaticMarkup(<SessionDetail detail={replacement.session} turns={[duplicate[1]!, duplicate[0]!]} />);
+    expect(capture.calls[0]!.wire.turns?.map((turn) => turn.content)).toEqual(["same-index changed content", "replacement content"]);
+    expect(html).toContain("same-index changed content");
   });
 
   it("rejects a count-preserving fixture name swap", () => {
@@ -121,8 +134,9 @@ describe("transcript-browser attribution ownership guard", () => {
     for (const file of productionSourceFiles(SRC_ROOT)) {
       const code = stripComments(readFileSync(file, "utf8"));
       if (/\b(?:effectiveModel|modelChangedFrom|observedModel)\s*[:=]/.test(code)
-        || /\b(?:activeRoot|activeModel|lastModel|previousModel|carryForwardModel|resolveModel|deriveModel)\b/.test(code)
-        || /\bmodelChanged\b/.test(code)) offenders.push(relative(SRC_ROOT, file));
+        || /\b(?:activeRoot|activeModel|lastModel|previousModel|carryForwardModel|resolveModel|deriveModel|stickyModel|modelState|modelTransition|priorModel|nextModel)\b/.test(code)
+        || /\bmodelChanged\b|model changed:/.test(code)
+        || /(?:for|while)\s*\([^)]*(?:model|observ)/.test(code)) offenders.push(relative(SRC_ROOT, file));
     }
     expect(offenders, `model attribution must remain in Fairtrade; offenders: [${offenders.join(", ")}]`).toHaveLength(0);
   });

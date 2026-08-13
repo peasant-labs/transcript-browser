@@ -13,7 +13,7 @@ import type {
   TurnLabel,
   TurnLinkBuilder,
 } from "./types.js";
-import type { CommitVM, ToolCallVM } from "@peasant-labs/fairtrade/ui";
+import type { CommitVM, ToolCallVM, TurnVM } from "@peasant-labs/fairtrade/ui";
 import type {
   TurnDetail,
   Harness,
@@ -29,6 +29,8 @@ export interface TranscriptCanvasProps {
    * `TranscriptToolCall` renders from cooked fields and nothing here parses wire.
    */
   toolVMsByTurn?: Map<number, ToolCallVM[]>;
+  /** Cooked turns from Fairtrade; supplied to the canonical card renderer. */
+  turnVMsByTurn?: Map<number, TurnVM>;
   /** Harness — used to pick the assistant rail icon. */
   provider?: Harness;
   /** Optional phases — rendered as sticky inline dividers between turns. */
@@ -77,6 +79,7 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
     {
       turns,
       toolVMsByTurn,
+      turnVMsByTurn,
       provider,
       phases = [],
       activePhaseIndex,
@@ -226,6 +229,7 @@ export const TranscriptCanvas = forwardRef<HTMLDivElement, TranscriptCanvasProps
                   turnNumber={turnLabels[i] ?? `${i + 1}`}
                   provider={provider}
                   toolVMs={toolVMsByTurn?.get(turn.index)}
+                  cookedTurn={turnVMsByTurn?.get(turn.index)}
                   searchQuery={searchQuery}
                   isActiveMatch={turn.index === activeMatchTurnIndex}
                   isSearchMatch={matchSet?.has(i)}

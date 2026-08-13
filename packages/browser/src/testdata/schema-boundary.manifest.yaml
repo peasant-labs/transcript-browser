@@ -85,7 +85,7 @@ requiredBehaviorTestNames:
   - canonical provider policy reaches mounted transcript
   - canonical depth reaches adapter
   - canonical StopReason reaches adapter
-expectedMutationCount: 5
+expectedMutationCount: 7
 mutations:
   - name: nullable turns synthesize a phantom row
     target: src/SessionDetail.tsx
@@ -95,28 +95,40 @@ mutations:
     expectedFailurePattern: nullable turns must normalize before adaptation
   - name: explicit turn precedence is bypassed
     target: src/SessionDetail.tsx
-    find: "const adapterTurns = turnsProp && turnsProp.some((turn) => !canonicalIndices.has(turn.index))\n    ? turnsProp\n    : canonicalTurns;"
-    replace: 'const adapterTurns = canonicalTurns;'
+    find: '  const adapterTurns = projectionMode ? canonicalTurns : turnsProp!;'
+    replace: '  const adapterTurns = canonicalTurns;'
     expectedTestName: explicit turns override canonical turns
     expectedFailurePattern: selected turns must reach the adapter
   - name: flat git fields are dropped before adaptation
     target: src/SessionDetail.tsx
-    find: '      { ...detail, turns: adapterTurns },'
-    replace: '      { ...detail, turns: adapterTurns, gitBranch: undefined, gitRemote: undefined },'
+    find: '    gitBranch: detail.gitBranch,'
+    replace: '    gitBranch: undefined,'
     expectedTestName: flat git fields reach canonical adapter
     expectedFailurePattern: flat git branch must reach the adapter
   - name: Harness is replaced before adaptation
     target: src/SessionDetail.tsx
-    find: '      { ...detail, turns: adapterTurns },'
-    replace: '      { ...detail, turns: adapterTurns, harness: "cursor" },'
+    find: '    harness: detail.harness,'
+    replace: '    harness: "cursor",'
     expectedTestName: canonical Harness reaches adapter
     expectedFailurePattern: canonical Harness must reach the adapter
   - name: Harness is omitted from mounted transcript
     target: src/SessionDetail.tsx
-    find: '                    provider={provider}'
-    replace: '                    provider={undefined}'
+    find: '                    turnVMsByTurn={turnVMsByTurn}'
+    replace: '                    turnVMsByTurn={new Map()}'
     expectedTestName: canonical provider policy reaches mounted transcript
-    expectedFailurePattern: canonical Harness must reach the mounted TurnRow
+    expectedFailurePattern: mounted TurnRow must render the canonical provider path
+  - name: depth is flattened before adaptation
+    target: src/SessionDetail.tsx
+    find: '      depth: turn.depth,'
+    replace: '      depth: 0,'
+    expectedTestName: canonical depth reaches adapter
+    expectedFailurePattern: canonical depth must reach the adapter
+  - name: StopReason is dropped before adaptation
+    target: src/SessionDetail.tsx
+    find: '      stopReason: turn.stopReason,'
+    replace: '      stopReason: undefined,'
+    expectedTestName: canonical StopReason reaches adapter
+    expectedFailurePattern: canonical StopReason must reach the adapter
 expectedReporterControlCount: 1
 reporterControls:
   - name: unrelated failed test is rejected

@@ -81,6 +81,8 @@ export interface SessionDetailProps {
    * the whole-session view hides.
    */
   turns?: TurnDetail[];
+  /** Explicitly select the visible projection path; default preserves replacement semantics. */
+  turnsMode?: "replace" | "visible";
 
   /**
    * Phases (sticky section dividers + Highlights). Host runs phase detection
@@ -208,6 +210,7 @@ const STICKY_PAD = 24;
 export function SessionDetail({
   detail,
   turns: turnsProp,
+  turnsMode,
   phases = [],
   annotations = [],
   breadcrumb = [],
@@ -238,18 +241,12 @@ export function SessionDetail({
   // Fairtrade adapter resolves ordered transcript state before this projection.
   // -------------------------------------------------------------------------
   const canonicalTurns = detail.turns ?? [];
+  const projectionMode = turnsMode === "visible" || turnsProp === undefined;
   const turns = useMemo<TurnDetail[]>(
-    () => turnsProp ?? prefilterTurns(canonicalTurns),
-    [turnsProp, canonicalTurns],
+    () => projectionMode ? (turnsProp ?? prefilterTurns(canonicalTurns)) : turnsProp!,
+    [projectionMode, turnsProp, canonicalTurns],
   );
-  const canonicalIndices = useMemo(() => new Set(canonicalTurns.map((turn) => turn.index)), [canonicalTurns]);
-  // A legacy caller may supply a wholly alternate canonical list (the old
-  // explicit-turns compatibility contract). A scoped list whose indices belong
-  // to the payload is only a visibility projection and cannot replace the full
-  // wire sequence used for attribution.
-  const adapterTurns = turnsProp && turnsProp.some((turn) => !canonicalIndices.has(turn.index))
-    ? turnsProp
-    : canonicalTurns;
+  const adapterTurns = projectionMode ? canonicalTurns : turnsProp!;
 
   // The wire-level harness id IS the viewer's provider key (icons, graph,
   // downloads all read it); aliased once so the surfaces below share one source.
@@ -261,19 +258,31 @@ export function SessionDetail({
   // resolves the complete canonical sequence before applying the optional
   // visible-index projection. Lifted views read cooked fields and never parse
   // wire values here.
+  const adapterPayload = {
+    ...detail,
+    gitBranch: detail.gitBranch,
+    gitRemote: detail.gitRemote,
+    harness: detail.harness,
+    turns: adapterTurns.map((turn) => ({
+      ...turn,
+      depth: turn.depth,
+      stopReason: turn.stopReason,
+    })),
+  };
   const vm = useMemo<TranscriptViewModel>(
     () => adaptTranscript(
-      { ...detail, turns: adapterTurns },
+      adapterPayload,
       undefined,
       undefined,
-      { visibleTurnIndices: turns.map((turn) => turn.index) },
+      projectionMode ? { visibleTurnIndices: turns.map((turn) => turn.index) } : undefined,
     ),
-    [detail, adapterTurns, turns],
+    [adapterPayload, turns, projectionMode],
   );
   const toolVMsByTurn = useMemo(
     () => new Map<number, ToolCallVM[]>(vm.turns.map((t) => [t.index, t.toolCalls])),
     [vm],
   );
+  const turnVMsByTurn = useMemo(() => new Map(vm.turns.map((turn) => [turn.index, turn])), [vm]);
   // Per-file rollups for the Diffs/Files outline rails — computed once from the
   // cooked tool calls (no wire parse).
   const fileRollups = useMemo(() => rollupFiles(toolVMsByTurn), [toolVMsByTurn]);
@@ -750,7 +759,8 @@ export function SessionDetail({
                 ) : (
                   <TranscriptCanvas
                     turns={filteredTurns}
-                    toolVMsByTurn={toolVMsByTurn}
+                   toolVMsByTurn={toolVMsByTurn}
+                    turnVMsByTurn={turnVMsByTurn}
                     provider={provider}
                     phases={viewOptions.showHidden ? filteredPhases : []}
                     activePhaseIndex={activePhaseIndex}

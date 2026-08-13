@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { Check, Link as LinkIcon, CornerDownRight, User, Wrench, AlertTriangle, Coins } from "@peasant-labs/fairtrade/icons";
-import { ProviderIcon, TranscriptToolCall, providerAccent, type ToolCallVM } from "@peasant-labs/fairtrade/ui";
+import { ProviderIcon, TranscriptToolCall, TranscriptTurnCard, providerAccent, type ToolCallVM, type TurnVM } from "@peasant-labs/fairtrade/ui";
 import { cn } from "../internal/cn.js";
 import { formatTokens } from "../lib/format-numbers.js";
 import { formatRelative } from "../lib/time.js";
@@ -26,6 +26,8 @@ export interface TurnRowProps {
    * fields directly and NEVER parses wire. Parallel to `turn.toolCalls` by id.
    */
   toolVMs?: ToolCallVM[];
+  /** Complete Fairtrade view-model turn for the canonical card path. */
+  cookedTurn?: TurnVM;
   /** Active search term, propagated to TurnContent. */
   searchQuery?: string;
   /** True for the turn the current search match points at. */
@@ -64,6 +66,7 @@ export function TurnRow({
   turnNumber,
   provider,
   toolVMs,
+  cookedTurn,
   searchQuery,
   isActiveMatch,
   isSearchMatch,
@@ -76,6 +79,16 @@ export function TurnRow({
   renderPanel,
   savedLabels,
 }: TurnRowProps) {
+  if (cookedTurn?.role && TranscriptTurnCard) {
+    return (
+      <TranscriptTurnCard
+        turn={cookedTurn}
+        compact={compact}
+        expandAll={expandToolCalls}
+        renderActions={renderActions ? () => renderActions(turn) : undefined}
+      />
+    );
+  }
   const subagent = turn.role === "assistant" && (turn.depth ?? 0) > 0;
   const isUser = turn.role === "user";
   const isAssistant = turn.role === "assistant" && !subagent;

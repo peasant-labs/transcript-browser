@@ -74,7 +74,16 @@ export function CodeBlock({
             {tokens.tokens.map((line, lineIndex) => (
               <span key={lineIndex}>
                 {line.map((token, tokenIndex) => (
-                  <span key={tokenIndex} style={token.htmlStyle as CSSProperties}>{token.content}</span>
+                  <span
+                    key={tokenIndex}
+                    className="shiki-token"
+                    style={{
+                      "--shiki-light": typeof token.htmlStyle === "object" ? token.htmlStyle.color : undefined,
+                      "--shiki-dark": typeof token.htmlStyle === "object" ? token.htmlStyle["--shiki-dark"] : undefined,
+                    } as CSSProperties}
+                  >
+                    {token.content}
+                  </span>
                 ))}
                 {lineIndex < tokens.tokens.length - 1 ? "\n" : null}
               </span>
