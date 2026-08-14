@@ -12,12 +12,12 @@ cases:
     vmTurns:
       - ref: vm-first
         index: 5
-        content: display first
+        content: cooked first
         effectiveModel: model/first
         toolPreviews: [tool first]
       - ref: vm-second
         index: 5
-        content: display second
+        content: cooked second
         effectiveModel: model/second
         toolPreviews: [tool second]
     expectedRows:
@@ -26,12 +26,14 @@ cases:
         occurrence: 0
         turnRef: display-first
         cookedRef: vm-first
+        cookedContent: cooked first
         alignment: aligned
       - key: "5:1"
         index: 5
         occurrence: 1
         turnRef: display-second
         cookedRef: vm-second
+        cookedContent: cooked second
         alignment: aligned
     expectedDiagnostics: []
   - name: duplicate-index-same-object-alias
@@ -45,12 +47,12 @@ cases:
     vmTurns:
       - ref: shared-vm-first
         index: 6
-        content: shared display
+        content: shared cooked first
         effectiveModel: model/shared-first
         toolPreviews: [shared tool first]
       - ref: shared-vm-second
         index: 6
-        content: shared display
+        content: shared cooked second
         effectiveModel: model/shared-second
         toolPreviews: [shared tool second]
     expectedRows:
@@ -59,12 +61,14 @@ cases:
         occurrence: 0
         turnRef: shared-display
         cookedRef: shared-vm-first
+        cookedContent: shared cooked first
         alignment: aligned
       - key: "6:1"
         index: 6
         occurrence: 1
         turnRef: shared-display-alias
         cookedRef: shared-vm-second
+        cookedContent: shared cooked second
         alignment: aligned
     expectedDiagnostics: []
   - name: reordered-replacement
@@ -79,12 +83,12 @@ cases:
     vmTurns:
       - ref: reordered-vm-second
         index: 8
-        content: replacement second
+        content: cooked replacement second
         effectiveModel: model/eight
         toolPreviews: [tool eight]
       - ref: reordered-vm-first
         index: 7
-        content: replacement first
+        content: cooked replacement first
         effectiveModel: model/seven
         toolPreviews: [tool seven]
     expectedRows:
@@ -93,12 +97,14 @@ cases:
         occurrence: 0
         turnRef: reordered-second
         cookedRef: reordered-vm-second
+        cookedContent: cooked replacement second
         alignment: aligned
       - key: "7:0"
         index: 7
         occurrence: 0
         turnRef: reordered-first
         cookedRef: reordered-vm-first
+        cookedContent: cooked replacement first
         alignment: aligned
     expectedDiagnostics: []
   - name: visible-subset-projection
@@ -113,17 +119,17 @@ cases:
     vmTurns:
       - ref: visible-vm-first
         index: 10
-        content: visible first
+        content: cooked visible first
         effectiveModel: model/ten
         toolPreviews: [tool ten]
       - ref: hidden-vm-middle
         index: 11
-        content: hidden middle
+        content: cooked hidden middle
         effectiveModel: model/eleven
         toolPreviews: [tool eleven]
       - ref: visible-vm-third
         index: 12
-        content: visible third
+        content: cooked visible third
         effectiveModel: model/twelve
         toolPreviews: [tool twelve]
     expectedRows:
@@ -132,12 +138,14 @@ cases:
         occurrence: 0
         turnRef: visible-first
         cookedRef: visible-vm-first
+        cookedContent: cooked visible first
         alignment: aligned
       - key: "12:0"
         index: 12
         occurrence: 0
         turnRef: visible-third
         cookedRef: visible-vm-third
+        cookedContent: cooked visible third
         alignment: aligned
     expectedDiagnostics:
       - what: Transcript view-model rows remained after visible alignment.
@@ -164,6 +172,7 @@ cases:
         occurrence: 0
         turnRef: changed-display
         cookedRef: changed-vm
+        cookedContent: prior cooked content
         alignment: aligned
     expectedDiagnostics: []
   - name: unmatched-replacement-row
@@ -178,12 +187,12 @@ cases:
     vmTurns:
       - ref: matched-vm
         index: 14
-        content: matched display
+        content: matched cooked
         effectiveModel: model/fourteen
         toolPreviews: [tool fourteen]
       - ref: wrong-vm
         index: 99
-        content: wrong display
+        content: wrong cooked
         effectiveModel: model/wrong
         toolPreviews: [tool wrong]
     expectedRows:
@@ -192,12 +201,14 @@ cases:
         occurrence: 0
         turnRef: matched-display
         cookedRef: matched-vm
+        cookedContent: matched cooked
         alignment: aligned
       - key: "15:0"
         index: 15
         occurrence: 0
         turnRef: unmatched-display
         cookedRef: null
+        cookedContent: null
         alignment: unaligned
     expectedDiagnostics:
       - what: Transcript row alignment failed.
@@ -218,7 +229,7 @@ cases:
     vmTurns:
       - ref: length-vm-first
         index: 16
-        content: length first
+        content: length cooked first
         effectiveModel: model/sixteen
         toolPreviews: [tool sixteen]
     expectedRows:
@@ -227,12 +238,14 @@ cases:
         occurrence: 0
         turnRef: length-first
         cookedRef: null
+        cookedContent: null
         alignment: unaligned
       - key: "17:0"
         index: 17
         occurrence: 0
         turnRef: length-second
         cookedRef: null
+        cookedContent: null
         alignment: unaligned
     expectedDiagnostics:
       - what: Transcript row alignment failed.
@@ -259,12 +272,12 @@ cases:
     vmTurns:
       - ref: legacy-vm-first
         index: 20
-        content: legacy first
+        content: legacy cooked first
         effectiveModel: null
         toolPreviews: []
       - ref: legacy-vm-second
         index: 21
-        content: legacy second
+        content: legacy cooked second
         effectiveModel: null
         toolPreviews: []
     expectedRows:
@@ -273,11 +286,13 @@ cases:
         occurrence: 0
         turnRef: legacy-first
         cookedRef: legacy-vm-first
+        cookedContent: legacy cooked first
         alignment: aligned
       - key: "21:0"
         index: 21
         occurrence: 0
         turnRef: legacy-second
         cookedRef: legacy-vm-second
+        cookedContent: legacy cooked second
         alignment: aligned
     expectedDiagnostics: []

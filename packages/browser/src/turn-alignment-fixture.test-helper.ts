@@ -226,17 +226,29 @@ export function loadTurnAlignmentFixture(
     const expectedRows = row.expectedRows.map((expectedValue, position): AlignedTurnRow => {
       const expectedLabel = `turn alignment case ${row.name}.expectedRows[${position}]`;
       const expected = requireObject(expectedValue, expectedLabel);
-      requireExactFields(expected, ["key", "index", "occurrence", "turnRef", "cookedRef", "alignment"], expectedLabel);
+      requireExactFields(expected, ["key", "index", "occurrence", "turnRef", "cookedRef", "cookedContent", "alignment"], expectedLabel);
       requireNonEmptyString(expected.key, `${expectedLabel}.key`);
       requireSafeNonnegativeInteger(expected.index, `${expectedLabel}.index`);
       requireSafeNonnegativeInteger(expected.occurrence, `${expectedLabel}.occurrence`);
       requireNonEmptyString(expected.turnRef, `${expectedLabel}.turnRef`);
-      if (expected.cookedRef !== null) requireNonEmptyString(expected.cookedRef, `${expectedLabel}.cookedRef`);
+      if (expected.cookedRef !== null) {
+        requireNonEmptyString(expected.cookedRef, `${expectedLabel}.cookedRef`);
+        requireNonEmptyString(expected.cookedContent, `${expectedLabel}.cookedContent`);
+      } else if (expected.cookedContent !== null) {
+        throw expectedRowError(
+          "Turn-alignment expected row has cooked content without a view-model reference.",
+          `cookedContent must be null when cookedRef is null at position ${position}.`,
+          `${expectedLabel}.cookedContent`,
+          "The fixture oracle could describe cooked data that no referenced Fairtrade row supplies.",
+          `Set cookedContent to null, or provide the aligned cookedRef whose content it describes.`,
+        );
+      }
       if (expected.alignment !== "aligned" && expected.alignment !== "unaligned") throw new Error(`${expectedLabel}.alignment must be aligned or unaligned`);
       const turn = display.turns[position]!;
       const referencedTurn = display.byRef.get(expected.turnRef);
-      if (!referencedTurn) throw new Error(`${expectedLabel}.turnRef is unknown`);
-      if (referencedTurn !== turn) {
+      const referencedPosition = display.positionByRef.get(expected.turnRef);
+      if (!referencedTurn || referencedPosition === undefined) throw new Error(`${expectedLabel}.turnRef is unknown`);
+      if (referencedPosition !== position || referencedTurn !== turn) {
         throw expectedRowError(
           "Turn-alignment expected row references the wrong display turn.",
           `turnRef ${expected.turnRef} resolves to a different display row than position ${position}.`,
@@ -286,17 +298,6 @@ export function loadTurnAlignmentFixture(
           `Use a non-null cookedRef only for aligned rows and null only for unaligned rows at position ${position}.`,
         );
       }
-      const cookedMatchesExpectedContent = cooked === null || cooked.content === turn.content;
-      const allowsCookedContentDivergence = row.name === "same-index-changed-content";
-      if (allowsCookedContentDivergence && cooked !== null && cookedMatchesExpectedContent) {
-        throw expectedRowError(
-          "The same-index content-divergence case no longer diverges.",
-          `cookedRef ${expected.cookedRef as string} must preserve content distinct from displayTurns[${position}] while retaining its index.`,
-          `${expectedLabel}.cookedRef`,
-          "The fixture would stop proving that wire content remains authoritative when the Fairtrade VM carries stale content for the same index.",
-          `Use same-index VM content that differs from displayTurns[${position}] only in the same-index-changed-content case.`,
-        );
-      }
       if (cooked !== null && cooked.index !== expected.index) {
         throw expectedRowError(
           "Turn-alignment expected row references an incompatible Fairtrade view model.",
@@ -315,13 +316,13 @@ export function loadTurnAlignmentFixture(
           `Set cookedRef to the vmTurns reference at position ${position}, or mark this expected row unaligned with cookedRef null.`,
         );
       }
-      if (cooked !== null && !cookedMatchesExpectedContent && !allowsCookedContentDivergence) {
+      if (cooked !== null && cooked.content !== expected.cookedContent) {
         throw expectedRowError(
-          "Turn-alignment expected row references Fairtrade content from a different row.",
-          `cookedRef ${expected.cookedRef as string} resolved to content ${JSON.stringify(cooked.content)}, but displayTurns[${position}] contains ${JSON.stringify(turn.content)}.`,
-          `${expectedLabel}.cookedRef`,
-          "The fixture oracle could attach cooked attribution or tools from a different transcript row without declaring the content-divergence scenario.",
-          `Reference a VM row whose content matches displayTurns[${position}], or isolate intentional content divergence in the same-index-changed-content case.`,
+          "Turn-alignment expected row references a view model with unexpected content.",
+          `cookedRef ${expected.cookedRef as string} resolved to content ${JSON.stringify(cooked.content)}, but cookedContent requires ${JSON.stringify(expected.cookedContent)}.`,
+          `${expectedLabel}.cookedRef and ${expectedLabel}.cookedContent`,
+          "The fixture oracle could attach cooked attribution or tools from a different transcript row.",
+          `Set cookedRef to the VM row carrying the declared cookedContent, or correct cookedContent to the independently expected VM text.`,
         );
       }
       return {
