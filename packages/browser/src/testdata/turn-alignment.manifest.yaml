@@ -1,0 +1,16 @@
+expectedCaseCount: 8
+requiredCaseNames:
+  - duplicate-index-distinct-content
+  - duplicate-index-same-object-alias
+  - reordered-replacement
+  - visible-subset-projection
+  - same-index-changed-content
+  - unmatched-replacement-row
+  - vm-length-mismatch
+  - legacy-unique-baseline
+expectedLoaderMutationCount: 1
+loaderMutations:
+  - name: count-preserving case name swap
+    find: "name: legacy-unique-baseline"
+    replace: "name: duplicate-index-distinct-content"
+    expectedError: duplicate

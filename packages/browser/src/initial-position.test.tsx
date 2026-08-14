@@ -55,6 +55,7 @@ vi.mock("@peasant-labs/fairtrade/ui", async (importOriginal) => {
     GraphLegend: Stub, GraphSubagentBranch: Stub, GraphToolNode: Stub, GraphTurnNode: Stub,
     Kbd: Stub, MetaItem: Stub, PhaseDivider: Stub, ProviderIcon: Stub, StepsWaterfall: Stub,
     Tooltip: Stub, TranscriptDiffEntryCard: Stub, TranscriptToolCall: Stub, TurnContextBar: Stub,
+    TranscriptTurnCard: Stub,
   };
 });
 

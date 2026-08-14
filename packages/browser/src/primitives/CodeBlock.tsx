@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { codeToHtml } from "shiki";
+import { useEffect, useState, type CSSProperties } from "react";
+import { codeToTokens } from "shiki";
 import { cn } from "../internal/cn.js";
 
 export interface CodeBlockProps {
@@ -30,21 +30,20 @@ export function CodeBlock({
   filename,
   showLineNumbers,
 }: CodeBlockProps) {
-  const [html, setHtml] = useState<string | null>(null);
+  const [tokens, setTokens] = useState<Awaited<ReturnType<typeof codeToTokens>> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    codeToHtml(code, {
-      lang: normalizeLang(lang),
+    codeToTokens(code, {
+      lang: normalizeLang(lang) as never,
       themes: { light: "github-light", dark: "github-dark" },
-      defaultColor: false,
     })
-      .then((out) => {
-        if (!cancelled) setHtml(out);
+      .then((result) => {
+        if (!cancelled) setTokens(result);
       })
       .catch(() => {
         // Unsupported language — fall back to plain rendering.
-        if (!cancelled) setHtml(null);
+        if (!cancelled) setTokens(null);
       });
     return () => {
       cancelled = true;
@@ -70,8 +69,26 @@ export function CodeBlock({
           capLines ? { maxHeight: `${maxLines * 1.55}em`, overflowY: "auto" } : undefined
         }
       >
-        {html ? (
-          <div dangerouslySetInnerHTML={{ __html: html }} />
+        {tokens ? (
+          <pre>
+            {tokens.tokens.map((line, lineIndex) => (
+              <span key={lineIndex}>
+                {line.map((token, tokenIndex) => (
+                  <span
+                    key={tokenIndex}
+                    className="shiki-token"
+                    style={{
+                      "--shiki-light": typeof token.htmlStyle === "object" ? token.htmlStyle.color : undefined,
+                      "--shiki-dark": typeof token.htmlStyle === "object" ? token.htmlStyle["--shiki-dark"] : undefined,
+                    } as CSSProperties}
+                  >
+                    {token.content}
+                  </span>
+                ))}
+                {lineIndex < tokens.tokens.length - 1 ? "\n" : null}
+              </span>
+            ))}
+          </pre>
         ) : (
           <pre>{code}</pre>
         )}

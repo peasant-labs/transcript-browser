@@ -147,6 +147,14 @@
   white-space: pre;
   color: var(--ink, #0f0e0d);
 }
+
+.tb-codeblock-host .shiki-token {
+  color: var(--shiki-light);
+}
+
+[data-theme="dark"] .tb-codeblock-host .shiki-token {
+  color: var(--shiki-dark);
+}
 .tb-codeblock-host .shiki {
   margin: 0;
   padding: 0.5rem 0.75rem;

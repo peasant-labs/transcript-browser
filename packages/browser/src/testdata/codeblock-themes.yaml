@@ -1,0 +1,10 @@
+expectedCaseCount: 2
+cases:
+  - name: light theme token variables
+    theme: light
+    expectedLight: '#D73A49'
+    expectedDark: '#F97583'
+  - name: dark theme token variables
+    theme: dark
+    expectedLight: '#D73A49'
+    expectedDark: '#F97583'

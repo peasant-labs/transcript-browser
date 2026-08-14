@@ -32,3 +32,9 @@ export type {
   RenderTurnPanel,
   DownloadFormat,
 } from "./types.js";
+export type {
+  AlignedTurnRow,
+  AlignmentDiagnostic,
+  RowAlignment,
+  TurnRowKey,
+} from "../lib/turn-alignment.js";

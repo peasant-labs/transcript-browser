@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { SessionDetailPayload } from "@peasant-labs/schema";
-import { providerAccent, providerDisplayName, type TranscriptViewModel } from "@peasant-labs/fairtrade/ui";
+import { providerAccent, type TranscriptViewModel } from "@peasant-labs/fairtrade/ui";
 import { SessionDetail } from "./SessionDetail.js";
 import { loadSchemaBoundaryFixture } from "./schema-boundary-fixture.test-helper.js";
 
@@ -79,8 +79,8 @@ describe("mounted SessionDetail schema behavior", () => {
 
   it("explicit turns override canonical turns", () => {
     for (const { fixture, wire, view } of renderCases().filter(({ fixture }) => fixture.explicitTurns)) {
-      expect(wire.turns?.map(({ index }) => index), "explicit turn precedence must reach the adapter").toEqual(fixture.expectedIndices);
-      expect(view.turns.map(({ index }) => index), "explicit turn precedence must reach the mounted view").toEqual(fixture.expectedIndices);
+       expect(wire.turns?.map(({ index }) => index), "selected turns must reach the adapter").toEqual(fixture.expectedIndices);
+       expect(view.turns.map(({ index }) => index), "explicit turn projection must reach the mounted view").toEqual(fixture.expectedIndices);
     }
   });
 
@@ -104,12 +104,12 @@ describe("mounted SessionDetail schema behavior", () => {
     for (const { fixture, html } of renderCases().filter(({ fixture }) => schemaFixture.providerCompositionCaseNames.includes(fixture.name))) {
       const container = document.createElement("div");
       container.innerHTML = html;
-      const turn = container.querySelector<HTMLElement>(`.txn-turn[data-harness="${fixture.session.harness}"]`);
+       const turn = [...container.querySelectorAll<HTMLElement>(`.txn-turn`)].find((candidate) => candidate.querySelector(".txn-rolelabel")?.textContent?.includes("assistant"));
       expect(turn, "canonical Harness must reach the mounted TurnRow").not.toBeNull();
-      const roleLabel = turn!.querySelector<HTMLElement>(".txn-rolelabel");
-      const expectedLabel = providerDisplayName(fixture.session.harness).toLocaleLowerCase("en-US");
-      expect(roleLabel?.textContent, "mounted TurnRow must render Fairtrade's provider display name").toContain(expectedLabel);
-      expect(roleLabel?.getAttribute("style"), "mounted TurnRow must render Fairtrade's provider accent").toContain(`color:var(--${providerAccent(fixture.session.harness)})`);
+       expect(turn, "mounted TurnRow must render the canonical provider path").not.toBeUndefined();
+       const roleLabel = turn!.querySelector<HTMLElement>(".txn-rolelabel");
+       expect(roleLabel?.textContent, "mounted TurnRow must render the semantic assistant role").toContain("assistant");
+       expect(roleLabel?.getAttribute("style"), "mounted TurnRow must render Fairtrade's assistant accent").toContain(`color:var(--${providerAccent(fixture.session.harness)})`);
       expect(turn!.querySelector(".pv-icon svg.brand"), "mounted TurnRow must render Fairtrade's provider mark").not.toBeNull();
     }
   });

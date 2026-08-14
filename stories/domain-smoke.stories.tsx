@@ -8,6 +8,7 @@ import {
   OutcomeChip,
   ErrorPill,
   DiffView,
+  CodeBlock,
   annotateTranscript,
   type Harness,
   type TurnDetail,
@@ -200,6 +201,14 @@ export const BrandMarks: Story = {
       <BrandMark name="openai" label="OpenAI" />
       <BrandMark name="cursor" label="Cursor" />
       <BrandMark name="opencode" label="opencode" />
+    </div>
+  ),
+};
+
+export const CodeBlockThemes: Story = {
+  render: () => (
+    <div data-sbsmoke="codeblock-themes" className="tb-root" style={{ padding: "1rem" }}>
+      <CodeBlock code="const transcript = true;" lang="ts" />
     </div>
   ),
 };

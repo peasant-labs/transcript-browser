@@ -1,0 +1,298 @@
+expectedCaseCount: 8
+cases:
+  - name: duplicate-index-distinct-content
+    mode: replace
+    displayTurns:
+      - ref: display-first
+        index: 5
+        content: display first
+      - ref: display-second
+        index: 5
+        content: display second
+    vmTurns:
+      - ref: vm-first
+        index: 5
+        content: cooked first
+        effectiveModel: model/first
+        toolPreviews: [tool first]
+      - ref: vm-second
+        index: 5
+        content: cooked second
+        effectiveModel: model/second
+        toolPreviews: [tool second]
+    expectedRows:
+      - key: "5:0"
+        index: 5
+        occurrence: 0
+        turnRef: display-first
+        cookedRef: vm-first
+        cookedContent: cooked first
+        alignment: aligned
+      - key: "5:1"
+        index: 5
+        occurrence: 1
+        turnRef: display-second
+        cookedRef: vm-second
+        cookedContent: cooked second
+        alignment: aligned
+    expectedDiagnostics: []
+  - name: duplicate-index-same-object-alias
+    mode: replace
+    displayTurns:
+      - ref: shared-display
+        index: 6
+        content: shared display
+      - ref: shared-display-alias
+        aliasOf: shared-display
+    vmTurns:
+      - ref: shared-vm-first
+        index: 6
+        content: shared cooked first
+        effectiveModel: model/shared-first
+        toolPreviews: [shared tool first]
+      - ref: shared-vm-second
+        index: 6
+        content: shared cooked second
+        effectiveModel: model/shared-second
+        toolPreviews: [shared tool second]
+    expectedRows:
+      - key: "6:0"
+        index: 6
+        occurrence: 0
+        turnRef: shared-display
+        cookedRef: shared-vm-first
+        cookedContent: shared cooked first
+        alignment: aligned
+      - key: "6:1"
+        index: 6
+        occurrence: 1
+        turnRef: shared-display-alias
+        cookedRef: shared-vm-second
+        cookedContent: shared cooked second
+        alignment: aligned
+    expectedDiagnostics: []
+  - name: reordered-replacement
+    mode: replace
+    displayTurns:
+      - ref: reordered-second
+        index: 8
+        content: replacement second
+      - ref: reordered-first
+        index: 7
+        content: replacement first
+    vmTurns:
+      - ref: reordered-vm-second
+        index: 8
+        content: cooked replacement second
+        effectiveModel: model/eight
+        toolPreviews: [tool eight]
+      - ref: reordered-vm-first
+        index: 7
+        content: cooked replacement first
+        effectiveModel: model/seven
+        toolPreviews: [tool seven]
+    expectedRows:
+      - key: "8:0"
+        index: 8
+        occurrence: 0
+        turnRef: reordered-second
+        cookedRef: reordered-vm-second
+        cookedContent: cooked replacement second
+        alignment: aligned
+      - key: "7:0"
+        index: 7
+        occurrence: 0
+        turnRef: reordered-first
+        cookedRef: reordered-vm-first
+        cookedContent: cooked replacement first
+        alignment: aligned
+    expectedDiagnostics: []
+  - name: visible-subset-projection
+    mode: visible
+    displayTurns:
+      - ref: visible-first
+        index: 10
+        content: visible first
+      - ref: visible-third
+        index: 12
+        content: visible third
+    vmTurns:
+      - ref: visible-vm-first
+        index: 10
+        content: cooked visible first
+        effectiveModel: model/ten
+        toolPreviews: [tool ten]
+      - ref: hidden-vm-middle
+        index: 11
+        content: cooked hidden middle
+        effectiveModel: model/eleven
+        toolPreviews: [tool eleven]
+      - ref: visible-vm-third
+        index: 12
+        content: cooked visible third
+        effectiveModel: model/twelve
+        toolPreviews: [tool twelve]
+    expectedRows:
+      - key: "10:0"
+        index: 10
+        occurrence: 0
+        turnRef: visible-first
+        cookedRef: visible-vm-first
+        cookedContent: cooked visible first
+        alignment: aligned
+      - key: "12:0"
+        index: 12
+        occurrence: 0
+        turnRef: visible-third
+        cookedRef: visible-vm-third
+        cookedContent: cooked visible third
+        alignment: aligned
+    expectedDiagnostics:
+      - what: Transcript view-model rows remained after visible alignment.
+        why: 1 Fairtrade turn(s) were not consumed by the monotone display subsequence.
+        where: alignTranscriptRows(visible) after processing 2 display rows.
+        when: After pairing the visible display projection with Fairtrade view-model turns before transcript rendering.
+        meaning: Unconsumed cooked rows are ignored so they cannot be substituted into unrelated display content.
+        fix: Ensure the visible projection and display list use the same ordered turn occurrences before rendering.
+  - name: same-index-changed-content
+    mode: replace
+    displayTurns:
+      - ref: changed-display
+        index: 13
+        content: changed wire content
+    vmTurns:
+      - ref: changed-vm
+        index: 13
+        content: prior cooked content
+        effectiveModel: model/thirteen
+        toolPreviews: [tool thirteen]
+    expectedRows:
+      - key: "13:0"
+        index: 13
+        occurrence: 0
+        turnRef: changed-display
+        cookedRef: changed-vm
+        cookedContent: prior cooked content
+        alignment: aligned
+    expectedDiagnostics: []
+  - name: unmatched-replacement-row
+    mode: replace
+    displayTurns:
+      - ref: matched-display
+        index: 14
+        content: matched display
+      - ref: unmatched-display
+        index: 15
+        content: unmatched display
+    vmTurns:
+      - ref: matched-vm
+        index: 14
+        content: matched cooked
+        effectiveModel: model/fourteen
+        toolPreviews: [tool fourteen]
+      - ref: wrong-vm
+        index: 99
+        content: wrong cooked
+        effectiveModel: model/wrong
+        toolPreviews: [tool wrong]
+    expectedRows:
+      - key: "14:0"
+        index: 14
+        occurrence: 0
+        turnRef: matched-display
+        cookedRef: matched-vm
+        cookedContent: matched cooked
+        alignment: aligned
+      - key: "15:0"
+        index: 15
+        occurrence: 0
+        turnRef: unmatched-display
+        cookedRef: null
+        cookedContent: null
+        alignment: unaligned
+    expectedDiagnostics:
+      - what: Transcript row alignment failed.
+        why: Fairtrade turn index 99 does not match display turn index 15 at position 1.
+        where: alignTranscriptRows(replace) at display position 1 (row key 15:0).
+        when: While pairing display turns with Fairtrade view-model turns before transcript rendering.
+        meaning: This row will use the legacy wire renderer without cooked model attribution or cooked tool previews.
+        fix: Pass the exact replacement turn sequence to adaptTranscript and preserve its positional order before calling alignTranscriptRows.
+  - name: vm-length-mismatch
+    mode: replace
+    displayTurns:
+      - ref: length-first
+        index: 16
+        content: length first
+      - ref: length-second
+        index: 17
+        content: length second
+    vmTurns:
+      - ref: length-vm-first
+        index: 16
+        content: length cooked first
+        effectiveModel: model/sixteen
+        toolPreviews: [tool sixteen]
+    expectedRows:
+      - key: "16:0"
+        index: 16
+        occurrence: 0
+        turnRef: length-first
+        cookedRef: null
+        cookedContent: null
+        alignment: unaligned
+      - key: "17:0"
+        index: 17
+        occurrence: 0
+        turnRef: length-second
+        cookedRef: null
+        cookedContent: null
+        alignment: unaligned
+    expectedDiagnostics:
+      - what: Transcript row alignment failed.
+        why: Replacement mode received 2 display turns but 1 Fairtrade turns.
+        where: alignTranscriptRows(replace) at display position 0 (row key 16:0).
+        when: While pairing display turns with Fairtrade view-model turns before transcript rendering.
+        meaning: This row will use the legacy wire renderer without cooked model attribution or cooked tool previews.
+        fix: Pass the exact replacement turn sequence to adaptTranscript and preserve its positional order before calling alignTranscriptRows.
+      - what: Transcript row alignment failed.
+        why: Replacement mode received 2 display turns but 1 Fairtrade turns.
+        where: alignTranscriptRows(replace) at display position 1 (row key 17:0).
+        when: While pairing display turns with Fairtrade view-model turns before transcript rendering.
+        meaning: This row will use the legacy wire renderer without cooked model attribution or cooked tool previews.
+        fix: Pass the exact replacement turn sequence to adaptTranscript and preserve its positional order before calling alignTranscriptRows.
+  - name: legacy-unique-baseline
+    mode: replace
+    displayTurns:
+      - ref: legacy-first
+        index: 20
+        content: legacy first
+      - ref: legacy-second
+        index: 21
+        content: legacy second
+    vmTurns:
+      - ref: legacy-vm-first
+        index: 20
+        content: legacy cooked first
+        effectiveModel: null
+        toolPreviews: []
+      - ref: legacy-vm-second
+        index: 21
+        content: legacy cooked second
+        effectiveModel: null
+        toolPreviews: []
+    expectedRows:
+      - key: "20:0"
+        index: 20
+        occurrence: 0
+        turnRef: legacy-first
+        cookedRef: legacy-vm-first
+        cookedContent: legacy cooked first
+        alignment: aligned
+      - key: "21:0"
+        index: 21
+        occurrence: 0
+        turnRef: legacy-second
+        cookedRef: legacy-vm-second
+        cookedContent: legacy cooked second
+        alignment: aligned
+    expectedDiagnostics: []

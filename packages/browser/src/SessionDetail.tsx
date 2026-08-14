@@ -18,6 +18,7 @@ import { StickyHeader } from "./header/StickyHeader.js";
 import { TurnContextBar } from "./header/TurnContextBar.js";
 import { useTriggerOffscreen } from "./header/useTriggerOffscreen.js";
 import { useTurnKeyboardNav } from "./lib/turnNav.js";
+import { alignTranscriptRows } from "./lib/turn-alignment.js";
 import { TAB_LABELS } from "./lib/labels.js";
 import type { BreadcrumbItem } from "./header/Breadcrumb.js";
 import { TranscriptCanvas } from "./canvas/TranscriptCanvas.js";
@@ -74,11 +75,15 @@ export interface SessionDetailProps {
 
   /**
    * Pre-filtered + deduped turns to render. Optional — when omitted, the
-   * composer applies `prefilterTurns` (exported) to `detail.turns`. Hosts that
-   * pass their own scoped list can call `prefilterTurns` first to hide the
-   * same noise turns the whole-session view hides.
+   * composer applies `prefilterTurns` (exported) to `detail.turns`. This is a
+   * display projection only: the complete payload always reaches Fairtrade's
+   * adapter first so ordered attribution remains intact. Hosts that pass their
+   * own scoped list can call `prefilterTurns` first to hide the same noise turns
+   * the whole-session view hides.
    */
   turns?: TurnDetail[];
+  /** Explicitly select the visible projection path; default preserves replacement semantics. */
+  turnsMode?: "replace" | "visible";
 
   /**
    * Phases (sticky section dividers + Highlights). Host runs phase detection
@@ -187,6 +192,7 @@ function positionFromHash(): TranscriptInitialPosition | undefined {
 }
 
 const STICKY_PAD = 24;
+const EMPTY_TURNS: readonly TurnDetail[] = [];
 
 /**
  * @deprecated Compatibility composer retained for existing consumers. New
@@ -206,6 +212,7 @@ const STICKY_PAD = 24;
 export function SessionDetail({
   detail,
   turns: turnsProp,
+  turnsMode,
   phases = [],
   annotations = [],
   breadcrumb = [],
@@ -231,11 +238,19 @@ export function SessionDetail({
   className,
 }: SessionDetailProps) {
   // -------------------------------------------------------------------------
-  // Derived: turn list (host may pass a pre-filtered list; else dedup here)
+  // Derived: canonical payload and display projection. The display list may be
+  // narrowed by the host, but it must never become the adapter's input: the
+  // Fairtrade adapter resolves ordered transcript state before this projection.
   // -------------------------------------------------------------------------
+  const canonicalTurns = detail.turns ?? EMPTY_TURNS;
+  const projectionMode = turnsMode === "visible" || turnsProp === undefined;
   const turns = useMemo<TurnDetail[]>(
-    () => turnsProp ?? prefilterTurns(detail.turns ?? []),
-    [turnsProp, detail.turns],
+    () => projectionMode ? (turnsProp ?? prefilterTurns(canonicalTurns as TurnDetail[])) : turnsProp!,
+    [projectionMode, turnsProp, canonicalTurns],
+  );
+  const adapterTurns = useMemo(
+    () => projectionMode || turnsProp === detail.turns ? canonicalTurns : turnsProp!,
+    [projectionMode, canonicalTurns, turnsProp, detail.turns],
   );
 
   // The wire-level harness id IS the viewer's provider key (icons, graph,
@@ -244,20 +259,49 @@ export function SessionDetail({
 
   // The ONE wire→view-model projection. The fairtrade adapter parses the wire
   // (tool `arguments`/`result` JSON, git drift) exactly ONCE here, into the
-  // cooked `TranscriptViewModel` every lifted component renders. Built from the
-  // SAME `turns` this composer displays, so the cooked `vm.turns` are parallel
-  // to the wire turns by index — the lifted tool rows (via `toolVMsByTurn`), the
-  // Diffs/Files tabs (via `vm.diffs`/`vm.files`), and the file count all read
-  // cooked fields and NEVER JSON.parse. Fairtrade is the sole legacy wire
-  // compatibility boundary; this browser consumes only its cooked projection.
+  // cooked `TranscriptViewModel` every lifted component renders. Fairtrade
+  // resolves the complete canonical sequence before applying the optional
+  // visible-index projection. Lifted views read cooked fields and never parse
+  // wire values here.
+  const adapterPayload = useMemo<SessionDetailPayload>(
+    () => adapterTurns === detail.turns
+      ? detail
+      : { ...detail, turns: adapterTurns as TurnDetail[] },
+    [adapterTurns, detail],
+  );
+  const adapterOptions = useMemo(
+    () => projectionMode ? { visibleTurnIndices: turns.map((turn) => turn.index) } : undefined,
+    [projectionMode, turns],
+  );
   const vm = useMemo<TranscriptViewModel>(
-    () => adaptTranscript({ ...detail, turns }),
-    [detail, turns],
+    () => adaptTranscript(
+      adapterPayload,
+      undefined,
+      undefined,
+      adapterOptions,
+    ),
+    [adapterPayload, adapterOptions],
   );
-  const toolVMsByTurn = useMemo(
-    () => new Map<number, ToolCallVM[]>(vm.turns.map((t) => [t.index, t.toolCalls])),
-    [vm],
+  const rows = useMemo(
+    () => alignTranscriptRows({
+      displayTurns: turns,
+      vmTurns: vm.turns,
+      mode: projectionMode ? "visible" : "replace",
+    }),
+    [turns, vm, projectionMode],
   );
+  const toolVMsByTurn = useMemo(() => {
+    const byIndex = new Map<number, ToolCallVM[]>();
+    // Graph, files, and rollup contracts remain index-scoped. When duplicate
+    // display rows share an index, their first occurrence owns that collapsed
+    // index so later occurrences cannot silently overwrite its cooked tools.
+    for (const row of rows) {
+      if (!byIndex.has(row.index) && row.toolVMs !== null) {
+        byIndex.set(row.index, row.toolVMs);
+      }
+    }
+    return byIndex;
+  }, [rows]);
   // Per-file rollups for the Diffs/Files outline rails — computed once from the
   // cooked tool calls (no wire parse).
   const fileRollups = useMemo(() => rollupFiles(toolVMsByTurn), [toolVMsByTurn]);
@@ -291,10 +335,11 @@ export function SessionDetail({
   // aggregates unique paths across every tool call; no wire parse here).
   const distinctFileCount = vm.files.length;
 
-  const filteredTurns = useMemo(
-    () => turns.filter((t) => applyFilter(t, filters, annotationsByTurn)),
-    [turns, filters, annotationsByTurn],
+  const filteredRows = useMemo(
+    () => rows.filter((row) => applyFilter(row.turn, filters, annotationsByTurn)),
+    [rows, filters, annotationsByTurn],
   );
+  const filteredTurns = useMemo(() => filteredRows.map((row) => row.turn), [filteredRows]);
 
   const filteredPhases = useMemo(() => {
     if (filteredTurns.length === turns.length) return phases;
@@ -476,7 +521,7 @@ export function SessionDetail({
     const container = containerRef.current;
     if (!container || turns.length === 0) return;
 
-    const visible = new Map<number, IntersectionObserverEntry>();
+    const visible = new Map<string, IntersectionObserverEntry>();
 
     function recompute() {
       if (visible.size === 0) return;
@@ -510,9 +555,12 @@ export function SessionDetail({
     const io = new IntersectionObserver(
       (records) => {
         for (const r of records) {
-          const idx = parseInt((r.target as HTMLElement).getAttribute("data-turn-index") ?? "0", 10);
-          if (r.isIntersecting) visible.set(idx, r);
-          else visible.delete(idx);
+          const target = r.target as HTMLElement;
+          const rowKey = target.getAttribute("data-turn-row")
+            ?? target.getAttribute("data-turn-index")
+            ?? "0";
+          if (r.isIntersecting) visible.set(rowKey, r);
+          else visible.delete(rowKey);
         }
         recompute();
       },
@@ -734,6 +782,7 @@ export function SessionDetail({
                 ) : (
                   <TranscriptCanvas
                     turns={filteredTurns}
+                    rows={filteredRows}
                     toolVMsByTurn={toolVMsByTurn}
                     provider={provider}
                     phases={viewOptions.showHidden ? filteredPhases : []}
