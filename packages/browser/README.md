@@ -19,7 +19,7 @@ which statically imports React Flow. It is therefore required for root-entry
 consumers. A future dedicated graph entry point could make that dependency
 truly optional without changing the current API.
 
-The package depends on `@peasant-labs/schema@0.1.0`; package managers install
+The package depends on `@peasant-labs/schema@0.1.1`; package managers install
 that canonical wire contract automatically. Fairtrade is a required peer at
 `>=0.0.10 <0.1.0`.
 
