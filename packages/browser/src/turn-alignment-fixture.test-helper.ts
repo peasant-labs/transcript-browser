@@ -24,14 +24,22 @@ export interface TurnAlignmentFixtureCase {
   aliasPairs: Array<{ aliasPosition: number; targetPosition: number }>;
 }
 
+interface ParsedViewModels {
+  turns: TurnVM[];
+  byRef: Map<string, TurnVM>;
+  positionByRef: Map<string, number>;
+}
+
 export interface TurnAlignmentFixture {
   cases: TurnAlignmentFixtureCase[];
   loaderMutations: LoaderMutation[];
+  oracleMutations: LoaderMutation[];
   source: string;
 }
 
 const casesPath = resolve(process.cwd(), "src/testdata/turn-alignment.yaml");
 const manifestPath = resolve(process.cwd(), "src/testdata/turn-alignment.manifest.yaml");
+const mutationManifestPath = resolve(process.cwd(), "src/testdata/turn-alignment.mutations.yaml");
 
 function requireObject(value: unknown, label: string): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error(`${label} must be an object`);
@@ -84,10 +92,11 @@ function parseDisplayTurns(raw: unknown, label: string): {
   return { turns, byRef, positionByRef, aliases };
 }
 
-function parseVMs(raw: unknown, label: string): { turns: TurnVM[]; byRef: Map<string, TurnVM> } {
+function parseVMs(raw: unknown, label: string): ParsedViewModels {
   if (!Array.isArray(raw)) throw new Error(`${label} must be an array`);
   const turns: TurnVM[] = [];
   const byRef = new Map<string, TurnVM>();
+  const positionByRef = new Map<string, number>();
   raw.forEach((value, position) => {
     const row = requireObject(value, `${label}[${position}]`);
     requireExactFields(row, ["ref", "index", "content", "effectiveModel", "toolPreviews"], `${label}[${position}]`);
@@ -117,8 +126,9 @@ function parseVMs(raw: unknown, label: string): { turns: TurnVM[]; byRef: Map<st
     };
     turns.push(turn);
     byRef.set(row.ref, turn);
+    positionByRef.set(row.ref, position);
   });
-  return { turns, byRef };
+  return { turns, byRef, positionByRef };
 }
 
 function parseDiagnostics(raw: unknown, label: string): AlignmentDiagnostic[] {
@@ -133,6 +143,23 @@ function parseDiagnostics(raw: unknown, label: string): AlignmentDiagnostic[] {
   });
 }
 
+function expectedRowError(
+  what: string,
+  why: string,
+  where: string,
+  meaning: string,
+  fix: string,
+): Error {
+  return new Error([
+    `what: ${what}`,
+    `why: ${why}`,
+    `where: ${where}`,
+    "when: While loading the turn-alignment expected-row oracle before executing its alignment case.",
+    `meaning: ${meaning}`,
+    `fix: ${fix}`,
+  ].join("\n"));
+}
+
 function parseLoaderMutations(raw: unknown, expectedCount: number, anchorSource: string): LoaderMutation[] {
   if (!Array.isArray(raw) || raw.length !== expectedCount) throw new Error("turn alignment loader mutations must match their declared count");
   const mutations = raw.map((value, index) => {
@@ -145,6 +172,7 @@ function parseLoaderMutations(raw: unknown, expectedCount: number, anchorSource:
     return row as LoaderMutation;
   });
   if (new Set(mutations.map(({ name }) => name)).size !== mutations.length) throw new Error("turn alignment loader mutation names must be unique");
+  if (new Set(mutations.map(({ expectedError }) => expectedError)).size !== mutations.length) throw new Error("turn alignment loader mutations must each assert an independent error");
   return mutations;
 }
 
@@ -152,6 +180,7 @@ export function loadTurnAlignmentFixture(
   source = readFileSync(casesPath, "utf8"),
   manifestSource = readFileSync(manifestPath, "utf8"),
   mutationAnchorSource = readFileSync(casesPath, "utf8"),
+  mutationManifestSource = readFileSync(mutationManifestPath, "utf8"),
 ): TurnAlignmentFixture {
   const manifest = parseStrictYamlObject(manifestSource, "turn alignment manifest");
   requireExactFields(manifest, ["expectedCaseCount", "requiredCaseNames", "expectedLoaderMutationCount", "loaderMutations"], "turn alignment manifest");
@@ -160,6 +189,18 @@ export function loadTurnAlignmentFixture(
   const requiredNames = requireUniqueStringSet(manifest.requiredCaseNames, "turn alignment manifest.requiredCaseNames");
   if (requiredNames.length !== manifest.expectedCaseCount) throw new Error("turn alignment manifest names must match expectedCaseCount");
   const loaderMutations = parseLoaderMutations(manifest.loaderMutations, manifest.expectedLoaderMutationCount, mutationAnchorSource);
+  const mutationManifest = parseStrictYamlObject(mutationManifestSource, "turn alignment mutation manifest");
+  requireExactFields(mutationManifest, ["expectedMutationCount", "expectedLoaderMutationCount", "loaderMutations", "mutations"], "turn alignment mutation manifest");
+  requireSafeNonnegativeInteger(mutationManifest.expectedMutationCount, "turn alignment mutation manifest.expectedMutationCount");
+  requireSafeNonnegativeInteger(mutationManifest.expectedLoaderMutationCount, "turn alignment mutation manifest.expectedLoaderMutationCount");
+  if (!Array.isArray(mutationManifest.mutations) || mutationManifest.mutations.length !== mutationManifest.expectedMutationCount) {
+    throw new Error("turn alignment mutation manifest production mutations must match their declared count");
+  }
+  const oracleMutations = parseLoaderMutations(
+    mutationManifest.loaderMutations,
+    mutationManifest.expectedLoaderMutationCount,
+    mutationAnchorSource,
+  );
 
   const root = parseStrictYamlObject(source, "turn alignment fixture");
   requireExactFields(root, ["expectedCaseCount", "cases"], "turn alignment fixture");
@@ -181,26 +222,113 @@ export function loadTurnAlignmentFixture(
     if (!Array.isArray(row.expectedRows) || row.expectedRows.length !== display.turns.length) {
       throw new Error(`turn alignment case ${row.name}.expectedRows must match display turn count`);
     }
+    const occurrenceCounts = new Map<number, number>();
     const expectedRows = row.expectedRows.map((expectedValue, position): AlignedTurnRow => {
-      const expected = requireObject(expectedValue, `turn alignment case ${row.name}.expectedRows[${position}]`);
-      requireExactFields(expected, ["key", "index", "occurrence", "turnRef", "cookedRef", "alignment"], `turn alignment case ${row.name}.expectedRows[${position}]`);
-      requireNonEmptyString(expected.key, `turn alignment case ${row.name}.expectedRows[${position}].key`);
-      requireSafeNonnegativeInteger(expected.index, `turn alignment case ${row.name}.expectedRows[${position}].index`);
-      requireSafeNonnegativeInteger(expected.occurrence, `turn alignment case ${row.name}.expectedRows[${position}].occurrence`);
-      requireNonEmptyString(expected.turnRef, `turn alignment case ${row.name}.expectedRows[${position}].turnRef`);
-      if (expected.cookedRef !== null) requireNonEmptyString(expected.cookedRef, `turn alignment case ${row.name}.expectedRows[${position}].cookedRef`);
-      if (expected.alignment !== "aligned" && expected.alignment !== "unaligned") throw new Error(`turn alignment case ${row.name}.expectedRows[${position}].alignment must be aligned or unaligned`);
-      const turn = display.byRef.get(expected.turnRef);
-      if (!turn) throw new Error(`turn alignment case ${row.name}.expectedRows[${position}].turnRef is unknown`);
+      const expectedLabel = `turn alignment case ${row.name}.expectedRows[${position}]`;
+      const expected = requireObject(expectedValue, expectedLabel);
+      requireExactFields(expected, ["key", "index", "occurrence", "turnRef", "cookedRef", "alignment"], expectedLabel);
+      requireNonEmptyString(expected.key, `${expectedLabel}.key`);
+      requireSafeNonnegativeInteger(expected.index, `${expectedLabel}.index`);
+      requireSafeNonnegativeInteger(expected.occurrence, `${expectedLabel}.occurrence`);
+      requireNonEmptyString(expected.turnRef, `${expectedLabel}.turnRef`);
+      if (expected.cookedRef !== null) requireNonEmptyString(expected.cookedRef, `${expectedLabel}.cookedRef`);
+      if (expected.alignment !== "aligned" && expected.alignment !== "unaligned") throw new Error(`${expectedLabel}.alignment must be aligned or unaligned`);
+      const turn = display.turns[position]!;
+      const referencedTurn = display.byRef.get(expected.turnRef);
+      if (!referencedTurn) throw new Error(`${expectedLabel}.turnRef is unknown`);
+      if (referencedTurn !== turn) {
+        throw expectedRowError(
+          "Turn-alignment expected row references the wrong display turn.",
+          `turnRef ${expected.turnRef} resolves to a different display row than position ${position}.`,
+          `${expectedLabel}.turnRef`,
+          "The fixture oracle could compare alignment output against shifted wire content and pass for the wrong scenario.",
+          `Set turnRef to the displayTurns reference at position ${position}.`,
+        );
+      }
+      const derivedOccurrence = occurrenceCounts.get(turn.index) ?? 0;
+      occurrenceCounts.set(turn.index, derivedOccurrence + 1);
+      if (expected.index !== turn.index) {
+        throw expectedRowError(
+          "Turn-alignment expected row has the wrong index.",
+          `Expected index ${expected.index} does not equal display turn index ${turn.index} at position ${position}.`,
+          `${expectedLabel}.index`,
+          "The fixture oracle no longer describes the wire row that the production aligner receives.",
+          `Set index to ${turn.index}, matching displayTurns[${position}].`,
+        );
+      }
+      if (expected.occurrence !== derivedOccurrence) {
+        throw expectedRowError(
+          "Turn-alignment expected row has the wrong occurrence ordinal.",
+          `Expected occurrence ${expected.occurrence} does not equal derived occurrence ${derivedOccurrence} for index ${turn.index} at position ${position}.`,
+          `${expectedLabel}.occurrence`,
+          "The fixture oracle could assign cooked data to the wrong repeated row occurrence.",
+          `Set occurrence to ${derivedOccurrence}, the zero-based occurrence derived from displayTurns through position ${position}.`,
+        );
+      }
+      const derivedKey = `${turn.index}:${derivedOccurrence}`;
+      if (expected.key !== derivedKey) {
+        throw expectedRowError(
+          "Turn-alignment expected row has the wrong key.",
+          `Expected key ${expected.key} does not equal derived key ${derivedKey} at position ${position}.`,
+          `${expectedLabel}.key`,
+          "The fixture oracle could assert a row identity that production cannot derive from the display list.",
+          `Set key to ${derivedKey}, derived from the display turn index and occurrence.`,
+        );
+      }
       const cooked = expected.cookedRef === null ? null : viewModels.byRef.get(expected.cookedRef as string);
-      if (cooked === undefined) throw new Error(`turn alignment case ${row.name}.expectedRows[${position}].cookedRef is unknown`);
-      if ((expected.alignment === "aligned") !== (cooked !== null)) throw new Error(`turn alignment case ${row.name}.expectedRows[${position}] alignment and cookedRef disagree`);
-      if (expected.key !== `${expected.index}:${expected.occurrence}`) throw new Error(`turn alignment case ${row.name}.expectedRows[${position}].key must encode index and occurrence`);
+      if (cooked === undefined) throw new Error(`${expectedLabel}.cookedRef is unknown`);
+      if ((expected.alignment === "aligned") !== (cooked !== null)) {
+        throw expectedRowError(
+          "Turn-alignment expected row has inconsistent alignment state.",
+          `${expected.alignment} requires cookedRef to be ${expected.alignment === "aligned" ? "a VM reference" : "null"}.`,
+          `${expectedLabel}.alignment and ${expectedLabel}.cookedRef`,
+          "The fixture oracle could claim cooked enrichment exists while returning none, or enrich a row declared unaligned.",
+          `Use a non-null cookedRef only for aligned rows and null only for unaligned rows at position ${position}.`,
+        );
+      }
+      const cookedMatchesExpectedContent = cooked === null || cooked.content === turn.content;
+      const allowsCookedContentDivergence = row.name === "same-index-changed-content";
+      if (allowsCookedContentDivergence && cooked !== null && cookedMatchesExpectedContent) {
+        throw expectedRowError(
+          "The same-index content-divergence case no longer diverges.",
+          `cookedRef ${expected.cookedRef as string} must preserve content distinct from displayTurns[${position}] while retaining its index.`,
+          `${expectedLabel}.cookedRef`,
+          "The fixture would stop proving that wire content remains authoritative when the Fairtrade VM carries stale content for the same index.",
+          `Use same-index VM content that differs from displayTurns[${position}] only in the same-index-changed-content case.`,
+        );
+      }
+      if (cooked !== null && cooked.index !== expected.index) {
+        throw expectedRowError(
+          "Turn-alignment expected row references an incompatible Fairtrade view model.",
+          `cookedRef ${expected.cookedRef as string} resolved to index ${cooked.index}, but the expected display row requires index ${expected.index}.`,
+          `${expectedLabel}.cookedRef`,
+          "The fixture oracle could attach cooked attribution or tools from a different transcript row.",
+          `Reference a VM row whose index matches displayTurns[${position}], or mark this expected row unaligned with cookedRef null.`,
+        );
+      }
+      if (cooked !== null && row.mode === "replace" && viewModels.positionByRef.get(expected.cookedRef as string) !== position) {
+        throw expectedRowError(
+          "Turn-alignment replacement oracle references a view model from the wrong position.",
+          `cookedRef ${expected.cookedRef as string} does not resolve to vmTurns[${position}] for this positional replacement row.`,
+          `${expectedLabel}.cookedRef`,
+          "The fixture oracle could attach same-index cooked attribution or tools from a neighboring replacement row.",
+          `Set cookedRef to the vmTurns reference at position ${position}, or mark this expected row unaligned with cookedRef null.`,
+        );
+      }
+      if (cooked !== null && !cookedMatchesExpectedContent && !allowsCookedContentDivergence) {
+        throw expectedRowError(
+          "Turn-alignment expected row references Fairtrade content from a different row.",
+          `cookedRef ${expected.cookedRef as string} resolved to content ${JSON.stringify(cooked.content)}, but displayTurns[${position}] contains ${JSON.stringify(turn.content)}.`,
+          `${expectedLabel}.cookedRef`,
+          "The fixture oracle could attach cooked attribution or tools from a different transcript row without declaring the content-divergence scenario.",
+          `Reference a VM row whose content matches displayTurns[${position}], or isolate intentional content divergence in the same-index-changed-content case.`,
+        );
+      }
       return {
-        key: expected.key as TurnRowKey,
+        key: derivedKey as TurnRowKey,
         turn,
-        index: expected.index,
-        occurrence: expected.occurrence,
+        index: turn.index,
+        occurrence: derivedOccurrence,
         cooked,
         toolVMs: cooked?.toolCalls ?? null,
         alignment: expected.alignment as RowAlignment,
@@ -219,5 +347,5 @@ export function loadTurnAlignmentFixture(
   if (names.size !== requiredNames.length || requiredNames.some((name) => !names.has(name))) {
     throw new Error("turn alignment fixture required names must exactly match cases");
   }
-  return { cases, loaderMutations, source };
+  return { cases, loaderMutations, oracleMutations, source };
 }

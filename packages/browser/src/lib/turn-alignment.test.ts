@@ -28,4 +28,11 @@ describe("alignTranscriptRows", () => {
       expect(() => loadTurnAlignmentFixture(source)).toThrow(new RegExp(mutation.expectedError));
     }
   });
+
+  for (const mutation of fixture.oracleMutations) {
+    it(`rejects malformed alignment fixture: ${mutation.name}`, () => {
+      const source = fixture.source.replace(mutation.find, mutation.replace);
+      expect(() => loadTurnAlignmentFixture(source)).toThrow(new RegExp(mutation.expectedError));
+    });
+  }
 });

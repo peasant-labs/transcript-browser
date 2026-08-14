@@ -31,8 +31,9 @@ export interface AlignTranscriptRowsArgs {
 }
 
 function occurrenceOrdinals(turns: readonly { index: number }[]): number[] {
-  // This counter only names positional occurrences. It never selects cooked
-  // data: alignment below remains a verified positional/subsequence operation.
+  // Occurrences are derived once from the display list. This module receives
+  // no separate canonical sequence, so visible alignment has one ordinal
+  // contract and one verified monotone mapping rather than nominal fallbacks.
   const counts = new Map<number, number>();
   return turns.map(({ index }) => {
     const occurrence = counts.get(index) ?? 0;
@@ -208,13 +209,12 @@ export function alignTranscriptRows({
     });
   }
 
-  const vmOccurrences = occurrenceOrdinals(vmTurns);
-  const fullMatches = matchVisibleRows(displayTurns, displayOccurrences, vmTurns, vmOccurrences);
-  const projectedOccurrences = occurrenceOrdinals(displayTurns);
-  const projectedMatches = matchVisibleRows(displayTurns, projectedOccurrences, vmTurns, vmOccurrences);
-  const fullMatchCount = fullMatches.filter((match) => match !== null).length;
-  const projectedMatchCount = projectedMatches.filter((match) => match !== null).length;
-  const matches = projectedMatchCount > fullMatchCount ? projectedMatches : fullMatches;
+  const matches = matchVisibleRows(
+    displayTurns,
+    displayOccurrences,
+    vmTurns,
+    occurrenceOrdinals(vmTurns),
+  );
   const rows: AlignedTurnRow[] = [];
 
   for (let position = 0; position < displayTurns.length; position += 1) {

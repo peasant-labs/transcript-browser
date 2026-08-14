@@ -1,4 +1,18 @@
 expectedMutationCount: 2
+expectedLoaderMutationCount: 3
+loaderMutations:
+  - name: expected turn reference swap
+    find: "        turnRef: display-second\n        cookedRef: vm-second"
+    replace: "        turnRef: display-first\n        cookedRef: vm-second"
+    expectedError: "what: Turn-alignment expected row references the wrong display turn\\.[\\s\\S]*why: turnRef display-first resolves to a different display row than position 1\\.[\\s\\S]*where: turn alignment case duplicate-index-distinct-content\\.expectedRows\\[1\\]\\.turnRef[\\s\\S]*when: While loading the turn-alignment expected-row oracle[\\s\\S]*meaning: The fixture oracle could compare alignment output against shifted wire content[\\s\\S]*fix: Set turnRef to the displayTurns reference at position 1\\."
+  - name: expected index swap
+    find: "      - key: \"5:1\"\n        index: 5\n        occurrence: 1\n        turnRef: display-second"
+    replace: "      - key: \"5:1\"\n        index: 6\n        occurrence: 1\n        turnRef: display-second"
+    expectedError: "what: Turn-alignment expected row has the wrong index\\.[\\s\\S]*why: Expected index 6 does not equal display turn index 5 at position 1\\.[\\s\\S]*where: turn alignment case duplicate-index-distinct-content\\.expectedRows\\[1\\]\\.index[\\s\\S]*when: While loading the turn-alignment expected-row oracle[\\s\\S]*meaning: The fixture oracle no longer describes the wire row[\\s\\S]*fix: Set index to 5, matching displayTurns\\[1\\]\\."
+  - name: expected occurrence swap
+    find: "      - key: \"5:1\"\n        index: 5\n        occurrence: 1\n        turnRef: display-second"
+    replace: "      - key: \"5:1\"\n        index: 5\n        occurrence: 0\n        turnRef: display-second"
+    expectedError: "what: Turn-alignment expected row has the wrong occurrence ordinal\\.[\\s\\S]*why: Expected occurrence 0 does not equal derived occurrence 1 for index 5 at position 1\\.[\\s\\S]*where: turn alignment case duplicate-index-distinct-content\\.expectedRows\\[1\\]\\.occurrence[\\s\\S]*when: While loading the turn-alignment expected-row oracle[\\s\\S]*meaning: The fixture oracle could assign cooked data to the wrong repeated row occurrence\\.[\\s\\S]*fix: Set occurrence to 1, the zero-based occurrence derived from displayTurns through position 1\\."
 mutations:
   - name: blind positional alignment
     target: src/lib/turn-alignment.ts

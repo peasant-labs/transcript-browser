@@ -12,12 +12,12 @@ cases:
     vmTurns:
       - ref: vm-first
         index: 5
-        content: cooked first
+        content: display first
         effectiveModel: model/first
         toolPreviews: [tool first]
       - ref: vm-second
         index: 5
-        content: cooked second
+        content: display second
         effectiveModel: model/second
         toolPreviews: [tool second]
     expectedRows:
@@ -45,12 +45,12 @@ cases:
     vmTurns:
       - ref: shared-vm-first
         index: 6
-        content: shared cooked first
+        content: shared display
         effectiveModel: model/shared-first
         toolPreviews: [shared tool first]
       - ref: shared-vm-second
         index: 6
-        content: shared cooked second
+        content: shared display
         effectiveModel: model/shared-second
         toolPreviews: [shared tool second]
     expectedRows:
@@ -79,12 +79,12 @@ cases:
     vmTurns:
       - ref: reordered-vm-second
         index: 8
-        content: cooked replacement second
+        content: replacement second
         effectiveModel: model/eight
         toolPreviews: [tool eight]
       - ref: reordered-vm-first
         index: 7
-        content: cooked replacement first
+        content: replacement first
         effectiveModel: model/seven
         toolPreviews: [tool seven]
     expectedRows:
@@ -113,17 +113,17 @@ cases:
     vmTurns:
       - ref: visible-vm-first
         index: 10
-        content: cooked visible first
+        content: visible first
         effectiveModel: model/ten
         toolPreviews: [tool ten]
       - ref: hidden-vm-middle
         index: 11
-        content: cooked hidden middle
+        content: hidden middle
         effectiveModel: model/eleven
         toolPreviews: [tool eleven]
       - ref: visible-vm-third
         index: 12
-        content: cooked visible third
+        content: visible third
         effectiveModel: model/twelve
         toolPreviews: [tool twelve]
     expectedRows:
@@ -178,12 +178,12 @@ cases:
     vmTurns:
       - ref: matched-vm
         index: 14
-        content: matched cooked
+        content: matched display
         effectiveModel: model/fourteen
         toolPreviews: [tool fourteen]
       - ref: wrong-vm
         index: 99
-        content: wrong cooked
+        content: wrong display
         effectiveModel: model/wrong
         toolPreviews: [tool wrong]
     expectedRows:
@@ -218,7 +218,7 @@ cases:
     vmTurns:
       - ref: length-vm-first
         index: 16
-        content: length cooked first
+        content: length first
         effectiveModel: model/sixteen
         toolPreviews: [tool sixteen]
     expectedRows:
@@ -259,12 +259,12 @@ cases:
     vmTurns:
       - ref: legacy-vm-first
         index: 20
-        content: legacy cooked first
+        content: legacy first
         effectiveModel: null
         toolPreviews: []
       - ref: legacy-vm-second
         index: 21
-        content: legacy cooked second
+        content: legacy second
         effectiveModel: null
         toolPreviews: []
     expectedRows:
