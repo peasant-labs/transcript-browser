@@ -1,3 +1,8 @@
+> **This package and repository are archived.** The transcript viewer, the adapter, analytics,
+> and helpers now live in `@peasant-labs/fairtrade` (`/ui`). The trajectory-graph engine now
+> lives in `@peasant-labs/fairtrade/graph`. See
+> [peasant-labs/fairtrade-design-system](https://github.com/peasant-labs/fairtrade-design-system).
+
 # transcript-browser
 
 Shared, framework-agnostic **transcript browser** building blocks for AI agent
