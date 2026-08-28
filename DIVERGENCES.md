@@ -1,3 +1,6 @@
+> This repository is archived. See the notice at the top of `README.md` for where each surface
+> moved.
+
 # Canonical schema migration boundary
 
 The generated `@peasant-labs/schema` package is the sole wire-contract source.
